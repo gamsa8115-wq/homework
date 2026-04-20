@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#4f46e5">
+<title>내 숙제</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap');
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: #f5f5f7;
+  color: #1a1a18;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+body {
+  padding: 0;
+  max-width: 560px;
+  margin: 0 auto;
+  background: #fff;
+  min-height: 100vh;
+  box-shadow: 0 0 40px rgba(0,0,0,.05);
+}
+
+/* ── 헤더 ── */
+.s-header {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #fff;
+  padding: 1.5rem 1.1rem 1.3rem;
+  position: relative;
+}
+.s-header-title {
+  font-size: .75rem;
+  opacity: .82;
+  letter-spacing: .05em;
+  margin-bottom: .35rem;
+}
+.s-header-name {
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.1;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+.s-header-group {
+  display: inline-block;
+  background: rgba(255,255,255,.22);
+  padding: .18rem .55rem;
+  border-radius: 14px;
+  font-size: .72rem;
+  font-weight: 600;
+}
+.s-header-date {
+  font-size: .78rem;
+  opacity: .85;
+  margin-top: .5rem;
+}
+.s-refresh-btn {
+  position: absolute; top: 1rem; right: 1rem;
+  background: rgba(255,255,255,.2);
+  border: none; color: #fff;
+  padding: .35rem .6rem;
+  border-radius: 18px;
+  font-size: .72rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+.s-refresh-btn:active { background: rgba(255,255,255,.35); }
+
+/* ── 로딩·에러 ── */
+.s-loading, .s-error {
+  padding: 4rem 1.5rem;
+  text-align: center;
+  color: #6b7280;
+}
+.s-loading-spinner {
+  width: 34px; height: 34px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #4f46e5;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.s-error {
+  color: #b83224;
+}
+.s-error-icon { font-size: 2.5rem; margin-bottom: .7rem; }
+.s-error-title { font-size: 1rem; font-weight: 700; margin-bottom: .4rem; color: #1a1a18; }
+.s-error-sub { font-size: .8rem; color: #6b7280; line-height: 1.6; }
+
+/* ── 섹션 ── */
+.s-section {
+  padding: 1.2rem 1.1rem .3rem;
+}
+.s-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: .65rem;
+}
+.s-section-title-left {
+  display: flex; align-items: center; gap: .35rem;
+  font-size: .88rem; font-weight: 800;
+}
+.s-section-count {
+  font-size: .72rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+.s-section-count.hot { color: #b83224; }
+
+/* ── 숙제 카드 ── */
+.s-hw-list {
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+}
+.s-hw-card {
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  padding: .7rem .9rem;
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  transition: background .15s;
+}
+.s-hw-card.today {
+  border-color: #4f46e5;
+  background: rgba(79,70,229,.03);
+}
+.s-hw-card.overdue {
+  border-color: #dc2626;
+  background: rgba(220,38,38,.03);
+}
+.s-hw-card.done {
+  background: #f9f9f9;
+  border-color: #e5e7eb;
+}
+.s-hw-icon {
+  flex: 0 0 auto;
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+}
+.s-hw-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.s-hw-book {
+  font-size: .84rem;
+  font-weight: 700;
+  color: #1a1a18;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.s-hw-detail {
+  font-size: .82rem;
+  color: #3a3a38;
+  margin-top: .2rem;
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: -.1px;
+}
+.s-hw-meta {
+  flex: 0 0 auto;
+  font-size: .7rem;
+  color: #97948E;
+  text-align: right;
+  line-height: 1.3;
+}
+.s-hw-result {
+  display: inline-block;
+  padding: .18rem .45rem;
+  border-radius: 8px;
+  font-size: .72rem;
+  font-weight: 700;
+  font-family: 'Space Mono', monospace;
+}
+.s-hw-result.pass { background: rgba(5,150,105,.1); color: #065f46; }
+.s-hw-result.fail { background: rgba(220,38,38,.08); color: #b83224; }
+.s-hw-result.score { background: rgba(79,70,229,.08); color: #4f46e5; }
+
+/* ── 빈 상태 ── */
+.s-empty {
+  text-align: center;
+  padding: 1.5rem .5rem;
+  color: #97948E;
+  font-size: .82rem;
+}
+.s-empty-icon { font-size: 1.8rem; margin-bottom: .3rem; opacity: .5; }
+
+/* ── 푸터 ── */
+.s-footer {
+  padding: 1.5rem 1.1rem 2.5rem;
+  text-align: center;
+  font-size: .68rem;
+  color: #97948E;
+  line-height: 1.6;
+}
+.s-footer-logo { color: #4f46e5; font-weight: 700; }
+
+/* ── 오늘 자동 스크롤 앵커 ── */
+#today-anchor { scroll-margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<div id="s-content">
+  <div class="s-loading">
+    <div class="s-loading-spinner"></div>
+    <div style="font-size:.85rem">숙제 정보를 불러오는 중...</div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════════════════
+// 🔥 Firebase 설정 (sotong-academy 프로젝트, 선생님용 v41과 동일)
+// ⚠️ 이 페이지는 학생이 접속하는 읽기 전용 페이지입니다.
+//   - 학생은 자신의 accessKey로만 자기 데이터 조회
+//   - 쓰기 권한 없음 (읽기만)
+// ══════════════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyAh3zMoepbA38yFFEDQ210XWveBdf2HDN8",
+  authDomain:        "sotong-academy.firebaseapp.com",
+  databaseURL:       "https://sotong-academy-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "sotong-academy",
+  storageBucket:     "sotong-academy.firebasestorage.app",
+  messagingSenderId: "401247371093",
+  appId:             "1:401247371093:web:fb714d3f1348a9aa56b9dc"
+};
+const FB_PATH = 'homework_v4';
+
+// ══════════════════════════════════════════════════════════
+// URL에서 접근 키 추출
+// ══════════════════════════════════════════════════════════
+function getAccessKey() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('k') || '';
+}
+
+// ══════════════════════════════════════════════════════════
+// 유틸
+// ══════════════════════════════════════════════════════════
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function _toArray(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  if (typeof val !== 'object') return [];
+  return Object.keys(val).sort((a,b)=>Number(a)-Number(b))
+                          .map(k => val[k])
+                          .filter(v => v !== null && v !== undefined);
+}
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function fmtDateKor(ds) {
+  if (!ds) return '';
+  const [y,m,d] = ds.split('-');
+  const dow = new Date(ds).getDay();
+  const dowNames = ['일','월','화','수','목','금','토'];
+  return `${+m}월 ${+d}일 (${dowNames[dow]})`;
+}
+
+function fmtDateShort(ds) {
+  if (!ds) return '';
+  const [,m,d] = ds.split('-');
+  return `${+m}/${+d}`;
+}
+
+/* 한국 공휴일 (2025-2027) */
+const HOLIDAYS = new Set([
+  '2025-01-01','2025-01-28','2025-01-29','2025-01-30','2025-03-01','2025-05-05','2025-05-06','2025-06-06',
+  '2025-08-15','2025-10-03','2025-10-05','2025-10-06','2025-10-07','2025-10-08','2025-10-09','2025-12-25',
+  '2026-01-01','2026-02-16','2026-02-17','2026-02-18','2026-03-01','2026-03-02','2026-05-05','2026-05-24','2026-05-25','2026-06-06',
+  '2026-08-15','2026-08-17','2026-09-24','2026-09-25','2026-09-26','2026-10-03','2026-10-05','2026-10-09','2026-12-25',
+  '2027-01-01','2027-02-06','2027-02-07','2027-02-08','2027-02-09','2027-03-01','2027-05-05','2027-05-13','2027-06-06','2027-06-07',
+  '2027-08-15','2027-08-16','2027-09-14','2027-09-15','2027-09-16','2027-10-03','2027-10-04','2027-10-09','2027-10-11','2027-12-25'
+]);
+
+/* 방학/휴무/공휴일인지 판정 */
+function isNonClassDay(ds, vacations) {
+  if (!ds) return false;
+  if (HOLIDAYS.has(ds)) return true;
+  if (Array.isArray(vacations) && vacations.includes(ds)) return true;
+  const d = new Date(ds);
+  const dow = d.getDay();
+  return dow === 0 || dow === 6; // 일·토
+}
+
+/* 레이블 그대로 반환 — 사용자 입력 그대로 보존 */
+function prettifyLabel(s) {
+  return String(s);
+}
+
+// ══════════════════════════════════════════════════════════
+// 렌더링
+// ══════════════════════════════════════════════════════════
+function renderError(title, sub) {
+  document.getElementById('s-content').innerHTML = `
+    <div class="s-error">
+      <div class="s-error-icon">⚠️</div>
+      <div class="s-error-title">${escHtml(title)}</div>
+      <div class="s-error-sub">${escHtml(sub || '')}</div>
+    </div>
+  `;
+}
+
+function renderHwCard(a, type) {
+  const isVoca = a.type === 'voca';
+  const book  = escHtml(a.bookName || '');
+  // 보카형: 회차 번호만 / 교재형: 레이블
+  let detail = '';
+  if (isVoca) {
+    const unit = a.unitFrom === a.unitTo
+      ? a.unitFrom
+      : `${a.unitFrom}~${a.unitTo}`;
+    detail = `${escHtml(unit)}회차`;
+  } else {
+    detail = (a.probLabels || [])
+      .map(l => escHtml(prettifyLabel(l)))
+      .join(' · ');
+  }
+  const icon = isVoca ? '📝' : '📖';
+  const dateShort = fmtDateShort(a.date);
+
+  let right = '';
+  let cls = '';
+  if (type === 'today') {
+    cls = 'today';
+    right = `<div class="s-hw-meta" style="color:#4f46e5;font-weight:700">오늘</div>`;
+  } else if (type === 'overdue') {
+    cls = 'overdue';
+    right = `<div class="s-hw-meta" style="color:#b83224">${dateShort}<br>미완료</div>`;
+  } else if (type === 'done') {
+    cls = 'done';
+    const resultStr = formatResult(a.result);
+    const resultCls = getResultClass(a.result);
+    right = `
+      <div class="s-hw-meta">
+        <div style="margin-bottom:.2rem">${dateShort}</div>
+        ${resultStr ? `<span class="s-hw-result ${resultCls}">${escHtml(resultStr)}</span>` : ''}
+      </div>`;
+  }
+
+  return `
+    <div class="s-hw-card ${cls}">
+      <div class="s-hw-icon">${icon}</div>
+      <div class="s-hw-body">
+        <div class="s-hw-book">${book}</div>
+        <div class="s-hw-detail">${detail || '-'}</div>
+      </div>
+      ${right}
+    </div>
+  `;
+}
+
+function formatResult(r) {
+  if (r === '' || r === null || r === undefined) return '';
+  if (typeof r === 'number') return String(r);
+  return String(r);
+}
+
+function getResultClass(r) {
+  if (r === '완료' || r === '통과') return 'pass';
+  if (r === '미수행' || r === '미통과') return 'fail';
+  if (typeof r === 'number' || /^\d+$/.test(String(r))) return 'score';
+  return 'score';
+}
+
+function renderMainView(student, assigns, vacations) {
+  const today = todayStr();
+
+  // 이 학생의 배정 전체
+  const myAssigns = assigns.filter(a => a.studentId === student.id);
+
+  // 분류
+  const hasResult = (a) =>
+    a.result !== '' && a.result !== null && a.result !== undefined;
+
+  // 오늘 숙제: 오늘이 수업일이고 + 결과 없는 것
+  // (오늘이 방학/공휴일이면 오늘 카드 비워둠 - 빈 상태)
+  const isTodayClassDay = !isNonClassDay(today, vacations);
+  const todays = isTodayClassDay
+    ? myAssigns.filter(a => a.date === today && !hasResult(a))
+    : [];
+
+  // 지난 미완료: 미완료 + 과거 + 방학/공휴일에 배정된 것은 제외
+  const overdue = myAssigns
+    .filter(a => a.date < today && !hasResult(a))
+    .filter(a => !isNonClassDay(a.date, vacations))
+    .sort((a,b) => b.date.localeCompare(a.date)); // 최근 미완료부터
+
+  // 최근 완료: 결과 있는 것은 날짜 무관하게 표시 (방학/공휴일 필터 안 함)
+  // 실제 했다는 기록이므로 그대로 보여줘야 함
+  const recentDone = myAssigns
+    .filter(a => hasResult(a))
+    .sort((a,b) => b.date.localeCompare(a.date))
+    .slice(0, 10);
+
+  // 헤더
+  const d = new Date();
+  const todayKor = fmtDateKor(today);
+
+  const html = `
+    <div class="s-header">
+      <div class="s-header-title">오늘의 숙제</div>
+      <div class="s-header-name">
+        ${escHtml(student.name)}
+        <span class="s-header-group">${escHtml(student.group || '')}</span>
+      </div>
+      <div class="s-header-date">📅 ${todayKor}</div>
+      <button class="s-refresh-btn" onclick="location.reload()">🔄 새로고침</button>
+    </div>
+
+    <div id="today-anchor" class="s-section">
+      <div class="s-section-title">
+        <div class="s-section-title-left">
+          <span>📅 오늘 할 숙제</span>
+        </div>
+        <span class="s-section-count">${todays.length}개</span>
+      </div>
+      ${todays.length === 0
+        ? (isTodayClassDay
+            ? `<div class="s-empty">
+                <div class="s-empty-icon">✨</div>
+                <div>오늘은 배정된 숙제가 없어요!</div>
+              </div>`
+            : `<div class="s-empty">
+                <div class="s-empty-icon">🏖</div>
+                <div>오늘은 학원 쉬는 날이에요</div>
+              </div>`)
+        : `<div class="s-hw-list">${todays.map(a => renderHwCard(a, 'today')).join('')}</div>`
+      }
+    </div>
+
+    ${overdue.length > 0 ? `
+      <div class="s-section">
+        <div class="s-section-title">
+          <div class="s-section-title-left">
+            <span>🔴 지난 미완료</span>
+          </div>
+          <span class="s-section-count hot">${overdue.length}개 남음</span>
+        </div>
+        <div class="s-hw-list">
+          ${overdue.map(a => renderHwCard(a, 'overdue')).join('')}
+        </div>
+      </div>
+    ` : ''}
+
+    <div class="s-section">
+      <div class="s-section-title">
+        <div class="s-section-title-left">
+          <span>✅ 최근 완료</span>
+        </div>
+        <span class="s-section-count">${recentDone.length}개</span>
+      </div>
+      ${recentDone.length === 0
+        ? `<div class="s-empty">
+            <div class="s-empty-icon">📝</div>
+            <div>아직 완료한 숙제가 없어요</div>
+          </div>`
+        : `<div class="s-hw-list">${recentDone.map(a => renderHwCard(a, 'done')).join('')}</div>`
+      }
+    </div>
+
+    <div class="s-footer">
+      <div class="s-footer-logo">📚 소통영어학원</div>
+      <div style="margin-top:.3rem">자동으로 업데이트됩니다 · 새로고침하면 최신 정보 확인</div>
+    </div>
+  `;
+
+  document.getElementById('s-content').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════
+// 초기화 + Firebase 데이터 로드
+// ══════════════════════════════════════════════════════════
+async function main() {
+  const key = getAccessKey();
+  if (!key) {
+    renderError('접근 키가 없습니다',
+      'URL에 접근 키가 포함되어 있지 않습니다.\n선생님께 다시 URL을 받아주세요.');
+    return;
+  }
+
+  try {
+    // Firebase 초기화 (별도 앱 이름)
+    const app = firebase.initializeApp(FIREBASE_CONFIG, 'student-view');
+    const db  = firebase.database(app);
+
+    // 데이터 읽기 (한 번만)
+    const snap = await db.ref(FB_PATH).once('value');
+    const val  = snap.val();
+
+    if (!val) {
+      renderError('숙제 데이터를 찾을 수 없습니다',
+        '아직 아무 데이터가 등록되지 않았거나,\n선생님께서 설정 중일 수 있어요.\n잠시 후 다시 접속해주세요.');
+      return;
+    }
+
+    const students  = Array.isArray(val.students)  ? val.students  : _toArray(val.students);
+    const assigns   = Array.isArray(val.assigns)   ? val.assigns   : _toArray(val.assigns);
+    const vacations = Array.isArray(val.vacations) ? val.vacations : _toArray(val.vacations);
+
+    // 내 accessKey에 매칭되는 학생 찾기
+    const me = students.find(s => s.accessKey === key);
+    if (!me) {
+      renderError('숙제 정보를 찾을 수 없습니다',
+        '접근 키가 유효하지 않습니다.\n학생 탈퇴로 인해 URL이 무효화되었을 수 있어요.\n선생님께 문의해주세요.');
+      return;
+    }
+
+    // 메인 뷰 렌더링
+    renderMainView(me, assigns, vacations);
+
+  } catch (err) {
+    console.error(err);
+    renderError('연결 오류',
+      '인터넷 연결을 확인하고 다시 시도해주세요.\n\n' + (err.message || err));
+  }
+}
+
+main();
+</script>
+</body>
+</html>
