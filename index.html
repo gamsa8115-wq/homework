@@ -689,6 +689,11 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
       <button class="btn bg bsm hist-mode-btn" id="hmode-assign" onclick="setHistMode('assign')" style="font-size:.72rem">📌 배정</button>
       <button class="btn bg bsm hist-mode-btn" id="hmode-score"  onclick="setHistMode('score')"  style="font-size:.72rem">✏ 결과</button>
       <button class="btn bg bsm hist-mode-btn" id="hmode-delete" onclick="setHistMode('delete')" style="font-size:.72rem">🗑 삭제</button>
+      <span style="width:1px;height:18px;background:var(--bd);margin:0 .15rem"></span>
+      <button class="btn bs bsm" id="hist-import-btn"
+        onclick="openScoreImport()"
+        style="font-size:.72rem;background:#7c3aed;color:#fff;border-color:#7c3aed"
+        title="LMS 리포트(엑셀)에서 점수를 자동으로 채웁니다">📥 점수 가져오기</button>
     </div>
   </div>
 
@@ -758,6 +763,9 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <!-- Firebase SDK (index.html과 동일 버전 9.23.0 compat) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<!-- SheetJS (v44 점수 가져오기 기능용 — xlsx 파일 파싱) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
 'use strict';
@@ -3522,6 +3530,451 @@ function histDeleteCell(el, info) {
     toast('한 번 더 클릭하면 삭제됩니다 (2.5초)');
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   📥 LMS 리포트 점수 가져오기 (v44 신규 기능)
+   ────────────────────────────────────────────────────────────────────
+   - 배정이력 탭에서만 동작 (현재 반 + 현재 교재 기준)
+   - 엑셀 컬럼: 학생이름, 세트명, 테스트 최고, 테스트 제출일
+   - 매칭: 학생명(공백 trim + 유사도 1까지 추천) × 세트명(교재 행 레이블 정확 일치)
+   - 안전: 미리보기 단계에서 확인 후 적용, 빈 셀 채우기 모드 기본
+   ════════════════════════════════════════════════════════════════════ */
+
+// 캐시 (모달 열려있는 동안만 유지)
+let _scoreImportData = null;  // 파싱된 엑셀 데이터
+let _scoreImportPreview = null; // 미리보기 결과
+
+/* 모달 열기 */
+function openScoreImport() {
+  const bid   = Number($('hist-book')?.value || 0);
+  const group = $('hist-group')?.value || '';
+
+  if (!group) { toast('먼저 반을 선택하세요'); return; }
+  if (!bid)   { toast('먼저 교재를 선택하세요'); return; }
+
+  const book = getBook(bid);
+  if (!book?.rows?.length) {
+    toast('이 교재에는 행 레이블이 없어 점수 가져오기를 사용할 수 없습니다');
+    return;
+  }
+
+  // SheetJS 로드 확인
+  if (typeof XLSX === 'undefined') {
+    alert('엑셀 라이브러리(SheetJS)가 로드되지 않았습니다.\n인터넷 연결을 확인하고 페이지를 새로고침해 주세요.');
+    return;
+  }
+
+  // 기존 모달 제거
+  const old = document.getElementById('score-import-modal');
+  if (old) old.remove();
+  _scoreImportData = null;
+  _scoreImportPreview = null;
+
+  const modal = document.createElement('div');
+  modal.id = 'score-import-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:12px;max-width:640px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.2)">
+      <div style="padding:.9rem 1.1rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+        <div style="font-weight:700;font-size:1rem">📥 LMS 리포트 점수 가져오기</div>
+        <button onclick="_closeScoreImport()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--mu)" title="닫기">×</button>
+      </div>
+      <div id="score-import-body" style="padding:1rem 1.1rem;overflow-y:auto;flex:1">
+        <div style="background:var(--s2);border-radius:8px;padding:.6rem .8rem;margin-bottom:.9rem;font-size:.78rem;color:var(--mu)">
+          <b style="color:var(--tx)">현재 대상</b>: ${escHtml(group)} 반 · ${escHtml(book.name)} 교재<br>
+          <span style="color:var(--mu)">엑셀에 있는 ${escHtml(group)} 반 학생들의 점수만 가져옵니다 (다른 반 학생은 무시됨)</span>
+        </div>
+
+        <div style="margin-bottom:.9rem">
+          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:.4rem">① 엑셀 파일 선택</label>
+          <input type="file" id="score-import-file" accept=".xlsx,.xls"
+            onchange="_onScoreImportFileSelect(event)"
+            style="width:100%;font-size:.8rem;padding:.4rem;border:1px dashed var(--bd);border-radius:6px;background:var(--s2)">
+          <div id="score-import-file-info" style="font-size:.72rem;color:var(--mu);margin-top:.35rem"></div>
+        </div>
+
+        <div style="margin-bottom:.9rem">
+          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:.4rem">② 점수 기준</label>
+          <div style="display:flex;align-items:center;gap:.5rem;font-size:.82rem">
+            <input type="number" id="score-import-threshold" value="80" min="0" max="100"
+              style="width:70px;padding:.3rem .4rem;text-align:center">
+            <span style="color:var(--mu)">점 이상만 가져옴 (미달 점수는 무시)</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom:.9rem">
+          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:.4rem">③ 이미 결과가 입력된 셀</label>
+          <label style="display:flex;align-items:center;gap:.4rem;font-size:.8rem;cursor:pointer;margin-bottom:.25rem;font-weight:400;color:var(--tx)">
+            <input type="radio" name="score-import-overwrite" value="skip" checked>
+            <span>건너뛰기 <span style="color:var(--mu)">(안전 · 추천)</span></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:.4rem;font-size:.8rem;cursor:pointer;font-weight:400;color:var(--tx)">
+            <input type="radio" name="score-import-overwrite" value="overwrite">
+            <span>덮어쓰기 <span style="color:var(--red)">(기존 점수 사라짐)</span></span>
+          </label>
+        </div>
+
+        <div id="score-import-preview" style="display:none"></div>
+      </div>
+      <div style="padding:.7rem 1.1rem;border-top:1px solid var(--bd);display:flex;gap:.5rem;justify-content:flex-end;flex-shrink:0">
+        <button onclick="_closeScoreImport()" class="btn bg bsm" style="font-size:.78rem">취소</button>
+        <button id="score-import-preview-btn" onclick="_previewScoreImport()" class="btn bs bsm"
+          style="font-size:.78rem;background:#7c3aed;color:#fff;border-color:#7c3aed" disabled>
+          🔍 미리보기
+        </button>
+        <button id="score-import-apply-btn" onclick="_applyScoreImport()" class="btn bs bsm"
+          style="font-size:.78rem;display:none;background:#059669;color:#fff;border-color:#059669">
+          ✅ 적용
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  // ESC 키로 닫기
+  setTimeout(() => {
+    const handler = (e) => {
+      if (e.key === 'Escape') {
+        _closeScoreImport();
+        document.removeEventListener('keydown', handler);
+      }
+    };
+    document.addEventListener('keydown', handler);
+  }, 0);
+}
+
+function _closeScoreImport() {
+  const m = document.getElementById('score-import-modal');
+  if (m) m.remove();
+  _scoreImportData = null;
+  _scoreImportPreview = null;
+}
+
+/* 파일 선택 시 — 파일 파싱 */
+async function _onScoreImportFileSelect(ev) {
+  const file = ev.target.files?.[0];
+  const infoEl = $('score-import-file-info');
+  const previewBtn = $('score-import-preview-btn');
+  const previewBox = $('score-import-preview');
+
+  // 미리보기 영역 초기화 (재선택 시)
+  if (previewBox) { previewBox.style.display = 'none'; previewBox.innerHTML = ''; }
+  const applyBtn = $('score-import-apply-btn');
+  if (applyBtn) applyBtn.style.display = 'none';
+
+  if (!file) {
+    if (infoEl) infoEl.textContent = '';
+    if (previewBtn) previewBtn.disabled = true;
+    _scoreImportData = null;
+    return;
+  }
+
+  if (infoEl) infoEl.innerHTML = '⏳ 파일 읽는 중...';
+
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
+    const sheetName = wb.SheetNames[0];
+    const sheet = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
+
+    // 컬럼 존재 확인 (최소 학생이름, 세트명, 테스트 최고가 있어야 함)
+    if (!rows.length) {
+      throw new Error('빈 파일입니다');
+    }
+    const firstRow = rows[0];
+    const required = ['학생이름', '세트명', '테스트 최고'];
+    const missing = required.filter(c => !(c in firstRow));
+    if (missing.length) {
+      throw new Error(`필수 컬럼 누락: ${missing.join(', ')}`);
+    }
+
+    _scoreImportData = rows;
+    if (infoEl) infoEl.innerHTML = `✅ ${escHtml(file.name)} · ${rows.length}개 행 읽음 · 시트: ${escHtml(sheetName)}`;
+    if (previewBtn) previewBtn.disabled = false;
+  } catch (e) {
+    _scoreImportData = null;
+    if (infoEl) infoEl.innerHTML = `<span style="color:var(--red)">⚠ 오류: ${escHtml(e.message || String(e))}</span>`;
+    if (previewBtn) previewBtn.disabled = true;
+  }
+}
+
+/* 점수값 파싱 (숫자만 허용, 그 외는 null) */
+function _parseExcelScore(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const s = String(v).trim();
+  if (s === '' || s === '-') return null;
+  const n = Number(s);
+  if (isNaN(n) || !isFinite(n)) return null;
+  return n;
+}
+
+/* Levenshtein 거리 (이름 유사도) — 한글 짧은 이름에 적합 */
+function _levDist(a, b) {
+  a = a || ''; b = b || '';
+  const m = a.length, n = b.length;
+  if (!m) return n;
+  if (!n) return m;
+  const dp = Array.from({length: m+1}, () => new Array(n+1).fill(0));
+  for (let i=0; i<=m; i++) dp[i][0] = i;
+  for (let j=0; j<=n; j++) dp[0][j] = j;
+  for (let i=1; i<=m; i++) {
+    for (let j=1; j<=n; j++) {
+      const cost = a[i-1] === b[j-1] ? 0 : 1;
+      dp[i][j] = Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+cost);
+    }
+  }
+  return dp[m][n];
+}
+
+/* 이름 정규화 — 공백 제거 (앞뒤, 중간 모두) */
+function _normName(s) {
+  return String(s||'').replace(/\s+/g, '').trim();
+}
+
+/* 미리보기 — 매칭 처리 + 결과 화면 표시 */
+function _previewScoreImport() {
+  if (!_scoreImportData) { toast('파일을 먼저 선택하세요'); return; }
+
+  const bid   = Number($('hist-book')?.value || 0);
+  const group = $('hist-group')?.value || '';
+  const book  = getBook(bid);
+  if (!book) { toast('교재 정보를 찾을 수 없습니다'); return; }
+
+  const threshold = Math.max(0, Math.min(100, Number($('score-import-threshold')?.value) || 80));
+  const overwriteMode = document.querySelector('input[name="score-import-overwrite"]:checked')?.value || 'skip';
+  const overwrite = (overwriteMode === 'overwrite');
+
+  // 현재 반 학생 (책을 배부받은 학생만, 매트릭스와 동일한 기준)
+  const groupStudents = S.students
+    .filter(s => s.group === group && (s.books||[]).includes(book.name));
+  const studentMap = new Map(); // normName → student
+  groupStudents.forEach(s => studentMap.set(_normName(s.name), s));
+
+  const bookLabelSet = new Set(book.rows);
+
+  // 결과 버킷
+  const out = {
+    toUpdate: [],       // 적용할 항목 {assignId, oldResult, newResult, name, label}
+    skipFilled: [],     // 이미 채워져 있어서 건너뜀
+    skipLowScore: 0,    // 기준 미달 (카운트만)
+    noAssignment: [],   // 배정 자체가 없음 (학생+레이블)
+    unknownLabel: new Set(), // 교재에 없는 세트명
+    nameSuggestions: new Map(), // 이름 매칭 안 됨 + 추천 후보
+    otherGroupCount: 0, // 다른 반 학생 (정상적으로 무시)
+    invalidScoreCount: 0, // 점수 파싱 실패 (빈 값 등)
+  };
+
+  _scoreImportData.forEach(row => {
+    const rawName = String(row['학생이름'] || '');
+    const setName = String(row['세트명'] || '').trim();
+    const scoreRaw = row['테스트 최고'];
+
+    if (!rawName.trim() || !setName) return;
+
+    const score = _parseExcelScore(scoreRaw);
+    if (score === null) { out.invalidScoreCount++; return; }
+
+    const normName = _normName(rawName);
+    let student = studentMap.get(normName);
+
+    if (!student) {
+      // 현재 반에는 없음 → 다른 반에 있는지 확인
+      const inOtherGroup = S.students.find(s => _normName(s.name) === normName && s.group !== group);
+      if (inOtherGroup) {
+        out.otherGroupCount++;
+        return;
+      }
+      // 진짜 모르는 이름 → 가까운 후보 찾기 (현재 반에서)
+      let best = null, bestD = 99;
+      groupStudents.forEach(s => {
+        const d = _levDist(normName, _normName(s.name));
+        if (d < bestD) { bestD = d; best = s; }
+      });
+      const key = rawName.trim();
+      const rec = out.nameSuggestions.get(key) || { name: key, suggestion: null, distance: 99, count: 0 };
+      rec.count++;
+      if (best && bestD <= 1 && bestD < rec.distance) {
+        rec.suggestion = best.name;
+        rec.distance = bestD;
+      }
+      out.nameSuggestions.set(key, rec);
+      return;
+    }
+
+    // 세트명이 교재의 행 레이블에 있는지
+    if (!bookLabelSet.has(setName)) {
+      out.unknownLabel.add(setName);
+      return;
+    }
+
+    // 점수 기준 미달
+    if (score < threshold) {
+      out.skipLowScore++;
+      return;
+    }
+
+    // 기존 배정 찾기 (현재 반 + 현재 교재 + 학생 + 레이블)
+    const assigns = S.assigns.filter(a =>
+      a.bookId === bid &&
+      a.studentId === student.id &&
+      (a.probLabels||[]).includes(setName)
+    );
+
+    if (!assigns.length) {
+      out.noAssignment.push({ name: student.name, label: setName, score });
+      return;
+    }
+
+    // 가장 최신 배정 (renderHistory의 pivot 로직과 동일)
+    const target = assigns.reduce((latest, a) =>
+      (!latest || a.date > latest.date) ? a : latest
+    , null);
+
+    const hasResult = target.result !== '' && target.result !== null && target.result !== undefined;
+
+    if (hasResult && !overwrite) {
+      out.skipFilled.push({ name: student.name, label: setName, current: target.result, score });
+      return;
+    }
+
+    out.toUpdate.push({
+      assignId: target.id,
+      oldResult: hasResult ? target.result : null,
+      newResult: score,
+      name: student.name,
+      label: setName,
+    });
+  });
+
+  _scoreImportPreview = out;
+  _renderScoreImportPreview(out, threshold, overwrite);
+}
+
+/* 미리보기 결과 렌더링 */
+function _renderScoreImportPreview(out, threshold, overwrite) {
+  const box = $('score-import-preview');
+  if (!box) return;
+
+  const updateList = out.toUpdate.slice(0, 8).map(it =>
+    `<div style="display:flex;justify-content:space-between;padding:.18rem 0;border-bottom:1px solid var(--bd);font-size:.74rem">
+      <span>${escHtml(it.name)} · ${escHtml(it.label)}</span>
+      <span style="color:#059669;font-weight:600">→ ${it.newResult}점${it.oldResult!==null?` <span style="color:var(--mu);font-weight:400">(기존 ${escHtml(String(it.oldResult))})</span>`:''}</span>
+    </div>`
+  ).join('');
+
+  const moreUpdate = out.toUpdate.length > 8 ? `<div style="text-align:center;font-size:.7rem;color:var(--mu);padding:.3rem">... 외 ${out.toUpdate.length-8}건</div>` : '';
+
+  let warnHtml = '';
+
+  // 이름 추천
+  if (out.nameSuggestions.size > 0) {
+    const items = [...out.nameSuggestions.values()].slice(0, 5).map(rec => {
+      const sugg = rec.suggestion
+        ? `→ 혹시 <b>${escHtml(rec.suggestion)}</b>일까요?`
+        : `→ 일치 학생 없음`;
+      return `<div style="font-size:.72rem;padding:.15rem 0">⚠ "${escHtml(rec.name)}" (${rec.count}건) ${sugg}</div>`;
+    }).join('');
+    const more = out.nameSuggestions.size > 5 ? `<div style="font-size:.7rem;color:var(--mu)">... 외 ${out.nameSuggestions.size-5}명</div>` : '';
+    warnHtml += `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:.5rem .65rem;margin-top:.55rem;color:#92400e">
+      <div style="font-size:.74rem;font-weight:600;margin-bottom:.25rem">⚠ 매칭 안 된 학생 이름 (${out.nameSuggestions.size}명)</div>
+      ${items}${more}
+      <div style="font-size:.68rem;margin-top:.3rem;color:#92400e">엑셀 또는 학생 관리에서 이름을 정확히 맞춰 주세요</div>
+    </div>`;
+  }
+
+  // 모르는 세트명
+  if (out.unknownLabel.size > 0) {
+    const labels = [...out.unknownLabel].slice(0, 5).map(l => `"${escHtml(l)}"`).join(', ');
+    const more = out.unknownLabel.size > 5 ? ` 외 ${out.unknownLabel.size-5}개` : '';
+    warnHtml += `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:.5rem .65rem;margin-top:.55rem;color:#991b1b">
+      <div style="font-size:.74rem;font-weight:600;margin-bottom:.25rem">⚠ 교재에 없는 세트명 (${out.unknownLabel.size}개)</div>
+      <div style="font-size:.72rem">${labels}${more}</div>
+      <div style="font-size:.68rem;margin-top:.3rem">현재 교재의 행 레이블과 일치하지 않습니다</div>
+    </div>`;
+  }
+
+  // 배정 안 된 학생 항목 (별도 안내)
+  if (out.noAssignment.length > 0) {
+    const items = out.noAssignment.slice(0, 5).map(it =>
+      `<div style="font-size:.72rem;padding:.1rem 0">"${escHtml(it.name)}" · ${escHtml(it.label)} (${it.score}점)</div>`
+    ).join('');
+    const more = out.noAssignment.length > 5 ? `<div style="font-size:.7rem;color:var(--mu)">... 외 ${out.noAssignment.length-5}건</div>` : '';
+    warnHtml += `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:.5rem .65rem;margin-top:.55rem;color:#075985">
+      <div style="font-size:.74rem;font-weight:600;margin-bottom:.25rem">ℹ 아직 배정 안 된 시험 (${out.noAssignment.length}건)</div>
+      ${items}${more}
+      <div style="font-size:.68rem;margin-top:.3rem">먼저 📌 배정 모드에서 배정 후 다시 시도하세요</div>
+    </div>`;
+  }
+
+  // 건너뛴 셀
+  if (out.skipFilled.length > 0) {
+    warnHtml += `<div style="font-size:.72rem;color:var(--mu);margin-top:.4rem">
+      🔒 이미 점수가 있어 건너뛴 셀: <b>${out.skipFilled.length}건</b> (덮어쓰기 옵션을 선택하면 모두 갱신됩니다)
+    </div>`;
+  }
+
+  const summaryHtml = `
+    <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:.65rem .8rem;color:#065f46">
+      <div style="font-size:.85rem;font-weight:700;margin-bottom:.3rem">📊 적용 예정: ${out.toUpdate.length}건</div>
+      <div style="font-size:.72rem">기준점수: ${threshold}점 이상 · 덮어쓰기: ${overwrite?'예':'아니오 (빈 셀만)'} · 미달 무시: ${out.skipLowScore}건 · 다른 반 무시: ${out.otherGroupCount}건${out.invalidScoreCount?` · 점수없음: ${out.invalidScoreCount}건`:''}</div>
+    </div>
+  `;
+
+  const previewHtml = out.toUpdate.length > 0 ? `
+    <div style="margin-top:.6rem">
+      <div style="font-size:.74rem;font-weight:600;margin-bottom:.3rem;color:var(--tx)">적용 미리보기 (앞 8건):</div>
+      <div style="background:var(--s2);border-radius:6px;padding:.4rem .65rem;max-height:200px;overflow-y:auto">
+        ${updateList}${moreUpdate}
+      </div>
+    </div>
+  ` : `<div style="font-size:.78rem;color:var(--mu);margin-top:.6rem">적용할 항목이 없습니다. 점수 기준을 낮추거나 옵션을 확인하세요.</div>`;
+
+  box.innerHTML = `<hr style="border:none;border-top:1px solid var(--bd);margin:.8rem 0">${summaryHtml}${previewHtml}${warnHtml}`;
+  box.style.display = 'block';
+
+  const applyBtn = $('score-import-apply-btn');
+  if (applyBtn) {
+    applyBtn.style.display = out.toUpdate.length > 0 ? '' : 'none';
+    applyBtn.textContent = `✅ ${out.toUpdate.length}건 적용`;
+  }
+}
+
+/* 적용 — S.assigns의 result 필드 업데이트 후 저장 + 재렌더 */
+function _applyScoreImport() {
+  if (!_scoreImportPreview || !_scoreImportPreview.toUpdate.length) {
+    toast('적용할 항목이 없습니다');
+    return;
+  }
+
+  const toUpdate = _scoreImportPreview.toUpdate;
+  let count = 0;
+
+  toUpdate.forEach(item => {
+    const a = S.assigns.find(x => x.id === item.assignId);
+    if (a) {
+      a.result = item.newResult;
+      count++;
+    }
+  });
+
+  save(); // ★ P0 FIX (Firebase에도 자동 반영)
+  _closeScoreImport();
+
+  // 스크롤 위치 유지하며 재렌더
+  const wrap = $('hist-wrap-el');
+  const savedScroll = wrap ? wrap.scrollTop : 0;
+  renderHistory();
+  updateSidebar();
+  const newWrap = $('hist-wrap-el');
+  if (newWrap && savedScroll > 0) newWrap.scrollTop = savedScroll;
+
+  toast(`✅ ${count}건의 점수가 업데이트되었습니다`);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   점수 가져오기 기능 끝
+   ════════════════════════════════════════════════════════════════════ */
 
 /* ── 고정 패널 (테이블 위 고정) ──
    테이블 구조상 <tr>은 전체 행 폭을 차지하므로
