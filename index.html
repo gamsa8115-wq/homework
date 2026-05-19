@@ -275,6 +275,41 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 }
 .hc-th-spacer{position:sticky;top:0;z-index:2;background:var(--s2);}
 .hist-table tr:hover .hc-td-done{background:rgba(5,150,105,.18);}
+
+/* 🎯 점검 모드 - 기준점수 미달 셀 강조 (v45) */
+@keyframes inspectPulse {
+  0%, 100% {
+    background: rgba(220, 38, 38, 0.18);
+    box-shadow: inset 0 0 0 2px rgba(220, 38, 38, 0.5);
+  }
+  50% {
+    background: rgba(220, 38, 38, 0.34);
+    box-shadow: inset 0 0 0 2px rgba(220, 38, 38, 0.85);
+  }
+}
+.hc-td-done.inspect-fail {
+  animation: inspectPulse 1.6s ease-in-out infinite;
+}
+.hc-td-done.inspect-fail .hc-date,
+.hc-td-done.inspect-fail .hc-result {
+  color: #7f1d1d !important;
+}
+.hc-td-done.inspect-fail .hc-result {
+  font-weight: 800 !important;
+}
+/* 동작 감속 선호 사용자 배려 (멀미 방지) */
+@media (prefers-reduced-motion: reduce) {
+  .hc-td-done.inspect-fail {
+    animation: none;
+    background: rgba(220, 38, 38, 0.32) !important;
+    box-shadow: inset 0 0 0 2px rgba(220, 38, 38, 0.85);
+  }
+}
+/* 점검 버튼 ON 상태 */
+.hist-inspect-btn-on {
+  background: #7f1d1d !important;
+  border-color: #7f1d1d !important;
+}
 .hist-table tr:hover .hc-td-empty{background:var(--s2);}
 .hist-table tr:hover .hc-td-lbl{background:var(--s2);}
 /* 범례 */
@@ -694,6 +729,10 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         onclick="openScoreImport()"
         style="font-size:.72rem;background:#7c3aed;color:#fff;border-color:#7c3aed"
         title="LMS 리포트(엑셀)에서 점수를 자동으로 채웁니다">📥 점수 가져오기</button>
+      <button class="btn bs bsm" id="hist-inspect-btn"
+        onclick="toggleInspect()"
+        style="font-size:.72rem;background:#dc2626;color:#fff;border-color:#dc2626"
+        title="기준점수 미만 셀을 잠시 강조 표시 (저장 안 됨, 새로고침 시 해제)">🎯 점검</button>
     </div>
   </div>
 
@@ -708,6 +747,31 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         onchange="updateHistAssignDateDisplay()">
       <span id="hist-assign-date-txt" style="font-size:.76rem;color:var(--acc);font-weight:600"></span>
       <span style="font-size:.7rem;color:var(--mu)">빈 셀 클릭 → 배정 · 배정 셀 클릭 → 날짜 변경</span>
+    </div>
+  </div>
+
+  <!-- 🎯 점검 모드 패널 (v45) - 기준점수 미달 셀을 잠시 강조 표시 -->
+  <div id="hist-inspect-bar" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:.45rem .8rem;margin-bottom:.55rem">
+    <div style="display:flex;align-items:center;gap:.55rem;flex-wrap:wrap">
+      <span style="font-size:.75rem;font-weight:700;color:#991b1b;white-space:nowrap">🎯 점검</span>
+      <span style="font-size:.7rem;color:#991b1b;white-space:nowrap">기준</span>
+      <input type="range" id="hist-inspect-slider" min="0" max="100" value="70" step="1"
+        oninput="updateInspectThreshold(this.value)"
+        style="width:130px;height:18px;accent-color:#dc2626" title="드래그하여 기준점수 조절">
+      <input type="number" id="hist-inspect-input" min="0" max="100" value="70"
+        oninput="updateInspectThreshold(this.value)"
+        style="width:54px;font-size:.78rem;padding:.22rem .35rem;text-align:center">
+      <span style="font-size:.7rem;color:#991b1b;white-space:nowrap">점 미만 강조</span>
+      <span id="hist-inspect-count" style="font-size:.75rem;font-weight:700;color:#dc2626;margin-left:.3rem;white-space:nowrap">미달: 0건</span>
+      <span style="margin-left:auto;display:flex;gap:.35rem">
+        <button onclick="copyInspectReport()" class="btn bg bsm"
+          style="font-size:.7rem"
+          title="기준 미달 학생 목록을 클립보드에 복사 (카톡·메모장 등에 붙여넣기 가능)">📋 결과 복사</button>
+        <button onclick="closeInspect()" class="btn bg bsm" style="font-size:.7rem" title="점검 모드 닫기">닫기 ✕</button>
+      </span>
+    </div>
+    <div style="font-size:.66rem;color:#991b1b;margin-top:.25rem;opacity:.75">
+      ※ 점검 모드는 화면에만 표시됩니다 (저장되지 않음, 새로고침 시 자동 해제)
     </div>
   </div>
 
@@ -3382,6 +3446,9 @@ function renderHistory() {
 
   renderHistCellModes();
 
+  // 🎯 점검 모드 ON이면 매트릭스 재렌더 후 강조 다시 적용 (v45)
+  if (_inspectActive) applyInspectHighlights();
+
   // 테이블 스크롤 시 팝업 닫기 (위치 어긋남 방지)
   const wrapForScroll = $('hist-wrap-el');
   if (wrapForScroll) wrapForScroll.onscroll = () => closeHistInline();
@@ -3974,6 +4041,199 @@ function _applyScoreImport() {
 
 /* ════════════════════════════════════════════════════════════════════
    점수 가져오기 기능 끝
+   ════════════════════════════════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════════════
+   🎯 점검 모드 (v45 신규 기능)
+   ────────────────────────────────────────────────────────────────────
+   - 기준점수 미만 셀을 잠시 강조 표시
+   - 저장 안 함: JS 변수에만 보관 → 새로고침 시 자동 해제
+   - 다른 모드(보기/배정/결과/삭제)와 독립: 점검 ON 상태에서도 모든 모드 사용 가능
+   - 비숫자 결과(완료/통과 등)는 강조 제외
+   - 결과 복사: 클립보드에 미달 학생 명단 텍스트로 저장
+   ════════════════════════════════════════════════════════════════════ */
+
+let _inspectActive    = false;
+let _inspectThreshold = 70;
+let _inspectFails     = []; // 최근 평가 결과 (복사용 캐시)
+
+/* 토글 — 버튼 클릭 시 */
+function toggleInspect() {
+  if (_inspectActive) closeInspect();
+  else                openInspect();
+}
+
+function openInspect() {
+  _inspectActive = true;
+  const bar = $('hist-inspect-bar');
+  const btn = $('hist-inspect-btn');
+  if (bar) bar.style.display = '';
+  if (btn) {
+    btn.classList.add('hist-inspect-btn-on');
+    btn.textContent = '🎯 점검 ON';
+  }
+  // 슬라이더 ↔ 입력 동기화 보장
+  const slider = $('hist-inspect-slider');
+  const input  = $('hist-inspect-input');
+  if (slider) slider.value = _inspectThreshold;
+  if (input)  input.value  = _inspectThreshold;
+  applyInspectHighlights();
+}
+
+function closeInspect() {
+  _inspectActive = false;
+  const bar = $('hist-inspect-bar');
+  const btn = $('hist-inspect-btn');
+  if (bar) bar.style.display = 'none';
+  if (btn) {
+    btn.classList.remove('hist-inspect-btn-on');
+    btn.textContent = '🎯 점검';
+  }
+  removeInspectHighlights();
+  _inspectFails = [];
+  const countEl = $('hist-inspect-count');
+  if (countEl) countEl.textContent = '미달: 0건';
+}
+
+/* 슬라이더 또는 입력칸에서 값 변경 — 실시간 반영 */
+function updateInspectThreshold(v) {
+  const n = Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
+  _inspectThreshold = n;
+  const slider = $('hist-inspect-slider');
+  const input  = $('hist-inspect-input');
+  if (slider && Number(slider.value) !== n) slider.value = n;
+  if (input  && Number(input.value)  !== n) input.value  = n;
+  if (_inspectActive) applyInspectHighlights();
+}
+
+/* 모든 강조 클래스 제거 */
+function removeInspectHighlights() {
+  document.querySelectorAll('.hc-td-done.inspect-fail').forEach(el => {
+    el.classList.remove('inspect-fail');
+  });
+}
+
+/* 강조 적용 - 현재 매트릭스의 모든 셀을 검사 */
+function applyInspectHighlights() {
+  if (!_inspectActive) {
+    removeInspectHighlights();
+    return;
+  }
+
+  removeInspectHighlights();
+
+  const fails = [];
+  let count = 0;
+
+  Object.entries(_histCellMap || {}).forEach(([cellId, info]) => {
+    // 배정 안 됨 → 평가 대상 아님
+    if (!info || !info.assignId) return;
+    // 결과 없음 → 평가 대상 아님
+    if (info.result === '' || info.result === null || info.result === undefined) return;
+    // 숫자가 아닌 결과(완료/통과 등) → 평가 대상 아님
+    const n = Number(info.result);
+    if (isNaN(n) || !isFinite(n)) return;
+    // 기준 미달 체크
+    if (n < _inspectThreshold) {
+      const el = document.getElementById(cellId);
+      if (el && el.classList.contains('hc-td-done')) {
+        el.classList.add('inspect-fail');
+        count++;
+        const st = S.students.find(s => s.id === info.sid);
+        fails.push({
+          name: st?.name || '(이름?)',
+          label: info.lbl,
+          result: n,
+          date: info.date || ''
+        });
+      }
+    }
+  });
+
+  // 학생 이름 → 레이블 순으로 정렬 (복사 텍스트가 깔끔하도록)
+  fails.sort((a, b) => {
+    const c = a.name.localeCompare(b.name, 'ko');
+    if (c !== 0) return c;
+    return a.label.localeCompare(b.label, 'ko');
+  });
+
+  _inspectFails = fails;
+  const countEl = $('hist-inspect-count');
+  if (countEl) {
+    countEl.textContent = count > 0
+      ? `미달: ${count}건`
+      : `미달: 0건 ✓`;
+  }
+}
+
+/* 결과 복사 — 클립보드에 텍스트로 */
+async function copyInspectReport() {
+  if (!_inspectActive) {
+    toast('점검 모드를 먼저 켜세요');
+    return;
+  }
+  if (!_inspectFails.length) {
+    toast('미달 항목이 없습니다');
+    return;
+  }
+
+  const book  = getBook(Number($('hist-book')?.value || 0));
+  const group = $('hist-group')?.value || '';
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+  // 학생별로 그룹화
+  const byStudent = {};
+  _inspectFails.forEach(f => {
+    if (!byStudent[f.name]) byStudent[f.name] = [];
+    byStudent[f.name].push(f);
+  });
+
+  const lines = [];
+  lines.push(`📊 재시험 대상 (${todayStr})`);
+  lines.push(`반: ${group} · 교재: ${book?.name || ''} · 기준: ${_inspectThreshold}점 미만`);
+  lines.push(`총 ${_inspectFails.length}건 (${Object.keys(byStudent).length}명)`);
+  lines.push('');
+
+  Object.keys(byStudent).forEach(name => {
+    const items = byStudent[name];
+    lines.push(`▸ ${name} (${items.length}건)`);
+    items.forEach(it => {
+      lines.push(`   · ${it.label} → ${it.result}점`);
+    });
+  });
+
+  const text = lines.join('\n');
+
+  // 최신 Clipboard API 시도 → 실패 시 fallback
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      toast(`📋 ${_inspectFails.length}건 복사됨 (Ctrl+V로 붙여넣기)`);
+      return;
+    }
+    throw new Error('clipboard API not available');
+  } catch (e) {
+    // Fallback: 구식 브라우저용
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast(`📋 ${_inspectFails.length}건 복사됨`);
+    } catch (e2) {
+      toast('복사 실패 — 브라우저가 클립보드 접근을 차단했습니다');
+    }
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   점검 모드 끝
    ════════════════════════════════════════════════════════════════════ */
 
 /* ── 고정 패널 (테이블 위 고정) ──
