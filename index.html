@@ -767,6 +767,9 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         <button onclick="copyInspectReport()" class="btn bg bsm"
           style="font-size:.7rem"
           title="기준 미달 학생 목록을 클립보드에 복사 (카톡·메모장 등에 붙여넣기 가능)">📋 결과 복사</button>
+        <button onclick="openMessageDialog()" class="btn bs bsm"
+          style="font-size:.7rem;background:#f97316;color:#fff;border-color:#f97316"
+          title="기준 미달 학생들에게 학생 화면 메시지를 보냅니다">📨 메시지 보내기</button>
         <button onclick="closeInspect()" class="btn bg bsm" style="font-size:.7rem" title="점검 모드 닫기">닫기 ✕</button>
       </span>
     </div>
@@ -3823,9 +3826,9 @@ function _previewScoreImport() {
   // 결과 버킷
   const out = {
     toUpdate: [],       // 적용할 항목 {assignId, oldResult, newResult, name, label}
+    toAutoAssign: [],   // 🆕 v47: 책 배부됐는데 배정 없음 + 기준 점수 이상 → 오늘 자동 배정 + 점수 입력
     skipFilled: [],     // 이미 채워져 있어서 건너뜀
     skipLowScore: 0,    // 기준 미달 (카운트만)
-    noAssignment: [],   // 배정 자체가 없음 (학생+레이블)
     unknownLabel: new Set(), // 교재에 없는 세트명
     nameSuggestions: new Map(), // 이름 매칭 안 됨 + 추천 후보
     otherGroupCount: 0, // 다른 반 학생 (정상적으로 무시)
@@ -3889,7 +3892,15 @@ function _previewScoreImport() {
     );
 
     if (!assigns.length) {
-      out.noAssignment.push({ name: student.name, label: setName, score });
+      // 🆕 v47: 책 배부받은 학생 + 기준 점수 이상 + 배정 없음
+      //        → 오늘 날짜로 자동 배정 + 점수 입력 대상으로 분류
+      //        (적용 단계에서 새 assigns 객체 생성)
+      out.toAutoAssign.push({
+        studentId: student.id,
+        name: student.name,
+        label: setName,
+        score: score
+      });
       return;
     }
 
@@ -3961,16 +3972,30 @@ function _renderScoreImportPreview(out, threshold, overwrite) {
     </div>`;
   }
 
-  // 배정 안 된 학생 항목 (별도 안내)
-  if (out.noAssignment.length > 0) {
-    const items = out.noAssignment.slice(0, 5).map(it =>
-      `<div style="font-size:.72rem;padding:.1rem 0">"${escHtml(it.name)}" · ${escHtml(it.label)} (${it.score}점)</div>`
-    ).join('');
-    const more = out.noAssignment.length > 5 ? `<div style="font-size:.7rem;color:var(--mu)">... 외 ${out.noAssignment.length-5}건</div>` : '';
-    warnHtml += `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:.5rem .65rem;margin-top:.55rem;color:#075985">
-      <div style="font-size:.74rem;font-weight:600;margin-bottom:.25rem">ℹ 아직 배정 안 된 시험 (${out.noAssignment.length}건)</div>
-      ${items}${more}
-      <div style="font-size:.68rem;margin-top:.3rem">먼저 📌 배정 모드에서 배정 후 다시 시도하세요</div>
+  // 🆕 v47: 자동 배정 + 점수 입력 대상 (책 배부됐는데 배정 없음 + 기준 점수 이상)
+  if (out.toAutoAssign.length > 0) {
+    // 학생별로 그룹화하여 표시 (선생님이 한눈에 확인 가능)
+    const byStudent = new Map();
+    out.toAutoAssign.forEach(it => {
+      if (!byStudent.has(it.name)) byStudent.set(it.name, []);
+      byStudent.get(it.name).push(it);
+    });
+    const studentNames = [...byStudent.keys()].sort((a,b)=>a.localeCompare(b,'ko'));
+    const previewStudents = studentNames.slice(0, 6);
+    const itemsHtml = previewStudents.map(name => {
+      const items = byStudent.get(name);
+      const labels = items.slice(0, 3).map(it => `${escHtml(it.label)}(${it.score}점)`).join(', ');
+      const moreInStu = items.length > 3 ? ` 외 ${items.length-3}건` : '';
+      return `<div style="font-size:.72rem;padding:.15rem 0"><b>${escHtml(name)}</b> · ${labels}${moreInStu}</div>`;
+    }).join('');
+    const moreStudents = studentNames.length > 6 ? `<div style="font-size:.7rem;color:var(--mu);margin-top:.2rem">... 외 ${studentNames.length-6}명</div>` : '';
+    warnHtml += `<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:.55rem .7rem;margin-top:.55rem;color:#78350f">
+      <div style="font-size:.76rem;font-weight:700;margin-bottom:.3rem">📌 신규 배정 + 점수 입력 (${out.toAutoAssign.length}건 · ${studentNames.length}명)</div>
+      ${itemsHtml}${moreStudents}
+      <div style="font-size:.68rem;margin-top:.4rem;line-height:1.45">
+        책은 배부됐지만 배정이 없는 시험입니다.<br>
+        <b>오늘 날짜로 자동 배정</b>되며 점수도 함께 입력됩니다.
+      </div>
     </div>`;
   }
 
@@ -3981,51 +4006,93 @@ function _renderScoreImportPreview(out, threshold, overwrite) {
     </div>`;
   }
 
+  // 🆕 v47: 적용 건수 = 점수 입력 + 신규 배정 합산
+  const totalApply = out.toUpdate.length + out.toAutoAssign.length;
+  const breakdownHtml = (out.toUpdate.length > 0 && out.toAutoAssign.length > 0)
+    ? `<div style="font-size:.72rem;margin-top:.2rem;color:#047857">└─ 점수 입력 ${out.toUpdate.length}건 · 신규 배정 ${out.toAutoAssign.length}건 (오늘)</div>`
+    : (out.toAutoAssign.length > 0
+        ? `<div style="font-size:.72rem;margin-top:.2rem;color:#047857">└─ 신규 배정 ${out.toAutoAssign.length}건 (오늘 자동 배정)</div>`
+        : '');
+
   const summaryHtml = `
     <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:.65rem .8rem;color:#065f46">
-      <div style="font-size:.85rem;font-weight:700;margin-bottom:.3rem">📊 적용 예정: ${out.toUpdate.length}건</div>
-      <div style="font-size:.72rem">기준점수: ${threshold}점 이상 · 덮어쓰기: ${overwrite?'예':'아니오 (빈 셀만)'} · 미달 무시: ${out.skipLowScore}건 · 다른 반 무시: ${out.otherGroupCount}건${out.invalidScoreCount?` · 점수없음: ${out.invalidScoreCount}건`:''}</div>
+      <div style="font-size:.85rem;font-weight:700;margin-bottom:.3rem">📊 적용 예정: ${totalApply}건</div>
+      ${breakdownHtml}
+      <div style="font-size:.72rem;margin-top:.3rem">기준점수: ${threshold}점 이상 · 덮어쓰기: ${overwrite?'예':'아니오 (빈 셀만)'} · 미달 무시: ${out.skipLowScore}건 · 다른 반 무시: ${out.otherGroupCount}건${out.invalidScoreCount?` · 점수없음: ${out.invalidScoreCount}건`:''}</div>
     </div>
   `;
 
   const previewHtml = out.toUpdate.length > 0 ? `
     <div style="margin-top:.6rem">
-      <div style="font-size:.74rem;font-weight:600;margin-bottom:.3rem;color:var(--tx)">적용 미리보기 (앞 8건):</div>
+      <div style="font-size:.74rem;font-weight:600;margin-bottom:.3rem;color:var(--tx)">기존 배정에 점수 입력 (앞 8건):</div>
       <div style="background:var(--s2);border-radius:6px;padding:.4rem .65rem;max-height:200px;overflow-y:auto">
         ${updateList}${moreUpdate}
       </div>
     </div>
-  ` : `<div style="font-size:.78rem;color:var(--mu);margin-top:.6rem">적용할 항목이 없습니다. 점수 기준을 낮추거나 옵션을 확인하세요.</div>`;
+  ` : (totalApply === 0 ? `<div style="font-size:.78rem;color:var(--mu);margin-top:.6rem">적용할 항목이 없습니다. 점수 기준을 낮추거나 옵션을 확인하세요.</div>` : '');
 
   box.innerHTML = `<hr style="border:none;border-top:1px solid var(--bd);margin:.8rem 0">${summaryHtml}${previewHtml}${warnHtml}`;
   box.style.display = 'block';
 
   const applyBtn = $('score-import-apply-btn');
   if (applyBtn) {
-    applyBtn.style.display = out.toUpdate.length > 0 ? '' : 'none';
-    applyBtn.textContent = `✅ ${out.toUpdate.length}건 적용`;
+    applyBtn.style.display = totalApply > 0 ? '' : 'none';
+    applyBtn.textContent = `✅ ${totalApply}건 적용`;
   }
 }
 
-/* 적용 — S.assigns의 result 필드 업데이트 후 저장 + 재렌더 */
+/* 적용 — S.assigns의 result 필드 업데이트 + 신규 배정 생성 (v47) + 저장 + 재렌더 */
 function _applyScoreImport() {
-  if (!_scoreImportPreview || !_scoreImportPreview.toUpdate.length) {
+  if (!_scoreImportPreview) {
     toast('적용할 항목이 없습니다');
     return;
   }
 
-  const toUpdate = _scoreImportPreview.toUpdate;
-  let count = 0;
+  const toUpdate = _scoreImportPreview.toUpdate || [];
+  const toAutoAssign = _scoreImportPreview.toAutoAssign || [];
 
+  if (!toUpdate.length && !toAutoAssign.length) {
+    toast('적용할 항목이 없습니다');
+    return;
+  }
+
+  let updateCount = 0;
+  let autoAssignCount = 0;
+
+  // [1] 기존 배정에 점수 입력 (변경 없음 - 기존 동작)
   toUpdate.forEach(item => {
     const a = S.assigns.find(x => x.id === item.assignId);
     if (a) {
       a.result = item.newResult;
-      count++;
+      updateCount++;
     }
   });
 
-  save(); // ★ P0 FIX (Firebase에도 자동 반영)
+  // [2] 🆕 v47: 신규 배정 생성 + 점수 입력
+  //     - 책 배부받은 학생만 대상 (_processScoreImport에서 이미 필터됨)
+  //     - 기준 점수 이상만 대상 (_processScoreImport에서 이미 필터됨)
+  //     - 오늘 날짜로 배정
+  if (toAutoAssign.length) {
+    const bid = Number($('hist-book')?.value || 0);
+    if (bid > 0) {
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+      toAutoAssign.forEach(item => {
+        S.assigns.push({
+          id: S.nid++,
+          bookId: bid,
+          studentId: item.studentId,
+          date: todayStr,
+          probLabels: [item.label],
+          result: item.score
+        });
+        autoAssignCount++;
+      });
+    }
+  }
+
+  save(); // ★ P0 FIX (Firebase에도 자동 반영 - assigns, nid 모두 PERSIST_KEYS에 포함)
   _closeScoreImport();
 
   // 스크롤 위치 유지하며 재렌더
@@ -4036,7 +4103,16 @@ function _applyScoreImport() {
   const newWrap = $('hist-wrap-el');
   if (newWrap && savedScroll > 0) newWrap.scrollTop = savedScroll;
 
-  toast(`✅ ${count}건의 점수가 업데이트되었습니다`);
+  // 결과 토스트 (어떤 작업이 일어났는지 명확히)
+  let msg = '';
+  if (updateCount > 0 && autoAssignCount > 0) {
+    msg = `✅ 점수 입력 ${updateCount}건 · 신규 배정 ${autoAssignCount}건 (오늘)`;
+  } else if (autoAssignCount > 0) {
+    msg = `✅ 신규 배정 ${autoAssignCount}건 + 점수 입력 (오늘 자동 배정)`;
+  } else {
+    msg = `✅ ${updateCount}건의 점수가 업데이트되었습니다`;
+  }
+  toast(msg);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -4234,6 +4310,252 @@ async function copyInspectReport() {
 
 /* ════════════════════════════════════════════════════════════════════
    점검 모드 끝
+   ════════════════════════════════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════════════
+   📨 학생 메시지 보내기 (v46 신규 기능)
+   ────────────────────────────────────────────────────────────────────
+   - 점검 모드 ON 상태에서만 사용 가능
+   - 기준점수 미달 학생들에게 학생 화면 메시지를 보냄
+   - S.students[i].message에 저장 → PERSIST_KEYS 통해 Firebase 자동 동기화
+   - 매번 덮어쓰기 (학생당 메시지 1개)
+   - 모든 학생에게 같은 "추가 한 마디" 적용
+   - 학생별로 자동 선택, 체크박스로 빼기 가능
+   ════════════════════════════════════════════════════════════════════ */
+
+/* 모달 열기 */
+function openMessageDialog() {
+  if (!_inspectActive) {
+    toast('점검 모드를 먼저 켜세요');
+    return;
+  }
+  if (!_inspectFails || !_inspectFails.length) {
+    toast('미달 학생이 없습니다');
+    return;
+  }
+
+  const book  = getBook(Number($('hist-book')?.value || 0));
+  const group = $('hist-group')?.value || '';
+  const bookName = book?.name || '';
+  const threshold = _inspectThreshold;
+
+  // 학생별로 미달 항목 그룹화
+  const byStudent = new Map();
+  _inspectFails.forEach(f => {
+    if (!byStudent.has(f.name)) byStudent.set(f.name, []);
+    byStudent.get(f.name).push({ label: f.label, score: f.result });
+  });
+
+  // S.students에서 학생 ID 매칭
+  const studentList = [];
+  byStudent.forEach((items, name) => {
+    const st = S.students.find(s => s.name === name && s.group === group);
+    if (st) {
+      studentList.push({
+        id: st.id,
+        name: st.name,
+        items: items,
+        hasExistingMsg: !!(st.message && st.message.bookName)
+      });
+    }
+  });
+
+  // 정렬 (이름 가나다순)
+  studentList.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+
+  if (!studentList.length) {
+    toast('대상 학생을 찾을 수 없습니다');
+    return;
+  }
+
+  // 기존 모달 제거
+  const old = document.getElementById('msg-dialog-modal');
+  if (old) old.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'msg-dialog-modal';
+  modal.dataset.bookName = bookName;
+  modal.dataset.threshold = String(threshold);
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem';
+
+  // 학생 목록 HTML
+  const studentsHtml = studentList.map(s => {
+    const itemsPreview = s.items.slice(0, 3).map(it => `${it.label}(${it.score}점)`).join(', ');
+    const more = s.items.length > 3 ? ` 외 ${s.items.length-3}건` : '';
+    const existingFlag = s.hasExistingMsg
+      ? `<span style="font-size:.65rem;color:#dc2626;margin-left:.3rem">⚠ 이전 메시지 덮어쓰여짐</span>`
+      : '';
+    return `
+      <label style="display:flex;align-items:flex-start;gap:.5rem;padding:.55rem .7rem;border-bottom:1px solid var(--bd);cursor:pointer;font-weight:400;color:var(--tx)">
+        <input type="checkbox" class="msg-student-cb" data-sid="${s.id}" checked
+          style="margin-top:.18rem;flex-shrink:0">
+        <span style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:.82rem">${escHtml(s.name)} <span style="color:var(--mu);font-weight:400">· ${s.items.length}건</span>${existingFlag}</div>
+          <div style="font-size:.7rem;color:var(--mu);margin-top:.15rem;line-height:1.35">${escHtml(itemsPreview)}${more}</div>
+        </span>
+      </label>
+    `;
+  }).join('');
+
+  // 기존 메시지 보유 학생 수 (전체 students에서)
+  const totalWithMsg = S.students.filter(s => s.message && s.message.bookName).length;
+
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:12px;max-width:540px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.2)">
+      <div style="padding:.9rem 1.1rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+        <div style="font-weight:700;font-size:1rem">📨 학생에게 다시풀기 안내 보내기</div>
+        <button onclick="_closeMessageDialog()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--mu)" title="닫기">×</button>
+      </div>
+      <div style="padding:1rem 1.1rem;overflow-y:auto;flex:1">
+        <div style="background:var(--s2);border-radius:8px;padding:.6rem .8rem;margin-bottom:.9rem;font-size:.74rem;color:var(--mu)">
+          <b style="color:var(--tx)">대상</b>: ${escHtml(group)} 반 · ${escHtml(bookName)} · ${threshold}점 미만<br>
+          학생 화면에 주황색 안내 배너가 표시됩니다 (학생이 직접 닫을 수 없음)
+        </div>
+
+        <div style="margin-bottom:.85rem">
+          <div style="font-size:.78rem;font-weight:600;margin-bottom:.4rem">① 대상 학생 (${studentList.length}명)</div>
+          <div style="border:1px solid var(--bd);border-radius:8px;max-height:220px;overflow-y:auto;background:#fff">
+            ${studentsHtml}
+          </div>
+          <div style="font-size:.7rem;color:var(--mu);margin-top:.3rem">체크박스를 해제하면 그 학생은 제외됩니다</div>
+        </div>
+
+        <div style="margin-bottom:.5rem">
+          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:.35rem">② 추가 한 마디 <span style="color:var(--mu);font-weight:400">(선택 · 모든 학생에게 동일하게 적용)</span></label>
+          <textarea id="msg-extra-note" maxlength="200" rows="2"
+            placeholder="예: 이번엔 천천히 다시 풀어보자! 💪"
+            style="width:100%;padding:.5rem .65rem;font-family:inherit;font-size:.82rem;border:1px solid var(--bd);border-radius:6px;resize:vertical;background:#fff;line-height:1.5"></textarea>
+          <div style="font-size:.66rem;color:var(--mu);margin-top:.25rem">최대 200자 · 비워두면 한 마디 없이 전송</div>
+        </div>
+
+        ${totalWithMsg > 0 ? `
+        <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:.55rem .75rem;margin-top:.7rem;font-size:.74rem;color:#92400e">
+          ℹ 현재 메시지를 받은 학생: <b>${totalWithMsg}명</b> · 모두 일괄 삭제하려면 <a href="#" onclick="event.preventDefault();_clearAllMessages()" style="color:#92400e;text-decoration:underline;font-weight:600">전체 메시지 삭제</a>
+        </div>
+        ` : ''}
+      </div>
+      <div style="padding:.7rem 1.1rem;border-top:1px solid var(--bd);display:flex;gap:.5rem;justify-content:flex-end;flex-shrink:0">
+        <button onclick="_closeMessageDialog()" class="btn bg bsm" style="font-size:.78rem">취소</button>
+        <button id="msg-send-btn" onclick="_sendMessages()" class="btn bs bsm"
+          style="font-size:.78rem;background:#f97316;color:#fff;border-color:#f97316">
+          📨 ${studentList.length}명에게 전송
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  // 체크박스 변경 시 버튼 텍스트 업데이트
+  modal.addEventListener('change', (e) => {
+    if (e.target.classList.contains('msg-student-cb')) {
+      const checked = modal.querySelectorAll('.msg-student-cb:checked').length;
+      const btn = $('msg-send-btn');
+      if (btn) {
+        btn.textContent = `📨 ${checked}명에게 전송`;
+        btn.disabled = (checked === 0);
+        btn.style.opacity = checked === 0 ? '.5' : '';
+      }
+    }
+  });
+
+  // ESC 키로 닫기
+  setTimeout(() => {
+    const handler = (e) => {
+      if (e.key === 'Escape') {
+        _closeMessageDialog();
+        document.removeEventListener('keydown', handler);
+      }
+    };
+    document.addEventListener('keydown', handler);
+  }, 0);
+}
+
+function _closeMessageDialog() {
+  const m = document.getElementById('msg-dialog-modal');
+  if (m) m.remove();
+}
+
+/* 메시지 전송 */
+function _sendMessages() {
+  const modal = document.getElementById('msg-dialog-modal');
+  if (!modal) return;
+
+  const bookName = modal.dataset.bookName || '';
+  const threshold = Number(modal.dataset.threshold) || 0;
+  const extraNote = ($('msg-extra-note')?.value || '').trim().slice(0, 200);
+
+  const checkedBoxes = modal.querySelectorAll('.msg-student-cb:checked');
+  if (!checkedBoxes.length) {
+    toast('대상 학생을 1명 이상 선택하세요');
+    return;
+  }
+
+  // 학생별 미달 항목 매핑 (현재 _inspectFails 기준)
+  const byStudent = new Map();
+  _inspectFails.forEach(f => {
+    if (!byStudent.has(f.name)) byStudent.set(f.name, []);
+    byStudent.get(f.name).push({ label: f.label, score: f.result });
+  });
+
+  let updated = 0;
+  checkedBoxes.forEach(cb => {
+    const sid = Number(cb.dataset.sid);
+    const st = S.students.find(s => s.id === sid);
+    if (!st) return;
+    const items = byStudent.get(st.name) || [];
+    if (!items.length) return;
+
+    // 점수 순으로 정렬 (낮은 점수 먼저)
+    items.sort((a, b) => a.score - b.score);
+
+    st.message = {
+      bookName: bookName,
+      threshold: threshold,
+      totalFailed: items.length,
+      failedItems: items.slice(0, 5),   // 최대 5건 저장 (학생 화면 표시용)
+      extraNote: extraNote
+    };
+    updated++;
+  });
+
+  if (!updated) {
+    toast('업데이트할 학생이 없습니다');
+    return;
+  }
+
+  save(); // ★ P0 FIX (students 변경 → Firebase 동기화)
+  _closeMessageDialog();
+  toast(`📨 ${updated}명에게 메시지를 보냈습니다`);
+}
+
+/* 전체 메시지 삭제 (2단계 확인) */
+function _clearAllMessages() {
+  const count = S.students.filter(s => s.message && s.message.bookName).length;
+  if (!count) {
+    toast('삭제할 메시지가 없습니다');
+    return;
+  }
+
+  if (!confirm(`현재 메시지를 받은 ${count}명의 학생 메시지를 모두 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
+    return;
+  }
+
+  let cleared = 0;
+  S.students.forEach(s => {
+    if (s.message) {
+      delete s.message;
+      cleared++;
+    }
+  });
+
+  save(); // ★ P0 FIX
+  _closeMessageDialog();
+  toast(`🗑 ${cleared}명의 메시지가 삭제되었습니다`);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   메시지 보내기 끝
    ════════════════════════════════════════════════════════════════════ */
 
 /* ── 고정 패널 (테이블 위 고정) ──
