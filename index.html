@@ -3304,7 +3304,7 @@ function submitBookForm() {
   }
 
   const retryEnabled   = mode === 'book' && !!$('nb-retry-enabled')?.checked;
-  const retryThreshold = Math.max(0, Math.min(100, Number($('nb-retry-threshold')?.value) || 80));
+  const rtVal = $('nb-retry-threshold')?.value; const retryThreshold = Math.max(0, Math.min(100, (rtVal === '' || rtVal == null || isNaN(Number(rtVal))) ? 80 : Number(rtVal)));
 
   S.books.push({ id: S.nid++, name, mode, total: rows.length, score, label: '', rows, retryEnabled, retryThreshold });
 
@@ -3403,7 +3403,7 @@ function saveBookEdit() {
   }
 
   const newRetryEnabled   = book.mode === 'book' && !!$('nb-retry-enabled')?.checked;
-  const newRetryThreshold = Math.max(0, Math.min(100, Number($('nb-retry-threshold')?.value) || 80));
+  const nrtVal = $('nb-retry-threshold')?.value; const newRetryThreshold = Math.max(0, Math.min(100, (nrtVal === '' || nrtVal == null || isNaN(Number(nrtVal))) ? 80 : Number(nrtVal)));
 
   const oldName = book.name;
   const nameChanged  = oldName !== newName;
@@ -4291,7 +4291,7 @@ function _previewScoreImport() {
   const book  = getBook(bid);
   if (!book) { toast('교재 정보를 찾을 수 없습니다'); return; }
 
-  const threshold = Math.max(0, Math.min(100, Number($('score-import-threshold')?.value) || 80));
+  const siVal = $('score-import-threshold')?.value; const threshold = Math.max(0, Math.min(100, (siVal === '' || siVal == null || isNaN(Number(siVal))) ? 80 : Number(siVal)));
   const overwriteMode = document.querySelector('input[name="score-import-overwrite"]:checked')?.value || 'skip';
   const overwrite = (overwriteMode === 'overwrite');
 
@@ -4358,12 +4358,6 @@ function _previewScoreImport() {
       return;
     }
 
-    // 점수 기준 미달
-    if (score < threshold) {
-      out.skipLowScore++;
-      return;
-    }
-
     // 기존 배정 찾기 (현재 반 + 현재 교재 + 학생 + 레이블)
     const assigns = S.assigns.filter(a =>
       a.bookId === bid &&
@@ -4372,9 +4366,11 @@ function _previewScoreImport() {
     );
 
     if (!assigns.length) {
-      // 🆕 v47: 책 배부받은 학생 + 기준 점수 이상 + 배정 없음
-      //        → 오늘 날짜로 자동 배정 + 점수 입력 대상으로 분류
-      //        (적용 단계에서 새 assigns 객체 생성)
+      // ★ 아직 배정 안 된 항목은 기준점수 이상일 때만 새로 자동배정 (미달이면 새로 만들지 않음)
+      if (score < threshold) { out.skipLowScore++; return; }
+      // v47: 책 배부받은 학생 + 기준 점수 이상 + 배정 없음
+      //      → 오늘 날짜로 자동 배정 + 점수 입력 대상으로 분류
+      //      (적용 단계에서 새 assigns 객체 생성)
       out.toAutoAssign.push({
         studentId: student.id,
         name: student.name,
@@ -4383,6 +4379,9 @@ function _previewScoreImport() {
       });
       return;
     }
+
+    // ★ 이미 배정된 항목은 기준점수와 무관하게 실제 점수를 그대로 기록
+    //   (미달 점수도 기록으로 남아야 "재도전" 기능이 감지할 수 있음)
 
     // 가장 최신 배정 (renderHistory의 pivot 로직과 동일)
     const target = assigns.reduce((latest, a) =>
@@ -4498,7 +4497,8 @@ function _renderScoreImportPreview(out, threshold, overwrite) {
     <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:.65rem .8rem;color:#065f46">
       <div style="font-size:.85rem;font-weight:700;margin-bottom:.3rem">📊 적용 예정: ${totalApply}건</div>
       ${breakdownHtml}
-      <div style="font-size:.72rem;margin-top:.3rem">기준점수: ${threshold}점 이상 · 덮어쓰기: ${overwrite?'예':'아니오 (빈 셀만)'} · 미달 무시: ${out.skipLowScore}건 · 다른 반 무시: ${out.otherGroupCount}건${out.invalidScoreCount?` · 점수없음: ${out.invalidScoreCount}건`:''}</div>
+      <div style="font-size:.72rem;margin-top:.3rem">기준점수: ${threshold}점 이상 · 덮어쓰기: ${overwrite?'예':'아니오 (빈 셀만)'} · 신규 배정 미달로 건너뜀: ${out.skipLowScore}건 · 다른 반 무시: ${out.otherGroupCount}건${out.invalidScoreCount?` · 점수없음: ${out.invalidScoreCount}건`:''}</div>
+      <div style="font-size:.68rem;color:var(--mu);margin-top:.15rem">※ 이미 배정된 항목은 기준점수와 무관하게 실제 점수 그대로 기록됩니다 (재도전 감지를 위해)</div>
     </div>
   `;
 
