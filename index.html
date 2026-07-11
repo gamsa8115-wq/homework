@@ -247,6 +247,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 /* 토글 버튼 활성 */
 #hist-toggle-complete.active{background:var(--acc);color:#fff;border-color:var(--acc);}
 #hist-toggle-retired.active{background:#7c3aed;color:#fff;border-color:#7c3aed;}
+#fl-toggle-retired.active{background:#7c3aed;color:#fff;border-color:#7c3aed;}
 /* 학생 이름 헤더 — 세로 스크롤 시 고정, 폭 최소화 (v37: 좌우 padding 20%↑) */
 .hc-th-st{background:var(--s2);color:var(--tx);padding:.45rem .85rem;text-align:center;
   border-bottom:1px solid var(--bd);border-right:.5px solid var(--bd);
@@ -554,9 +555,8 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 
 <!-- ════ 배정 목록 ════ -->
 <div class="page" id="p-list">
-  <div class="ph"><h1>배정 목록</h1><p>학생·교재별로 모아보기 — 날짜/점수 조정은 배정 이력 탭에서</p></div>
+  <div class="ph"><h1>배정 목록</h1><p>지금 진행 중인 학생·교재를 모아보기 — 날짜/점수 조정은 배정 이력 탭에서</p></div>
   <div style="display:flex;gap:.45rem;margin-bottom:.9rem;flex-wrap:wrap;align-items:center">
-    <input type="date" id="fl-date" style="width:auto" oninput="renderList()" title="특정 날짜만 좁혀보기 (선택 안 하면 전체 기간)">
     <select style="width:auto" id="fl-group" onchange="onGroupFilterChange()"><option value="">전체 반</option></select>
     <select style="width:auto" id="fl-st" onchange="renderList()"><option value="">전체 학생</option></select>
     <select style="width:auto" id="fl-book" onchange="renderList()"><option value="">전체 교재</option></select>
@@ -565,6 +565,8 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
       <option value="voca">보카형</option>
       <option value="book">교재형</option>
     </select>
+    <button id="fl-toggle-retired" class="btn bg bsm" onclick="toggleListShowRetired()"
+      title="완료 처리된 교재도 함께 보기" style="font-size:.76rem">🗂 종료 항목 숨김</button>
     <button class="btn bg bsm" onclick="clearFilters()">초기화</button>
     <button class="btn bs bsm" style="margin-left:auto" onclick="goPage('p-export')">💾 내보내기</button>
   </div>
@@ -2186,21 +2188,18 @@ function populateStudentFilterByGroup() {
 }
 
 function renderList() {
-  const flDateEl  = $('fl-date');
   const flGrpEl   = $('fl-group');
   const flStEl    = $('fl-st');
   const flBookEl  = $('fl-book');
   const flTypeEl  = $('fl-type');
   const listEl    = $('assign-list');
-  if (!flDateEl || !listEl) return;
-  const dateF = flDateEl.value;
+  if (!flGrpEl || !listEl) return;
   const grpF  = flGrpEl  ? flGrpEl.value  : '';
   const stF   = flStEl   ? flStEl.value   : '';
   const bkF   = flBookEl ? flBookEl.value : '';
   const tyF   = flTypeEl ? flTypeEl.value : '';
 
   let rows = [...S.assigns];
-  if (dateF) rows = rows.filter(r => r.date === dateF);
   if (grpF) {
     const ids = new Set(S.students.filter(s => s.group === grpF).map(s => s.id));
     rows = rows.filter(r => ids.has(r.studentId));
@@ -2226,12 +2225,19 @@ function renderList() {
     groups[key].items.push(r);
   });
 
-  const groupList = Object.values(groups).map(g => {
+  let groupList = Object.values(groups).map(g => {
     g.count = g.items.length;
     g.doneCount = g.items.filter(a => a.result !== '' && a.result !== null && a.result !== undefined).length;
     g.latestDate = g.items.reduce((m, a) => (a.date > m ? a.date : m), g.items[0].date);
+    const st = S.students.find(s => s.id === g.studentId);
+    g.isActive = !!(st && (st.books||[]).includes(g.bookName)); // ★ 지금 진행 중인지 (완료 처리 안 됨)
     return g;
   });
+
+  // ★ 기본은 진행 중인 것만 — "종료 항목 보기" 토글을 켜야 완료 처리된 것도 함께 표시
+  if (!_listShowRetired) {
+    groupList = groupList.filter(g => g.isActive);
+  }
 
   groupList.sort((a,b) =>
     a.group.localeCompare(b.group,'ko') ||
@@ -2242,8 +2248,9 @@ function renderList() {
 
   const tb = $('list-toolbar');
   const summary = $('list-summary-txt');
-  if (tb) tb.style.display = rows.length ? '' : 'none';
-  if (summary) summary.textContent = `총 ${groupList.length}개 묶음 · ${rows.length}건 배정 — 날짜·점수 조정은 각 묶음의 "배정 이력에서 조정" 버튼으로`;
+  const shownRowCount = groupList.reduce((sum,g) => sum + g.count, 0);
+  if (tb) tb.style.display = groupList.length ? '' : 'none';
+  if (summary) summary.textContent = `총 ${groupList.length}개 묶음 · ${shownRowCount}건 배정 — 날짜·점수 조정은 각 묶음의 "배정 이력에서 조정" 버튼으로`;
 
   listEl.innerHTML = groupList.length
     ? groupList.map(groupCard).join('')
@@ -2344,8 +2351,20 @@ function deleteGroupAssigns(studentId, bookId) {
   toast(`✅ ${count}건 삭제 완료`);
 }
 
+let _listShowRetired = false; // ★ 완료 처리된(종료된) 묶음도 함께 표시할지
+
+function toggleListShowRetired() {
+  _listShowRetired = !_listShowRetired;
+  const btn = $('fl-toggle-retired');
+  if (btn) {
+    btn.textContent = _listShowRetired ? '🗂 종료 항목 포함' : '🗂 종료 항목 숨김';
+    btn.classList.toggle('active', _listShowRetired);
+  }
+  renderList();
+}
+
 function clearFilters() {
-  const fields = ['fl-date','fl-group','fl-st','fl-book','fl-type'];
+  const fields = ['fl-group','fl-st','fl-book','fl-type'];
   fields.forEach(id => { const el = $(id); if (el) el.value = ''; });
   populateStudentFilterByGroup();
   renderList();
