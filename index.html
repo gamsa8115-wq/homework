@@ -451,17 +451,15 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
       <div class="card">
         <div class="ct" style="color:var(--grn);margin-bottom:.6rem">📝 보카형 자동 배정</div>
 
-        <div style="display:flex;align-items:flex-end;gap:.45rem;margin-bottom:.5rem">
-          <div style="flex:1">
+        <div class="g2" style="margin-bottom:.5rem">
+          <div>
             <label>교재</label>
             <select id="v-book" onchange="onVocaFormChange()"><option value="">교재 선택...</option></select>
           </div>
-          <button class="btn bg bsm" onclick="clearVocaForm()" style="white-space:nowrap;flex-shrink:0">초기화</button>
-        </div>
-
-        <div style="margin-bottom:.5rem">
-          <label>반</label>
-          <select id="v-group" onchange="selClass(this.value)"><option value="">반 선택...</option></select>
+          <div>
+            <label>반</label>
+            <select id="v-group" onchange="selClass(this.value)"><option value="">반 선택...</option></select>
+          </div>
         </div>
 
         <div style="display:flex;align-items:center;gap:.35rem;margin-bottom:.35rem;font-size:.72rem;color:var(--mu)">
@@ -469,6 +467,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
           <span style="margin-left:auto;display:flex;gap:.25rem">
             <button class="btn bg bsm" onclick="selectVisible()" style="font-size:.68rem;padding:.18rem .45rem">전체선택</button>
             <button class="btn bg bsm" onclick="selNone()" style="font-size:.68rem;padding:.18rem .45rem">해제</button>
+            <button class="btn bg bsm" onclick="clearVocaForm()" style="font-size:.68rem;padding:.18rem .45rem">초기화</button>
           </span>
         </div>
         <div class="distrib-st-list" id="v-student-list" style="margin-bottom:.55rem">
@@ -3355,15 +3354,18 @@ function setupHistory() {
         `<option value="${escHtml(g)}" ${g===prev?'selected':''}>${escHtml(g)}</option>`
       ).join('');
   }
-  // 교재형만 (행 레이블 있어야 매트릭스 가능) — 오름차순
+  // 교재형 + 보카형 모두 포함 — 오름차순
   const hb = $('hist-book');
   if (hb) {
     const prev = hb.value;
     hb.innerHTML = '<option value="">교재 선택...</option>' +
       S.books
-        .filter(b => b.mode==='book' && b.rows?.length)
+        .filter(b => (b.mode==='book' && b.rows?.length) || b.mode==='voca')
         .sort((a,b) => a.name.localeCompare(b.name,'ko'))
-        .map(b => `<option value="${b.id}" ${String(b.id)===prev?'selected':''}>${escHtml(b.name)} (${b.rows.length}개)</option>`)
+        .map(b => {
+          const tag = b.mode==='voca' ? '보카형' : `${b.rows.length}개`;
+          return `<option value="${b.id}" ${String(b.id)===prev?'selected':''}>${escHtml(b.name)} (${tag})</option>`;
+        })
         .join('');
   }
   // 이름 검색 초기화 (탭 재진입 시)
@@ -3480,7 +3482,8 @@ function renderHistory() {
   if (!bid || !group) return;
 
   const book = getBook(bid);
-  if (!book?.rows?.length) {
+  const isVoca = book?.mode === 'voca';
+  if (!book || (!isVoca && !book?.rows?.length)) {
     showHistMsg(container, '행 레이블이 없는 교재입니다');
     return;
   }
@@ -3513,22 +3516,33 @@ function renderHistory() {
     return;
   }
 
-  // 피벗: student × label → 최신 assign
+  // 피벗: student × 키(레이블 또는 보카 회차) → 최신 assign
   const bookAssigns = S.assigns.filter(a => a.bookId === bid);
   const pivot = {};
   students.forEach(s => { pivot[s.id] = {}; });
   bookAssigns.forEach(a => {
     if (!pivot[a.studentId]) return;
-    (a.probLabels||[]).forEach(lbl => {
+    const keys = isVoca ? [a.unitFrom] : (a.probLabels||[]);
+    keys.forEach(lbl => {
       const ex = pivot[a.studentId][lbl];
       if (!ex || a.date > ex.date)
         pivot[a.studentId][lbl] = { assignId:a.id, date:a.date, result:a.result??'' };
     });
   });
 
+  // 행 목록: 교재형은 book.rows(고정 레이블), 보카형은 실제 배정된 회차를 모아 오름차순 정렬
+  const rows = isVoca
+    ? [...new Set(bookAssigns.map(a => a.unitFrom))].sort((a,b) => Number(a)-Number(b))
+    : book.rows;
+
+  if (isVoca && !rows.length) {
+    showHistMsg(container, `아직 '${book.name}'으로 배정된 회차가 없습니다. 📅 숙제 배정 탭에서 먼저 자동 배정하세요.`);
+    return;
+  }
+
   // ── 완료율 계산 ──
-  // 완료 = 해당 교재의 모든 레이블에 배정이 있는 학생
-  const totalLabels = book.rows.length;
+  // 완료 = 해당 교재의 모든 레이블(또는 회차)에 배정이 있는 학생
+  const totalLabels = rows.length;
   const progressMap = {}; // sid → 배정된 고유 레이블 수
   students.forEach(s => {
     progressMap[s.id] = Object.keys(pivot[s.id]).length;
@@ -3536,7 +3550,7 @@ function renderHistory() {
 
   // ── 미완료만 필터 (P7: 전원 완료 시 별도 메시지) ──
   let displayStudents = students;
-  if (_histOnlyIncomplete) {
+  if (_histOnlyIncomplete && !isVoca) {
     displayStudents = students.filter(s => progressMap[s.id] < totalLabels);
     if (!displayStudents.length) {
       // 반 학생 전원 완료 → 전체 보기로 자동 전환하지 않고 안내만
@@ -3548,7 +3562,7 @@ function renderHistory() {
   const fmtCell = d => { const p=d.split('-'); return `${+p[1]}/${+p[2]}`; };
 
   // HTML 생성 + _histCellMap 구축
-  const tbodyRows = book.rows.map((lbl, rowIdx) => {
+  const tbodyRows = rows.map((lbl, rowIdx) => {
     const cells = displayStudents.map(s => {
       const cellId = `hc-${s.id}-${rowIdx}`;
       const info   = pivot[s.id]?.[lbl];
@@ -3570,17 +3584,18 @@ function renderHistory() {
       </td>`;
     }).join('');
     // 오른쪽 남은 공간 채우는 spacer 셀
-    return `<tr id="hrow-${rowIdx}"><td class="hc-td-lbl">${escHtml(lbl)}</td>${cells}<td class="hc-td-spacer"></td></tr>`;
+    const lblTxt = isVoca ? `${lbl}회차` : lbl;
+    return `<tr id="hrow-${rowIdx}"><td class="hc-td-lbl">${escHtml(lblTxt)}</td>${cells}<td class="hc-td-spacer"></td></tr>`;
   }).join('');
 
-  // 학생 헤더: 이름 + 진행률 표시 + 완료 시 시각적 구분
+  // 학생 헤더: 이름 + 진행률 표시 + 완료 시 시각적 구분 (보카형은 진행률 숨김 — 고정 총량 개념이 없음)
   const headerCols = displayStudents.map(s => {
     const done      = progressMap[s.id];
-    const isComplete = done >= totalLabels;
+    const isComplete = !isVoca && done >= totalLabels;
     const pctText   = `${done}/${totalLabels}`;
     return `<th class="hc-th-st${isComplete ? ' completed' : ''}">
       ${escHtml(s.name)}
-      <span class="hc-progress">${pctText}${isComplete ? ' ✓' : ''}</span>
+      ${isVoca ? '' : `<span class="hc-progress">${pctText}${isComplete ? ' ✓' : ''}</span>`}
     </th>`;
   }).join('');
 
@@ -3636,6 +3651,11 @@ function histAssignCell(el, info) {
   const book = getBook(Number($('hist-book')?.value||0));
   const group = $('hist-group')?.value||'';
   if (!book) return;
+
+  if (book.mode === 'voca') {
+    toast('보카형은 📅 숙제 배정 탭에서 자동 배정하세요 (여기서는 결과 입력/삭제만 가능)');
+    return;
+  }
 
   // 이미 배정됨 → 날짜 변경 인라인 입력
   if (info.assignId) {
