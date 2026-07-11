@@ -789,6 +789,16 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         <option value="">교재 선택...</option>
       </select>
     </div>
+    <!-- ★ 점수형 교재 선택 시에만 표시: 여기서 바로 기준점수 설정 → 숙제 현황(미완료 확인)에 미달 점수로 반영 -->
+    <div id="hist-threshold-wrap" style="display:none;align-items:center;gap:.35rem;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:.25rem .6rem">
+      <label style="display:flex;align-items:center;gap:.3rem;margin:0;font-size:.76rem;cursor:pointer">
+        <input type="checkbox" id="hist-threshold-enable" onchange="onHistThresholdChange()" style="width:13px;height:13px">
+        기준점수
+      </label>
+      <input type="number" id="hist-threshold-input" min="0" max="100" style="width:55px;padding:.2rem .35rem;font-size:.78rem"
+        onchange="onHistThresholdChange()">
+      <span style="font-size:.7rem;color:var(--mu)">점 미만 → 숙제 현황에 표시</span>
+    </div>
     <div style="display:flex;gap:.3rem;margin-left:auto;align-items:center">
       <!-- 보기 범위: 진행 중 / 종료 포함 (완료 여부는 진행 중 안에서 표시만, 필터링은 안 함) -->
       <select id="hist-view-mode" onchange="setHistViewMode(this.value)"
@@ -3790,6 +3800,26 @@ function renderHistCellModes() {
 
 /* renderHistory — 행 레이블 × 학생 매트릭스
    onclick에 문자열 미포함 — _histCellMap[cellId]로 조회 */
+/* ★ 배정 내역 탭에서 기준점수 체크박스/입력값이 바뀌면 해당 교재에 바로 저장
+   → 숙제 현황(미완료 확인)의 "점수 미달" 판정에 즉시 반영됨 */
+function onHistThresholdChange() {
+  const bid = Number($('hist-book')?.value || 0);
+  const book = getBook(bid);
+  if (!book) return;
+  const chk = $('hist-threshold-enable');
+  const inp = $('hist-threshold-input');
+  const enabled = !!chk?.checked;
+  let threshold = Number(inp?.value);
+  if (isNaN(threshold)) threshold = 80;
+  threshold = Math.max(0, Math.min(100, threshold));
+  if (inp) inp.value = threshold;
+
+  book.retryEnabled = enabled;
+  book.retryThreshold = threshold;
+  save();
+  toast(enabled ? `✅ 기준점수 ${threshold}점 미만은 숙제 현황에 표시됩니다` : '기준점수 적용이 꺼졌습니다');
+}
+
 function renderHistory() {
   const container = $('hist-container');
   if (!container) return;
@@ -3822,6 +3852,19 @@ function renderHistory() {
   }
   if (isVocaBook && _inspectActive) {
     closeInspect();
+  }
+
+  // ★ 점수형 교재를 선택했을 때만 "기준점수" 설정 UI 표시 + 현재 값 동기화
+  const thWrap = $('hist-threshold-wrap');
+  if (thWrap) {
+    const showThreshold = !!bidBook && bidBook.mode === 'book' && bidBook.score === '점수';
+    thWrap.style.display = showThreshold ? 'flex' : 'none';
+    if (showThreshold) {
+      const chk = $('hist-threshold-enable');
+      const inp = $('hist-threshold-input');
+      if (chk) chk.checked = !!bidBook.retryEnabled;
+      if (inp) inp.value = (bidBook.retryThreshold != null) ? bidBook.retryThreshold : 80;
+    }
   }
 
   if (!bid || !group) return;
