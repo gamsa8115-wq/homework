@@ -153,6 +153,8 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 .lbl-tag.result{background:rgba(5,150,105,.15);color:#064e3b;font-weight:700;}
 .ai-date{font-family:'Space Mono',monospace;font-size:.74rem;color:var(--mu);flex:0 0 auto;font-weight:600;}
 .ai-actions{flex:0 0 auto;}
+.ai-group-class{font-size:.7rem;color:var(--mu);background:var(--s2);padding:.15rem .5rem;border-radius:20px;flex:0 0 auto;white-space:nowrap;}
+.ai-group-count{font-size:.76rem;color:var(--mu);flex:1 1 auto;min-width:0;}
 .ai.ai-sel{background:rgba(79,70,229,.04);border-color:var(--acc);}
 
 /* ─── 배정 목록 선택 툴바 ─── */
@@ -548,9 +550,9 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 
 <!-- ════ 배정 목록 ════ -->
 <div class="page" id="p-list">
-  <div class="ph"><h1>배정 목록</h1><p>전체 배정 내역 조회 및 삭제</p></div>
+  <div class="ph"><h1>배정 목록</h1><p>학생·교재별로 모아보기 — 날짜/점수 조정은 배정 이력 탭에서</p></div>
   <div style="display:flex;gap:.45rem;margin-bottom:.9rem;flex-wrap:wrap;align-items:center">
-    <input type="date" id="fl-date" style="width:auto" oninput="renderList()">
+    <input type="date" id="fl-date" style="width:auto" oninput="renderList()" title="특정 날짜만 좁혀보기 (선택 안 하면 전체 기간)">
     <select style="width:auto" id="fl-group" onchange="onGroupFilterChange()"><option value="">전체 반</option></select>
     <select style="width:auto" id="fl-st" onchange="renderList()"><option value="">전체 학생</option></select>
     <select style="width:auto" id="fl-book" onchange="renderList()"><option value="">전체 교재</option></select>
@@ -563,13 +565,8 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
     <button class="btn bs bsm" style="margin-left:auto" onclick="goPage('p-export')">💾 내보내기</button>
   </div>
 
-  <!-- 선택 툴바 -->
   <div class="list-toolbar" id="list-toolbar" style="display:none">
-    <button class="btn bg bsm" onclick="selAllList()" style="font-size:.72rem">☑ 전체선택</button>
-    <button class="btn bg bsm" onclick="selNoneList()" style="font-size:.72rem">☐ 전체해제</button>
-    <div class="sep"></div>
-    <span>선택: <span class="sel-count" id="sel-count">0</span> / <span id="tot-count">0</span></span>
-    <button class="btn bd2 bsm" onclick="delSelectedAssigns()" style="margin-left:auto;font-size:.72rem" id="btn-del-sel" disabled>🗑 선택 삭제</button>
+    <span id="list-summary-txt"></span>
   </div>
 
   <div id="assign-list"></div>
@@ -2193,7 +2190,7 @@ function renderList() {
   const bkF   = flBookEl ? flBookEl.value : '';
   const tyF   = flTypeEl ? flTypeEl.value : '';
 
-  let rows = [...S.assigns].sort((a,b) => a.date.localeCompare(b.date) || a.studentName.localeCompare(b.studentName));
+  let rows = [...S.assigns];
   if (dateF) rows = rows.filter(r => r.date === dateF);
   if (grpF) {
     const ids = new Set(S.students.filter(s => s.group === grpF).map(s => s.id));
@@ -2204,25 +2201,98 @@ function renderList() {
   if (tyF)   rows = rows.filter(r => r.type === tyF);
 
   _listVisibleIds = rows.map(r => r.id);
-  Array.from(_selAssignIds).forEach(id => {
-    if (!_listVisibleIds.includes(id)) _selAssignIds.delete(id);
+
+  // 반 → 학생 → 유형 → 교재명 순으로 그룹핑 (날짜와 무관하게 한 덩어리로 모아 보여줌)
+  const groups = {};
+  rows.forEach(r => {
+    const key = `${r.studentId}_${r.bookId}`;
+    if (!groups[key]) {
+      const st = S.students.find(s => s.id === r.studentId);
+      groups[key] = {
+        studentId: r.studentId, studentName: r.studentName,
+        group: st?.group || '', bookId: r.bookId, bookName: r.bookName,
+        type: r.type, items: []
+      };
+    }
+    groups[key].items.push(r);
   });
 
+  const groupList = Object.values(groups).map(g => {
+    g.count = g.items.length;
+    g.doneCount = g.items.filter(a => a.result !== '' && a.result !== null && a.result !== undefined).length;
+    g.latestDate = g.items.reduce((m, a) => (a.date > m ? a.date : m), g.items[0].date);
+    return g;
+  });
+
+  groupList.sort((a,b) =>
+    a.group.localeCompare(b.group,'ko') ||
+    a.studentName.localeCompare(b.studentName,'ko') ||
+    a.type.localeCompare(b.type) ||
+    a.bookName.localeCompare(b.bookName,'ko')
+  );
+
   const tb = $('list-toolbar');
+  const summary = $('list-summary-txt');
   if (tb) tb.style.display = rows.length ? '' : 'none';
+  if (summary) summary.textContent = `총 ${groupList.length}개 묶음 · ${rows.length}건 배정 — 날짜·점수 조정은 각 묶음의 "배정 이력에서 조정" 버튼으로`;
 
-  listEl.innerHTML = rows.length
-    ? rows.map(r => assignCard(r, true)).join('')
+  listEl.innerHTML = groupList.length
+    ? groupList.map(groupCard).join('')
     : `<div style="color:var(--mu);font-size:.8rem;padding:2rem;text-align:center;background:var(--surface);border:1px solid var(--bd);border-radius:var(--r)">배정된 숙제가 없습니다</div>`;
+}
 
-  updateListSelUI();
+/* 학생×교재 묶음 카드 — 날짜/개별 항목은 배정 이력 탭에서 다룸 */
+function groupCard(g) {
+  const isVoca = g.type === 'voca';
+  const badgeCls = isVoca ? 'bg2' : 'bb';
+  const badgeTxt = isVoca ? '보카' : '교재';
+  const doneTxt = g.doneCount ? ` · 완료 ${g.doneCount}` : '';
+  const groupEsc = escHtml(g.group).replace(/'/g,"\\'");
+  const nameEsc  = escHtml(g.studentName).replace(/'/g,"\\'");
+  return `<div class="ai" id="aig-${g.studentId}-${g.bookId}">
+    <div class="ai-row">
+      <span class="badge ${badgeCls}">${badgeTxt}</span>
+      <span class="ai-group-class">${escHtml(g.group)}</span>
+      <span class="ai-name">${escHtml(g.studentName)}</span>
+      <span class="ai-book" title="${escHtml(g.bookName)}">${escHtml(g.bookName)}</span>
+      <span class="ai-group-count">${g.count}건${doneTxt} · 최근 ${shortAiDate(g.latestDate)}</span>
+      <div class="ai-actions" style="display:flex;gap:.35rem">
+        <button class="btn bs bsm" style="font-size:.7rem" onclick="jumpToHistoryFromList(${g.bookId}, '${groupEsc}', '${nameEsc}')">📊 배정 이력에서 조정</button>
+        <button class="btn bd2 bsm" style="font-size:.7rem" onclick="deleteGroupAssigns(${g.studentId}, ${g.bookId})">🗑 전체 삭제</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* 배정 목록 묶음 → 배정 이력 탭으로 이동하며 필터 자동 지정 */
+function jumpToHistoryFromList(bookId, group, studentName) {
+  goPage('p-history');
+  const hb = $('hist-book');  if (hb) hb.value = String(bookId);
+  const hg = $('hist-group'); if (hg) hg.value = group;
+  const ns = $('hist-name-search'); if (ns) ns.value = studentName;
+  const nc = $('hist-name-clear');  if (nc) nc.style.display = studentName ? '' : 'none';
+  renderHistory();
+}
+
+/* 묶음 전체 삭제 (해당 학생×교재의 모든 배정 삭제) */
+function deleteGroupAssigns(studentId, bookId) {
+  const st = S.students.find(s => s.id === studentId);
+  const book = getBook(bookId);
+  const count = S.assigns.filter(a => a.studentId === studentId && a.bookId === bookId).length;
+  if (!count) return;
+  if (!confirm(`${st?.name || ''} · ${book?.name || ''}의 배정 ${count}건을 모두 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+
+  S.assigns = S.assigns.filter(a => !(a.studentId === studentId && a.bookId === bookId));
+  save();
+  renderCal(); renderTodayPreview(); updateSidebar();
+  renderList();
+  toast(`✅ ${count}건 삭제 완료`);
 }
 
 function clearFilters() {
   const fields = ['fl-date','fl-group','fl-st','fl-book','fl-type'];
   fields.forEach(id => { const el = $(id); if (el) el.value = ''; });
   populateStudentFilterByGroup();
-  _selAssignIds.clear();
   renderList();
 }
 
@@ -3655,16 +3725,17 @@ function histAssignCell(el, info) {
   const group = $('hist-group')?.value||'';
   if (!book) return;
 
-  if (book.mode === 'voca') {
-    toast('보카형은 📅 숙제 배정 탭에서 자동 배정하세요 (여기서는 결과 입력/삭제만 가능)');
-    return;
-  }
-
-  // 이미 배정됨 → 날짜 변경 인라인 입력
+  // 이미 배정됨 → 날짜 변경 인라인 입력 (보카형도 허용 — 날짜만 옮기는 건 안전함)
   if (info.assignId) {
     const assign = S.assigns.find(a => a.id === info.assignId);
     if (!assign) return;
     openHistInline(el, info, 'change-date');
+    return;
+  }
+
+  // 빈 셀 → 신규 배정 (보카형은 숙제 배정 탭의 자동배정만 허용 — 여긴 레이블 개념이 없어 수동 배정 불가)
+  if (book.mode === 'voca') {
+    toast('보카형은 📅 숙제 배정 탭에서 자동 배정하세요 (기존 항목의 결과 입력·날짜 변경·삭제는 여기서 가능)');
     return;
   }
 
