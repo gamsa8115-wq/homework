@@ -790,6 +790,10 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
       <button class="btn bg bsm hist-mode-btn" id="hmode-assign" onclick="setHistMode('assign')" style="font-size:.72rem">📌 배정</button>
       <button class="btn bg bsm hist-mode-btn" id="hmode-score"  onclick="setHistMode('score')"  style="font-size:.72rem">✏ 결과</button>
       <button class="btn bg bsm hist-mode-btn" id="hmode-delete" onclick="setHistMode('delete')" style="font-size:.72rem">🗑 삭제</button>
+      <button class="btn bd2 bsm" id="hist-delete-class-btn"
+        onclick="deleteHistClassAll()"
+        title="지금 선택된 반 전체가 이 교재를 받은 적 없는 것으로 — 배정 기록·배부 상태 완전 삭제"
+        style="font-size:.72rem">🗑 반 전체 배정 삭제</button>
       <span style="width:1px;height:18px;background:var(--bd);margin:0 .15rem"></span>
       <button class="btn bs bsm" id="hist-import-btn"
         onclick="openScoreImport()"
@@ -2395,19 +2399,52 @@ function completeGroupAll(bid, group) {
   toast(`✅ ${targets.length}명 완료 처리 완료`);
 }
 
+/* ★ 배정 이력 탭에서 지금 선택된 반+교재 조합 전체를 완전히 삭제
+   — 그 반이 이 교재를 받은 적 자체가 없던 것처럼 (배정 기록 + 배부 상태 모두 제거) */
+function deleteHistClassAll() {
+  const bid   = Number($('hist-book')?.value || 0);
+  const group = $('hist-group')?.value || '';
+  const book  = getBook(bid);
+  if (!bid || !group || !book) { toast('반과 교재를 먼저 선택하세요'); return; }
+
+  const targetIds = new Set(S.students.filter(s => s.group === group).map(s => s.id));
+  const count = S.assigns.filter(a => a.bookId === bid && targetIds.has(a.studentId)).length;
+  if (!count) { toast('이 반에 삭제할 배정 기록이 없습니다'); return; }
+
+  if (!confirm(`⚠️ '${group}' 반의 '${book.name}' 관련 배정 ${count}건을 전부 삭제하시겠습니까?\n\n이 반 학생들이 이 교재를 받은 적 자체가 없던 것처럼, 배정 기록·배부 상태·완료 이력이 모두 완전히 사라집니다.\n다른 반 학생들의 기록은 영향받지 않습니다.\n\n이 작업은 되돌릴 수 없습니다.`)) return;
+
+  S.assigns = S.assigns.filter(a => !(a.bookId === bid && targetIds.has(a.studentId)));
+  S.students.forEach(s => {
+    if (!targetIds.has(s.id)) return;
+    if (Array.isArray(s.books)) s.books = s.books.filter(n => n !== book.name);
+    if (Array.isArray(s.completedBooks)) s.completedBooks = s.completedBooks.filter(c => c.bookName !== book.name);
+  });
+
+  save();
+  updateSidebar();
+  renderCal();
+  renderHistory();
+  toast(`✅ '${group}' 반의 '${book.name}' 배정 ${count}건 완전 삭제 완료`);
+}
+
 /* 묶음 전체 삭제 (해당 학생×교재의 모든 배정 삭제) */
 function deleteGroupAssigns(studentId, bookId) {
   const st = S.students.find(s => s.id === studentId);
   const book = getBook(bookId);
   const count = S.assigns.filter(a => a.studentId === studentId && a.bookId === bookId).length;
   if (!count) return;
-  if (!confirm(`${st?.name || ''} · ${book?.name || ''}의 배정 ${count}건을 모두 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+  if (!confirm(`${st?.name || ''} · ${book?.name || ''}의 배정 ${count}건을 모두 삭제하시겠습니까?\n배부받았던 기록 자체가 없던 것처럼 완전히 사라집니다.\n이 작업은 되돌릴 수 없습니다.`)) return;
 
   S.assigns = S.assigns.filter(a => !(a.studentId === studentId && a.bookId === bookId));
+  // ★ 배정 기록뿐 아니라 "배부받은 상태"·완료 이력도 함께 제거 — 아예 받은 적 없던 것처럼
+  if (st) {
+    if (Array.isArray(st.books) && book) st.books = st.books.filter(n => n !== book.name);
+    if (Array.isArray(st.completedBooks) && book) st.completedBooks = st.completedBooks.filter(c => c.bookName !== book.name);
+  }
   save();
   renderCal(); renderTodayPreview(); updateSidebar();
   renderList();
-  toast(`✅ ${count}건 삭제 완료`);
+  toast(`✅ ${count}건 삭제 완료 (배부 기록도 함께 제거됨)`);
 }
 
 let _listShowRetired = false; // ★ 완료 처리된(종료된) 묶음도 함께 표시할지
@@ -3498,6 +3535,11 @@ function delBook(id) {
   S.books = S.books.filter(b=>b.id!=id);
   // 고아 데이터 함께 제거
   S.assigns = S.assigns.filter(a=>a.bookId!=id);
+  // ★ 학생들의 배부 목록·완료 이력에 남은 이 교재명 흔적도 함께 정리
+  S.students.forEach(s => {
+    if (Array.isArray(s.books)) s.books = s.books.filter(n => n !== book.name);
+    if (Array.isArray(s.completedBooks)) s.completedBooks = s.completedBooks.filter(c => c.bookName !== book.name);
+  });
   save(); // ★ P0 FIX
   renderBooks();
   populateBookSelects();
