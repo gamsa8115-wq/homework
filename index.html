@@ -1277,7 +1277,7 @@ function doDistribute() {
     st.books.push(book.name);
     // ★ 언제 이 교재를 배정(배부)했는지 기록 — "교재 배정" 개념을 위한 날짜
     if (!st.bookDates) st.bookDates = {};
-    st.bookDates[book.name] = today;
+    st.bookDates[book.id] = today;
     added++;
   });
 
@@ -2024,7 +2024,7 @@ function addVoca() {
     if (!st.books.includes(book.name)) st.books.push(book.name);
     // ★ 언제 이 교재를 배정했는지 기록 (교재 배정 개념의 날짜) — 이미 있으면 유지, 없으면 시작일로 채움
     if (!st.bookDates) st.bookDates = {};
-    if (!st.bookDates[book.name]) st.bookDates[book.name] = startDate;
+    if (!st.bookDates[book.id]) st.bookDates[book.id] = startDate;
     dates.forEach((d, i) => {
       const unit = fmtUnit(i);
       const isDup = S.assigns.some(a =>
@@ -2364,7 +2364,7 @@ function groupRow(g) {
   const nameEsc  = escHtml(g.studentName).replace(/'/g,"\\'");
   const isActive = g.isActive;
   const st = S.students.find(s => s.id === g.studentId);
-  const assignedDate = st?.bookDates?.[g.bookName];
+  const assignedDate = st?.bookDates?.[g.bookId];
   const assignedTxt = assignedDate ? `배정일 ${shortAiDate(assignedDate)}` : `<span style="color:var(--mu)">배정일 기록 없음</span>`;
   const countTxt = g.count
     ? `${assignedTxt} · ${g.count}건${doneTxt} · 최근 ${shortAiDate(g.latestDate)}`
@@ -5708,12 +5708,14 @@ function backfillBookDates() {
     if (!Array.isArray(st.books) || !st.books.length) return;
     if (!st.bookDates) st.bookDates = {};
     st.books.forEach(bookName => {
-      if (st.bookDates[bookName]) return; // 이미 기록 있음
+      const book = S.books.find(b => b.name === bookName);
+      if (!book) return; // 교재 자체가 삭제된 경우 등 — 건너뜀
+      if (st.bookDates[book.id]) return; // 이미 기록 있음
       const dates = S.assigns
         .filter(a => a && a.studentId === st.id && a.bookName === bookName && a.date)
         .map(a => a.date);
       if (dates.length) {
-        st.bookDates[bookName] = dates.reduce((min,d) => d < min ? d : min, dates[0]);
+        st.bookDates[book.id] = dates.reduce((min,d) => d < min ? d : min, dates[0]);
         filled++;
       }
     });
@@ -5929,12 +5931,21 @@ function rerenderAll() {
 /* ★ 저장 직전 방어 로직: 학생 books/completedBooks 배열에 undefined·null·빈값이
    섞여있으면 Firebase update()가 통째로 실패하므로, 저장 전에 항상 한 번 걸러냄 */
 function sanitizeStudentsBeforeSave() {
+  const validBookIds = new Set(S.books.map(b => String(b.id)));
   S.students.forEach(s => {
     if (Array.isArray(s.books)) {
       s.books = s.books.filter(n => typeof n === 'string' && n.length > 0);
     }
     if (Array.isArray(s.completedBooks)) {
       s.completedBooks = s.completedBooks.filter(c => c && c.bookName);
+    }
+    // ★ bookDates는 반드시 "교재 id"만 키로 써야 함 (교재명은 "/" 등 Firebase 금지문자가 섞일 수 있어 위험)
+    if (s.bookDates && typeof s.bookDates === 'object') {
+      const cleaned = {};
+      Object.keys(s.bookDates).forEach(k => {
+        if (validBookIds.has(String(k)) && s.bookDates[k]) cleaned[k] = s.bookDates[k];
+      });
+      s.bookDates = cleaned;
     }
   });
 }
