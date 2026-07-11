@@ -145,7 +145,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 .ai-checkbox{width:16px;height:16px;cursor:pointer;accent-color:var(--acc);flex:0 0 auto;margin:0;}
 .ai-row > .badge{flex:0 0 auto;}
 .ai-name{font-size:.875rem;font-weight:700;flex:0 0 auto;white-space:nowrap;}
-.ai-book{font-size:.78rem;color:var(--mu);flex:0 0 auto;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;}
+.ai-book{font-size:.78rem;color:var(--tx);font-weight:700;flex:0 0 auto;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;}
 .ai-sep{color:var(--bd);flex:0 0 auto;font-size:.7rem;}
 .ai-labels{display:flex;align-items:center;flex-wrap:nowrap;gap:.25rem;flex:1 1 auto;min-width:0;overflow:hidden;}
 .lbl-tag{font-size:.78rem;padding:.22rem .55rem;border-radius:4px;background:rgba(79,70,229,.1);color:#3730a3;font-weight:600;white-space:nowrap;letter-spacing:-.1px;}
@@ -156,6 +156,14 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 .ai-group-class{font-size:.7rem;color:var(--mu);background:var(--s2);padding:.15rem .5rem;border-radius:20px;flex:0 0 auto;white-space:nowrap;}
 .ai-group-count{font-size:.76rem;color:var(--mu);flex:1 1 auto;min-width:0;}
 .ai-retired-badge{font-size:.68rem;font-weight:700;color:#5b21b6;background:#ede9fe;padding:.2rem .55rem;border-radius:20px;white-space:nowrap;}
+
+/* ★ 배정 목록: 학생별 카드 그룹핑 */
+.st-block{background:var(--surface);border:1px solid var(--bd);border-radius:12px;margin-bottom:.7rem;overflow:hidden;}
+.st-block-hd{display:flex;align-items:center;gap:.6rem;padding:.6rem .9rem;background:var(--s2);border-bottom:1px solid var(--bd);}
+.st-block-name{font-size:.95rem;font-weight:900;color:var(--tx);}
+.st-block-sum{margin-left:auto;font-size:.72rem;color:var(--mu);}
+.st-block-body{padding:.5rem .6rem;display:flex;flex-direction:column;gap:.3rem;}
+.ai-sub-row{display:flex;align-items:center;gap:.55rem;min-width:0;flex-wrap:nowrap;padding:.42rem .5rem;border-radius:8px;background:var(--bg);}
 .ai.ai-sel{background:rgba(79,70,229,.04);border-color:var(--acc);}
 
 /* ─── 배정 목록 선택 툴바 ─── */
@@ -245,8 +253,6 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 .hc-progress{display:block;font-size:.62rem;font-weight:400;color:var(--mu);margin-top:.1rem;}
 .hc-th-st.completed .hc-progress{color:#059669;}
 /* 토글 버튼 활성 */
-#hist-toggle-complete.active{background:var(--acc);color:#fff;border-color:var(--acc);}
-#hist-toggle-retired.active{background:#7c3aed;color:#fff;border-color:#7c3aed;}
 #fl-toggle-retired.active{background:#7c3aed;color:#fff;border-color:#7c3aed;}
 /* 학생 이름 헤더 — 세로 스크롤 시 고정, 폭 최소화 (v37: 좌우 padding 20%↑) */
 .hc-th-st{background:var(--s2);color:var(--tx);padding:.45rem .85rem;text-align:center;
@@ -770,15 +776,14 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
       </select>
     </div>
     <div style="display:flex;gap:.3rem;margin-left:auto;align-items:center">
-      <!-- 미완료 필터 토글 -->
-      <button id="hist-toggle-complete" class="btn bg bsm"
-        onclick="toggleHistComplete()"
-        style="font-size:.72rem;margin-right:.35rem">📊 전체</button>
-      <!-- 종료(완료 처리)된 학생도 보기 토글 -->
-      <button id="hist-toggle-retired" class="btn bg bsm"
-        onclick="toggleHistShowRetired()"
-        title="배부 목록에서 종료 처리된 학생의 과거 기록도 함께 보기"
-        style="font-size:.72rem;margin-right:.35rem">🗂 종료 학생 숨김</button>
+      <!-- 보기 범위: 진행 중만 / 완료 포함 / 종료 기록도 포함 (하나로 통합) -->
+      <select id="hist-view-mode" onchange="setHistViewMode(this.value)"
+        title="어느 범위까지 보여줄지 선택"
+        style="font-size:.72rem;padding:.28rem .5rem;margin-right:.35rem;width:auto">
+        <option value="active">🟢 진행 중만</option>
+        <option value="all">✅ 완료 포함</option>
+        <option value="retired">🗂 종료 기록도 포함</option>
+      </select>
       <button class="btn bg bsm hist-mode-btn" id="hmode-view"   onclick="setHistMode('view')"   style="font-size:.72rem">👁 보기</button>
       <button class="btn bg bsm hist-mode-btn" id="hmode-assign" onclick="setHistMode('assign')" style="font-size:.72rem">📌 배정</button>
       <button class="btn bg bsm hist-mode-btn" id="hmode-score"  onclick="setHistMode('score')"  style="font-size:.72rem">✏ 결과</button>
@@ -2249,12 +2254,39 @@ function renderList() {
   const tb = $('list-toolbar');
   const summary = $('list-summary-txt');
   const shownRowCount = groupList.reduce((sum,g) => sum + g.count, 0);
+  const studentCount = new Set(groupList.map(g => g.studentId)).size;
   if (tb) tb.style.display = groupList.length ? '' : 'none';
-  if (summary) summary.textContent = `총 ${groupList.length}개 묶음 · ${shownRowCount}건 배정 — 날짜·점수 조정은 각 묶음의 "배정 이력에서 조정" 버튼으로`;
+  if (summary) summary.textContent = `학생 ${studentCount}명 · 교재 ${groupList.length}개 묶음 · ${shownRowCount}건 배정 — 날짜·점수 조정은 각 줄의 "배정 이력에서 조정" 버튼으로`;
 
   listEl.innerHTML = groupList.length
-    ? groupList.map(groupCard).join('')
+    ? renderStudentBlocks(groupList)
     : `<div style="color:var(--mu);font-size:.8rem;padding:2rem;text-align:center;background:var(--surface);border:1px solid var(--bd);border-radius:var(--r)">배정된 숙제가 없습니다</div>`;
+}
+
+/* ★ 같은 학생의 여러 교재 묶음을 하나의 학생 카드 안에 모아서 렌더링 */
+function renderStudentBlocks(groupList) {
+  const blocks = [];
+  let cur = null;
+  groupList.forEach(g => {
+    if (!cur || cur.studentId !== g.studentId) {
+      cur = { studentId: g.studentId, studentName: g.studentName, group: g.group, items: [] };
+      blocks.push(cur);
+    }
+    cur.items.push(g);
+  });
+
+  return blocks.map(b => {
+    const totalCount = b.items.reduce((s,g) => s + g.count, 0);
+    const activeCount = b.items.filter(g => g.isActive).length;
+    return `<div class="st-block">
+      <div class="st-block-hd">
+        <span class="ai-group-class">${escHtml(b.group)}</span>
+        <span class="st-block-name">${escHtml(b.studentName)}</span>
+        <span class="st-block-sum">교재 ${b.items.length}개 · 진행중 ${activeCount}개 · 배정 ${totalCount}건</span>
+      </div>
+      <div class="st-block-body">${b.items.map(g => groupRow(g)).join('')}</div>
+    </div>`;
+  }).join('');
 }
 
 /* 학생×교재 묶음 카드 — 날짜/개별 항목은 배정 이력 탭에서 다룸 */
@@ -2283,6 +2315,30 @@ function groupCard(g) {
         <button class="btn bs bsm" style="font-size:.7rem" onclick="jumpToHistoryFromList(${g.bookId}, '${groupEsc}', '${nameEsc}')">📊 배정 이력에서 조정</button>
         <button class="btn bd2 bsm" style="font-size:.7rem" onclick="deleteGroupAssigns(${g.studentId}, ${g.bookId})">🗑 전체 삭제</button>
       </div>
+    </div>
+  </div>`;
+}
+
+/* ★ 학생 카드 안에서 쓰는 축약형 줄 — 반/학생명 반복 없이 교재 정보만 */
+function groupRow(g) {
+  const isVoca = g.type === 'voca';
+  const badgeCls = isVoca ? 'bg2' : 'bb';
+  const badgeTxt = isVoca ? '보카' : '교재';
+  const doneTxt = g.doneCount ? ` · 완료 ${g.doneCount}` : '';
+  const groupEsc = escHtml(g.group).replace(/'/g,"\\'");
+  const nameEsc  = escHtml(g.studentName).replace(/'/g,"\\'");
+  const isActive = g.isActive;
+  const completeBtn = (!isVoca && isActive)
+    ? `<button class="btn bg bsm" style="font-size:.68rem" onclick="completeGroupAssign(${g.studentId}, ${g.bookId})">✅ 완료 처리</button>`
+    : (!isVoca && !isActive ? `<span class="ai-retired-badge">종료됨</span>` : '');
+  return `<div class="ai-sub-row" id="aig-${g.studentId}-${g.bookId}">
+    <span class="badge ${badgeCls}">${badgeTxt}</span>
+    <span class="ai-book" title="${escHtml(g.bookName)}">${escHtml(g.bookName)}</span>
+    <span class="ai-group-count">${g.count}건${doneTxt} · 최근 ${shortAiDate(g.latestDate)}</span>
+    <div class="ai-actions" style="display:flex;gap:.35rem">
+      ${completeBtn}
+      <button class="btn bs bsm" style="font-size:.68rem" onclick="jumpToHistoryFromList(${g.bookId}, '${groupEsc}', '${nameEsc}')">📊 배정 이력에서 조정</button>
+      <button class="btn bd2 bsm" style="font-size:.68rem" onclick="deleteGroupAssigns(${g.studentId}, ${g.bookId})">🗑 전체 삭제</button>
     </div>
   </div>`;
 }
@@ -3468,44 +3524,25 @@ function showHistMsg(container, msg) {
 let _histMode             = 'view';
 let _histCellMap          = {};
 let _histAssignDate       = '';
-let _histOnlyIncomplete   = false;  // 미완료 학생만 표시 토글
-let _histShowRetired      = false;  // ★ 종료(완료 처리)된 학생도 함께 표시 토글
+let _histOnlyIncomplete   = true;   // ★ 기본값: 진행 중(미완료)인 학생만 표시
+let _histShowRetired      = false;  // 종료(완료 처리)된 학생도 함께 표시할지
 
-/* 미완료 학생 필터 토글 */
-function toggleHistComplete() {
-  _histOnlyIncomplete = !_histOnlyIncomplete;
-  // 버튼 UI 갱신
-  const btn = $('hist-toggle-complete');
-  if (btn) {
-    btn.textContent = _histOnlyIncomplete ? '⏳ 미완료만' : '📊 전체';
-    btn.classList.toggle('active', _histOnlyIncomplete);
-  }
+/* ★ 보기 범위 통합 선택 — 'active'(진행중만) / 'all'(완료 포함) / 'retired'(종료 기록도 포함) */
+function setHistViewMode(mode) {
+  if (mode === 'active') { _histOnlyIncomplete = true;  _histShowRetired = false; }
+  else if (mode === 'all') { _histOnlyIncomplete = false; _histShowRetired = false; }
+  else if (mode === 'retired') { _histOnlyIncomplete = false; _histShowRetired = true; }
+  syncHistViewSelect();
   renderHistory();
 }
 
-/* ★ 종료된 학생 표시 토글 */
-function toggleHistShowRetired() {
-  _histShowRetired = !_histShowRetired;
-  const btn = $('hist-toggle-retired');
-  if (btn) {
-    btn.textContent = _histShowRetired ? '🗂 종료 학생 포함' : '🗂 종료 학생 숨김';
-    btn.classList.toggle('active', _histShowRetired);
-  }
-  renderHistory();
-}
-
-/* 토글 버튼 상태를 현재 _histOnlyIncomplete / _histShowRetired에 맞게 동기화 */
-function syncHistToggleBtn() {
-  const btn = $('hist-toggle-complete');
-  if (btn) {
-    btn.textContent = _histOnlyIncomplete ? '⏳ 미완료만' : '📊 전체';
-    btn.classList.toggle('active', _histOnlyIncomplete);
-  }
-  const rbtn = $('hist-toggle-retired');
-  if (rbtn) {
-    rbtn.textContent = _histShowRetired ? '🗂 종료 학생 포함' : '🗂 종료 학생 숨김';
-    rbtn.classList.toggle('active', _histShowRetired);
-  }
+/* 드롭다운 값을 현재 상태에 맞게 동기화 */
+function syncHistViewSelect() {
+  const sel = $('hist-view-mode');
+  if (!sel) return;
+  if (_histShowRetired) sel.value = 'retired';
+  else if (_histOnlyIncomplete) sel.value = 'active';
+  else sel.value = 'all';
 }
 
 function setupHistory() {
@@ -3547,7 +3584,7 @@ function setupHistory() {
   // 기본 모드: 보기
   setHistMode('view');
   // 토글 버튼 상태 동기화 (_histOnlyIncomplete 유지)
-  syncHistToggleBtn();
+  syncHistViewSelect();
 }
 
 /* 이름 검색 초기화 (✕ 버튼) */
@@ -3683,7 +3720,7 @@ function renderHistory() {
     const groupHasStudents = S.students.some(s => s.group === group);
     if (groupHasStudents) {
       showHistMsg(container,
-        `'${group}' 반에서 '${book.name}'을(를) 배부받은 학생이 없습니다. 📅 숙제 배정 탭 → 📖 교재형 배부에서 먼저 배부하세요.${_histShowRetired ? '' : ' (🗂 종료 학생 포함을 켜면 종료된 기록도 볼 수 있어요)'}`);
+        `'${group}' 반에서 '${book.name}'을(를) 배부받은 학생이 없습니다. 📅 숙제 배정 탭 → 📖 교재형 배부에서 먼저 배부하세요.${_histShowRetired ? '' : ' (위 "보기 범위"를 🗂 종료 기록도 포함으로 바꾸면 종료된 기록도 볼 수 있어요)'}`);
       return;
     } else {
       showHistMsg(container, '해당 반에 학생이 없습니다');
