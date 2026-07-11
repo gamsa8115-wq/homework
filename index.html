@@ -5600,7 +5600,9 @@ const FB_APP_NAME = 'homework_v4'; // 별도 앱 인스턴스 이름
 let _fbApp = null, _fbDB = null, _fbReady = false;
 let _isSavingToFb = false; // 자기 echo 방지
 let _saveDebounceTimer = null;
-let _lastSyncedAssignsById = {}; // ★ assigns 레코드 단위 저장을 위한 마지막 동기화 스냅샷 (id → record)
+let _lastSyncedById = { assigns: {}, books: {}, students: {} };
+  // ★ 레코드 단위(충돌 없는) 저장 대상: id를 가진 배열들 — 통째 덮어쓰기 대신 바뀐 것만 개별 기록
+const RECORD_KEYS = ['assigns', 'books', 'students'];
 
 /* 경로 안전 검증 — homework_v4로 시작 안 하면 에러 */
 function _validatePath(path) {
@@ -5664,23 +5666,25 @@ function initFirebase() {
   }
 }
 
-/* ★ assigns 마이그레이션: 예전엔 통째 배열로 저장됨 → 레코드 단위(id별) 객체로 1회 변환
+/* ★ id 있는 배열(assigns/books/students) 마이그레이션: 예전엔 통째 배열로 저장됨 → 레코드 단위(id별) 객체로 1회 변환
    (여러 선생님이 동시에 삭제/수정해도 서로 안 덮어쓰도록 하기 위함) */
 async function migrateAssignsIfNeeded() {
   if (!_fbReady) return;
-  try {
-    const path = `${FB_PATH}/assigns`;
-    _validatePath(path);
-    const snap = await _fbDB.ref(path).once('value');
-    const val = snap.val();
-    if (Array.isArray(val)) {
-      const keyed = {};
-      val.forEach(rec => { if (rec && rec.id != null) keyed[rec.id] = rec; });
-      await _fbDB.ref(path).set(Object.keys(keyed).length ? keyed : null);
-      console.log(`[Firebase 마이그레이션] assigns ${Object.keys(keyed).length}건을 레코드 단위 구조로 변환 완료`);
+  for (const key of RECORD_KEYS) {
+    try {
+      const path = `${FB_PATH}/${key}`;
+      _validatePath(path);
+      const snap = await _fbDB.ref(path).once('value');
+      const val = snap.val();
+      if (Array.isArray(val)) {
+        const keyed = {};
+        val.forEach(rec => { if (rec && rec.id != null) keyed[rec.id] = rec; });
+        await _fbDB.ref(path).set(Object.keys(keyed).length ? keyed : null);
+        console.log(`[Firebase 마이그레이션] ${key} ${Object.keys(keyed).length}건을 레코드 단위 구조로 변환 완료`);
+      }
+    } catch (e) {
+      console.error(`[Firebase] ${key} 마이그레이션 오류:`, e);
     }
-  } catch (e) {
-    console.error('[Firebase] assigns 마이그레이션 오류:', e);
   }
 }
 
@@ -5741,9 +5745,6 @@ async function pullInitialFromFirebase() {
     if (Array.isArray(val.assigns))  S.assigns  = val.assigns;
     else if (val.assigns)            S.assigns  = _toArray(val.assigns);
     S.assigns = sanitizeAssignsArray(S.assigns); // ★ null/손상 레코드 제거
-    // ★ 방금 원격에서 읽은 assigns를 "동기화 기준점"으로 저장 (다음 저장 시 이걸 기준으로 diff)
-    _lastSyncedAssignsById = {};
-    S.assigns.forEach(a => { if (a && a.id != null) _lastSyncedAssignsById[a.id] = a; });
     if (typeof val.nid === 'number') S.nid      = val.nid;
     if (Array.isArray(val.groups))   S.groups   = val.groups;
     else if (val.groups)             S.groups   = _toArray(val.groups);
@@ -5755,6 +5756,14 @@ async function pullInitialFromFirebase() {
     else if (val.classDays)                                    S.classDays = _toArray(val.classDays);
     if (Array.isArray(val.vacations)) S.vacations = val.vacations;
     else if (val.vacations)          S.vacations = _toArray(val.vacations);
+
+    // ★ 방금 원격에서 읽은 id-배열들(assigns/books/students)을 "동기화 기준점"으로 저장
+    //   (다음 저장 시 이걸 기준으로 diff — books/students도 assigns와 동일하게 레코드 단위 보호)
+    RECORD_KEYS.forEach(key => {
+      const map = {};
+      (S[key] || []).forEach(rec => { if (rec && rec.id != null) map[rec.id] = rec; });
+      _lastSyncedById[key] = map;
+    });
 
     // nid 재계산
     const maxAssignId  = S.assigns.reduce ((m, a) => Math.max(m, a.id||0), 0);
@@ -5817,7 +5826,7 @@ function saveToFirebase() {
     try {
       const updates = {};
       PERSIST_KEYS.forEach(k => {
-        if (k === 'assigns') return; // ★ assigns는 아래에서 레코드 단위로 별도 처리
+        if (RECORD_KEYS.includes(k)) return; // ★ id 있는 배열은 아래에서 레코드 단위로 별도 처리
         const path = `${FB_PATH}/${k}`;
         _validatePath(path);
         const val = S[k];
@@ -5829,27 +5838,34 @@ function saveToFirebase() {
         }
       });
 
-      // ★ assigns: 통째로 덮어쓰지 않고, 실제로 바뀐/추가/삭제된 레코드만 개별 경로로 기록
-      //   → 다른 선생님이 동시에 다른 배정을 저장해도 서로 덮어쓰지 않음
-      const currentById = {};
-      S.assigns.forEach(a => { if (a && a.id != null) currentById[a.id] = a; });
-      Object.keys(currentById).forEach(id => {
-        const cur  = currentById[id];
-        const prev = _lastSyncedAssignsById[id];
-        if (!prev || JSON.stringify(prev) !== JSON.stringify(cur)) {
-          _validatePath(`${FB_PATH}/assigns/${id}`);
-          updates[`${FB_PATH}/assigns/${id}`] = cur;
-        }
-      });
-      Object.keys(_lastSyncedAssignsById).forEach(id => {
-        if (!(id in currentById)) {
-          _validatePath(`${FB_PATH}/assigns/${id}`);
-          updates[`${FB_PATH}/assigns/${id}`] = null; // 삭제된 배정만 콕 집어서 null
-        }
+      // ★ id 있는 배열(assigns/books/students)은 통째로 덮어쓰지 않고,
+      //   실제로 바뀐/추가/삭제된 레코드만 개별 경로로 기록
+      //   → 다른 선생님이 동시에 다른 걸(다른 배정, 다른 학생, 다른 교재) 저장해도 서로 안 덮어씀
+      const newSyncedById = {};
+      RECORD_KEYS.forEach(key => {
+        const currentById = {};
+        (S[key] || []).forEach(rec => { if (rec && rec.id != null) currentById[rec.id] = rec; });
+        const lastSynced = _lastSyncedById[key] || {};
+
+        Object.keys(currentById).forEach(id => {
+          const cur  = currentById[id];
+          const prev = lastSynced[id];
+          if (!prev || JSON.stringify(prev) !== JSON.stringify(cur)) {
+            _validatePath(`${FB_PATH}/${key}/${id}`);
+            updates[`${FB_PATH}/${key}/${id}`] = cur;
+          }
+        });
+        Object.keys(lastSynced).forEach(id => {
+          if (!(id in currentById)) {
+            _validatePath(`${FB_PATH}/${key}/${id}`);
+            updates[`${FB_PATH}/${key}/${id}`] = null; // 삭제된 레코드만 콕 집어서 null
+          }
+        });
+        newSyncedById[key] = currentById;
       });
 
       await _fbDB.ref('/').update(updates);
-      _lastSyncedAssignsById = currentById; // 성공 시 동기화 기준점 갱신
+      _lastSyncedById = newSyncedById; // 성공 시 동기화 기준점 갱신
       _setFbStatus('connected', '연결됨 (실시간 공유)');
     } catch (e) {
       console.error('[Firebase] 저장 오류:', e);
@@ -5883,11 +5899,12 @@ function subscribeToFirebase() {
       // 실제 변경된 경우만 적용
       if (JSON.stringify(S[k]) !== JSON.stringify(newVal)) {
         S[k] = newVal;
-        // ★ assigns가 원격에서 갱신됐으면 레코드 단위 저장 기준점도 최신으로 맞춤
+        // ★ id 있는 배열(assigns/books/students)이 원격에서 갱신됐으면 레코드 단위 저장 기준점도 최신으로 맞춤
         //   (다른 선생님의 변경분을 다시 덮어쓰지 않기 위해)
-        if (k === 'assigns') {
-          _lastSyncedAssignsById = {};
-          S.assigns.forEach(a => { if (a && a.id != null) _lastSyncedAssignsById[a.id] = a; });
+        if (RECORD_KEYS.includes(k)) {
+          const map = {};
+          (S[k] || []).forEach(rec => { if (rec && rec.id != null) map[rec.id] = rec; });
+          _lastSyncedById[k] = map;
         }
         // localStorage도 갱신
         try {
