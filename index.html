@@ -458,6 +458,22 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
           </div>
           <button class="btn bg bsm" onclick="clearVocaForm()" style="white-space:nowrap;flex-shrink:0">초기화</button>
         </div>
+
+        <div style="margin-bottom:.5rem">
+          <label>반</label>
+          <select id="v-group" onchange="selClass(this.value)"><option value="">반 선택...</option></select>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:.35rem;margin-bottom:.35rem;font-size:.72rem;color:var(--mu)">
+          <span id="v-student-count">—</span>
+          <span style="margin-left:auto;display:flex;gap:.25rem">
+            <button class="btn bg bsm" onclick="selectVisible()" style="font-size:.68rem;padding:.18rem .45rem">전체선택</button>
+            <button class="btn bg bsm" onclick="selNone()" style="font-size:.68rem;padding:.18rem .45rem">해제</button>
+          </span>
+        </div>
+        <div class="distrib-st-list" id="v-student-list" style="margin-bottom:.55rem">
+          <div class="distrib-empty">반을 선택하세요</div>
+        </div>
         <div id="v-last-panel" style="display:none"></div>
 
         <div class="g2" style="margin-bottom:.55rem">
@@ -1132,7 +1148,16 @@ function setupDistribute() {
     dg.innerHTML = '<option value="">반 선택...</option>' +
       sortedGroups.map(g => `<option value="${escHtml(g)}" ${g===prev?'selected':''}>${escHtml(g)}</option>`).join('');
   }
+  // 보카형 반 select (같은 반 목록, chipFilter와 동기화)
+  const vg = $('v-group');
+  if (vg) {
+    const sortedGroups = [...S.groups].sort((a,b) => a.localeCompare(b,'ko'));
+    vg.innerHTML = '<option value="">반 선택...</option>' +
+      sortedGroups.map(g => `<option value="${escHtml(g)}">${escHtml(g)}</option>`).join('');
+    vg.value = S.chipFilter || '';
+  }
   renderDistribStudents();
+  renderVocaStudentList();
 }
 
 /* 교재+반 선택 시 학생 목록 렌더링 (배부된 학생은 표시 + 기본 체크) */
@@ -1418,6 +1443,44 @@ function renderStudentChips() {
   $('student-chips').innerHTML = visible.map(s =>
     `<span class="chip ${S.selStudents.includes(s.id)?'sel':''}" onclick="toggleSt(${s.id})">${escHtml(s.name)}</span>`
   ).join('');
+  renderVocaStudentList(); // ★ 보카형 카드의 반+체크박스 목록도 동기화
+}
+
+/* 보카형 카드 전용: 반 선택 + 체크박스로 학생 선택 (교재형 배부와 동일한 패턴) */
+function renderVocaStudentList() {
+  const listEl = $('v-student-list');
+  const cntEl  = $('v-student-count');
+  const vg     = $('v-group');
+  if (!listEl) return; // 이 페이지가 아니면 무시
+
+  if (vg) vg.value = S.chipFilter || '';
+
+  if (!S.chipFilter) {
+    listEl.innerHTML = '<div class="distrib-empty">반을 선택하세요</div>';
+    if (cntEl) cntEl.textContent = '—';
+    return;
+  }
+
+  const students = S.students
+    .filter(s => s.group === S.chipFilter)
+    .sort((a,b) => a.name.localeCompare(b.name,'ko'));
+
+  if (!students.length) {
+    listEl.innerHTML = '<div class="distrib-empty">이 반에 등록된 학생이 없습니다</div>';
+    if (cntEl) cntEl.textContent = '0명';
+    return;
+  }
+
+  const selCount = students.filter(s => S.selStudents.includes(s.id)).length;
+  if (cntEl) cntEl.textContent = `${S.chipFilter} · ${students.length}명 · 선택됨 ${selCount}명`;
+
+  listEl.innerHTML = students.map(s => {
+    const checked = S.selStudents.includes(s.id);
+    return `<label class="distrib-st-row ${checked?'sel':''}" data-sid="${s.id}">
+      <input type="checkbox" class="v-chk" data-sid="${s.id}" ${checked?'checked':''} onchange="toggleSt(${s.id})">
+      <span class="st-name">${escHtml(s.name)}</span>
+    </label>`;
+  }).join('');
 }
 
 function toggleSt(id) {
@@ -4907,8 +4970,8 @@ function _taBuildStudentCards(student, dateStr) {
     }
 
     // 교재형
-    const already = S.assigns.find(x => x.type==='book' && x.studentId===student.id && x.bookId===book.id && x.date===dateStr);
-    if (already) { cards.push({ book, kind:'book-done', assign: already }); return; }
+    const alreadyAll = S.assigns.filter(x => x.type==='book' && x.studentId===student.id && x.bookId===book.id && x.date===dateStr);
+    if (alreadyAll.length) { cards.push({ book, kind:'book-done', assigns: alreadyAll }); return; }
 
     const mine = S.assigns.filter(x => x.type==='book' && x.studentId===student.id && x.bookId===book.id);
     if (!mine.length) { cards.push({ book, kind:'book-start' }); return; }
@@ -4934,10 +4997,16 @@ function _taCardHtml(c, student, dateStr) {
   }
 
   if (c.kind === 'book-done') {
-    const lbl = (c.assign.probLabels||[])[0] || '';
+    const items = c.assigns.map(a => {
+      const lbl = (a.probLabels||[])[0] || '';
+      const hasRes = a.result !== '' && a.result !== null && a.result !== undefined;
+      const resTxt = hasRes ? ` · ${escHtml(String(a.result))}${b.score==='점수'?'점':''}` : '';
+      return `<div>${escHtml(lbl)}${resTxt}</div>`;
+    }).join('');
+    const countTxt = c.assigns.length > 1 ? ` (${c.assigns.length}건)` : '';
     return `<div class="ta-card ta-ok">
-      <div class="ta-card-top"><span class="ta-book-name">📘 ${escHtml(b.name)}</span><span class="ta-badge ta-badge-ok">오늘 이미 배정됨</span></div>
-      <div class="ta-card-sub">${escHtml(lbl)}</div>
+      <div class="ta-card-top"><span class="ta-book-name">📘 ${escHtml(b.name)}</span><span class="ta-badge ta-badge-ok">오늘 이미 배정됨${countTxt}</span></div>
+      <div class="ta-card-sub">${items}</div>
     </div>`;
   }
 
