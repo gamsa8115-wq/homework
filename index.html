@@ -252,6 +252,9 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 /* 진행률 배지 */
 .hc-progress{display:block;font-size:.62rem;font-weight:400;color:var(--mu);margin-top:.1rem;}
 .hc-th-st.completed .hc-progress{color:#059669;}
+.hc-complete-btn{display:block;margin:.25rem auto 0;font-size:.6rem;font-weight:700;background:#059669;color:#fff;border:none;border-radius:10px;padding:.15rem .5rem;cursor:pointer;}
+.hc-complete-btn:hover{background:#047857;}
+.hist-alldone-banner{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;border-radius:8px;padding:.55rem .9rem;margin-bottom:.6rem;font-size:.8rem;}
 /* 토글 버튼 활성 */
 #fl-toggle-retired.active{background:#7c3aed;color:#fff;border-color:#7c3aed;}
 /* 학생 이름 헤더 — 세로 스크롤 시 고정, 폭 최소화 (v37: 좌우 padding 20%↑) */
@@ -776,13 +779,12 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
       </select>
     </div>
     <div style="display:flex;gap:.3rem;margin-left:auto;align-items:center">
-      <!-- 보기 범위: 진행 중만 / 완료 포함 / 종료 기록도 포함 (하나로 통합) -->
+      <!-- 보기 범위: 진행 중 / 종료 포함 (완료 여부는 진행 중 안에서 표시만, 필터링은 안 함) -->
       <select id="hist-view-mode" onchange="setHistViewMode(this.value)"
         title="어느 범위까지 보여줄지 선택"
         style="font-size:.72rem;padding:.28rem .5rem;margin-right:.35rem;width:auto">
-        <option value="active">🟢 진행 중만</option>
-        <option value="all">✅ 완료 포함</option>
-        <option value="retired">🗂 종료 기록도 포함</option>
+        <option value="active">🟢 진행 중</option>
+        <option value="retired">🗂 종료 포함</option>
       </select>
       <button class="btn bg bsm hist-mode-btn" id="hmode-view"   onclick="setHistMode('view')"   style="font-size:.72rem">👁 보기</button>
       <button class="btn bg bsm hist-mode-btn" id="hmode-assign" onclick="setHistMode('assign')" style="font-size:.72rem">📌 배정</button>
@@ -2368,6 +2370,7 @@ function completeGroupAssign(studentId, bookId) {
   save();
   updateSidebar();
   renderList();
+  if ($('p-history')?.classList.contains('active')) renderHistory();
   toast(`✅ ${st.name} · ${book.name} 완료 처리`);
 }
 
@@ -3524,14 +3527,11 @@ function showHistMsg(container, msg) {
 let _histMode             = 'view';
 let _histCellMap          = {};
 let _histAssignDate       = '';
-let _histOnlyIncomplete   = true;   // ★ 기본값: 진행 중(미완료)인 학생만 표시
-let _histShowRetired      = false;  // 종료(완료 처리)된 학생도 함께 표시할지
+let _histShowRetired      = false;  // ★ 종료(완료 처리)된 학생도 함께 표시할지 (완료 여부와 무관 — 진행 중인 학생은 진도와 상관없이 항상 다 보임)
 
-/* ★ 보기 범위 통합 선택 — 'active'(진행중만) / 'all'(완료 포함) / 'retired'(종료 기록도 포함) */
+/* ★ 보기 범위 선택 — 'active'(진행중, 종료된 학생 숨김) / 'retired'(종료된 학생도 포함) */
 function setHistViewMode(mode) {
-  if (mode === 'active') { _histOnlyIncomplete = true;  _histShowRetired = false; }
-  else if (mode === 'all') { _histOnlyIncomplete = false; _histShowRetired = false; }
-  else if (mode === 'retired') { _histOnlyIncomplete = false; _histShowRetired = true; }
+  _histShowRetired = (mode === 'retired');
   syncHistViewSelect();
   renderHistory();
 }
@@ -3540,9 +3540,7 @@ function setHistViewMode(mode) {
 function syncHistViewSelect() {
   const sel = $('hist-view-mode');
   if (!sel) return;
-  if (_histShowRetired) sel.value = 'retired';
-  else if (_histOnlyIncomplete) sel.value = 'active';
-  else sel.value = 'all';
+  sel.value = _histShowRetired ? 'retired' : 'active';
 }
 
 function setupHistory() {
@@ -3583,7 +3581,7 @@ function setupHistory() {
   if (dateInput) { dateInput.value = todayStr; updateHistAssignDateDisplay(); }
   // 기본 모드: 보기
   setHistMode('view');
-  // 토글 버튼 상태 동기화 (_histOnlyIncomplete 유지)
+  // 보기 범위 드롭다운 상태 동기화
   syncHistViewSelect();
 }
 
@@ -3760,22 +3758,19 @@ function renderHistory() {
     progressMap[s.id] = Object.keys(pivot[s.id]).length;
   });
 
-  // ── 미완료만 필터 (P7: 전원 완료 시 별도 메시지) ──
-  let displayStudents = students;
-  if (_histOnlyIncomplete && !isVoca) {
-    displayStudents = students.filter(s => progressMap[s.id] < totalLabels);
-    if (!displayStudents.length) {
-      // 반 학생 전원 완료 → 전체 보기로 자동 전환하지 않고 안내 + 일괄 종료 버튼
-      closeHistInline();
+  // ★ 진도와 상관없이 항상 전부 표시 (완료됐다고 화면에서 사라지지 않음) — 종료 처리 여부만 위에서 이미 걸러짐
+  const displayStudents = students;
+
+  // ★ 반 전체가 완료했으면 매트릭스는 그대로 두고, 위에 안내 배너만 살짝 띄움 (화면 전체를 덮지 않음)
+  let allDoneBanner = '';
+  if (!isVoca) {
+    const activeIncomplete = activeStudents.filter(s => progressMap[s.id] < totalLabels);
+    if (activeStudents.length && !activeIncomplete.length) {
       const activeCount = activeStudents.filter(s => !nameQ || s.name.toLowerCase().includes(nameQ)).length;
-      const d = document.createElement('div');
-      d.style.cssText = 'color:var(--mu);font-size:.82rem;padding:2rem;text-align:center;background:var(--surface);border:1px solid var(--bd);border-radius:var(--r)';
-      d.innerHTML = `🎉 ${escHtml(group)} 반의 모든 학생이 ${escHtml(book.name)}을 완료했습니다!` +
-        (activeCount > 0
-          ? `<br><button class="btn bp bsm" style="margin-top:.7rem" onclick="completeGroupAll(${bid}, '${group.replace(/'/g,"\\'")}')">✅ ${activeCount}명 전체 종료 처리</button>`
-          : `<br><span style="font-size:.72rem">이미 전원 종료 처리되었습니다</span>`);
-      container.appendChild(d);
-      return;
+      allDoneBanner = `<div class="hist-alldone-banner">
+        🎉 ${escHtml(group)} 반의 모든 학생이 ${escHtml(book.name)}을 완료했습니다!
+        <button class="btn bp bsm" onclick="completeGroupAll(${bid}, '${group.replace(/'/g,"\\'")}')">✅ ${activeCount}명 전체 종료 처리</button>
+      </div>`;
     }
   }
 
@@ -3814,9 +3809,14 @@ function renderHistory() {
     const isComplete = !isVoca && done >= totalLabels;
     const pctText   = `${done}/${totalLabels}`;
     const isRetired = retiredIdSet.has(s.id);
+    // ★ 진도를 다 채웠고, 아직 종료 처리 안 된 학생은 헤더에서 바로 종료 처리 가능
+    const completeBtn = (isComplete && !isRetired)
+      ? `<button class="hc-complete-btn" onclick="event.stopPropagation();completeGroupAssign(${s.id},${bid})" title="이 학생 종료 처리">✅ 종료</button>`
+      : '';
     return `<th class="hc-th-st${isComplete ? ' completed' : ''}${isRetired ? ' retired' : ''}">
       ${escHtml(s.name)}${isRetired ? ' <span class="hc-retired-tag">종료</span>' : ''}
       ${isVoca ? '' : `<span class="hc-progress">${pctText}${isComplete ? ' ✓' : ''}</span>`}
+      ${completeBtn}
     </th>`;
   }).join('');
 
@@ -3829,8 +3829,8 @@ function renderHistory() {
     wrap.id = 'hist-wrap-el';
     container.appendChild(wrap);
   }
-  // table width:100% + spacer 열이 남은 공간을 흡수
-  wrap.innerHTML = `<table class="hist-table" style="width:100%">
+  // 전원 완료 배너(있으면) + table width:100% + spacer 열이 남은 공간을 흡수
+  wrap.innerHTML = `${allDoneBanner}<table class="hist-table" style="width:100%">
       <thead>
         <tr>
           <th class="hc-th-lbl">${escHtml(book.name)}</th>
