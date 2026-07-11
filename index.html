@@ -885,46 +885,12 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 
 <!-- ════ 숙제 현황 ════ -->
 <div class="page" id="p-today">
-  <div style="display:flex;align-items:baseline;gap:.65rem;margin-bottom:.6rem">
+  <div style="display:flex;align-items:baseline;gap:.65rem;margin-bottom:.9rem">
     <h1 style="font-size:1.25rem;font-weight:700;white-space:nowrap">🎯 숙제 현황</h1>
-    <span style="font-size:.78rem;color:var(--mu)">학생이 쓰는 모든 교재를 한 화면에서 확인하고 배정</span>
+    <span style="font-size:.78rem;color:var(--mu)">기준 날짜까지 배정됐지만 아직 완료되지 않은 숙제를 학생별로 확인</span>
   </div>
 
-  <div style="display:flex;gap:.35rem;margin-bottom:.8rem">
-    <button id="tp-mode-assign" class="btn bg bsm hist-mode-btn active" onclick="setTaPageMode('assign')" style="font-size:.76rem">🎯 오늘 배정하기</button>
-    <button id="tp-mode-incomplete" class="btn bg bsm hist-mode-btn" onclick="setTaPageMode('incomplete')" style="font-size:.76rem">📋 미완료 확인</button>
-  </div>
-
-  <!-- ── 오늘 배정하기 (숙제 현황 탭 내 모드) ── -->
-  <div id="ta-assign-section">
-    <div class="hist-filter">
-      <div style="display:flex;align-items:center;gap:.4rem">
-        <label style="margin:0;white-space:nowrap">날짜</label>
-        <input type="date" id="ta-date" onchange="renderTodayAssign()">
-      </div>
-      <div style="display:flex;align-items:center;gap:.4rem">
-        <label style="margin:0;white-space:nowrap">반</label>
-        <select id="ta-group" onchange="onTaGroupChange()" style="min-width:110px">
-          <option value="">전체</option>
-        </select>
-      </div>
-      <div id="ta-student-wrap" style="display:flex;align-items:center;gap:.4rem">
-        <label style="margin:0;white-space:nowrap">학생</label>
-        <select id="ta-student" onchange="renderTodayAssign()" style="min-width:140px">
-          <option value="">학생 선택...</option>
-        </select>
-      </div>
-      <div style="display:flex;gap:.3rem;margin-left:auto;align-items:center">
-        <button class="btn bg bsm hist-mode-btn" id="ta-view-single" onclick="setTaView('single')" style="font-size:.72rem">👤 학생별</button>
-        <button class="btn bg bsm hist-mode-btn" id="ta-view-group"  onclick="setTaView('group')"  style="font-size:.72rem">📋 반 전체</button>
-      </div>
-    </div>
-
-    <div id="ta-body"></div>
-  </div>
-
-  <!-- ── 🆕 미완료 확인: 그 날짜까지 배정됐지만 아직 결과가 없는 것만 학생별로 모아보기 ── -->
-  <div id="ta-incomplete-section" style="display:none">
+  <div id="ta-incomplete-section">
     <div class="hist-filter">
       <div style="display:flex;align-items:center;gap:.4rem">
         <label style="margin:0;white-space:nowrap">기준 날짜</label>
@@ -940,6 +906,20 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         <label style="margin:0;white-space:nowrap">학생</label>
         <select id="ic-student" onchange="renderIncomplete()" style="min-width:140px">
           <option value="">학생 선택...</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:.4rem">
+        <label style="margin:0;white-space:nowrap">유형</label>
+        <select id="ic-type" onchange="onIcTypeChange()" style="min-width:100px">
+          <option value="">전체 유형</option>
+          <option value="book">교재형</option>
+          <option value="voca">보카형</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:.4rem">
+        <label style="margin:0;white-space:nowrap">교재</label>
+        <select id="ic-book" onchange="renderIncomplete()" style="min-width:160px">
+          <option value="">전체 교재</option>
         </select>
       </div>
       <div style="display:flex;gap:.3rem;margin-left:auto;align-items:center">
@@ -1181,10 +1161,7 @@ function goPage(id) {
   if (id === 'p-students'){ renderAllGroupUIs(); renderStudents(); }
   if (id === 'p-books')   { renderBooks(); }
   if (id === 'p-history') { setupHistory(); renderHistory(); }
-  if (id === 'p-today')   {
-    setupTodayAssign(); renderTodayAssign();
-    if (_tpPageMode === 'incomplete') { setupIncomplete(); renderIncomplete(); }
-  }
+  if (id === 'p-today')   { setupIncomplete(); renderIncomplete(); }
   if (id === 'p-export')  { setupExport(); }
 }
 
@@ -5596,20 +5573,6 @@ function taAssignPick(sid, bid, dateStr) {
   toast(`✅ ${student.name} · ${label} 배정 (${dateStr})`);
 }
 
-/* ══════════ 🆕 오늘 배정 탭 — 모드 전환 (오늘 배정하기 ↔ 미완료 확인) ══════════ */
-let _tpPageMode = 'assign'; // 'assign' | 'incomplete'
-
-function setTaPageMode(mode) {
-  _tpPageMode = mode;
-  $('tp-mode-assign')?.classList.toggle('active', mode === 'assign');
-  $('tp-mode-incomplete')?.classList.toggle('active', mode === 'incomplete');
-  const assignSec = $('ta-assign-section');
-  const icSec = $('ta-incomplete-section');
-  if (assignSec) assignSec.style.display = mode === 'assign' ? '' : 'none';
-  if (icSec) icSec.style.display = mode === 'incomplete' ? '' : 'none';
-  if (mode === 'incomplete') { setupIncomplete(); renderIncomplete(); }
-}
-
 /* ══════════ 🆕 미완료 확인: 기준 날짜까지 배정됐지만 결과가 없는 것만 학생별로 모아보기 ══════════ */
 let _icView = 'single'; // 'single' | 'group'
 
@@ -5622,8 +5585,28 @@ function setupIncomplete() {
     const sortedGroups = [...S.groups].sort((a,b) => a.localeCompare(b,'ko'));
     gsel.innerHTML = '<option value="">전체</option>' + sortedGroups.map(g=>`<option value="${escHtml(g)}">${escHtml(g)}</option>`).join('');
   }
+  // ★ 교재 목록 (유형 필터에 따라 다시 채워짐)
+  populateIcBookSelect();
   populateIcStudentSelect();
   setIcView(_icView);
+}
+
+/* 유형 필터에 맞는 교재만 골라서 교재 드롭다운 채우기 */
+function populateIcBookSelect() {
+  const bsel = $('ic-book');
+  if (!bsel) return;
+  const typeF = $('ic-type')?.value || '';
+  const prev = bsel.value;
+  const list = S.books
+    .filter(b => !typeF || b.mode === typeF)
+    .sort((a,b) => a.name.localeCompare(b.name,'ko'));
+  bsel.innerHTML = '<option value="">전체 교재</option>' + list.map(b=>`<option value="${b.id}">${escHtml(b.name)}</option>`).join('');
+  if (list.some(b => String(b.id) === prev)) bsel.value = prev;
+}
+
+function onIcTypeChange() {
+  populateIcBookSelect();
+  renderIncomplete();
 }
 
 function onIcGroupChange() {
@@ -5676,12 +5659,15 @@ function _incompleteReason(book, result) {
   return null; // 완료로 인정됨
 }
 
-/* 학생 1명의 "기준일까지 배정됐지만 미완료(미수행·미통과·점수미달)인 것" 을 교재별로 묶어서 반환 */
-function _buildIncompleteForStudent(student, untilDate) {
+/* 학생 1명의 "기준일까지 배정됐지만 미완료(미수행·미통과·점수미달)인 것" 을 교재별로 묶어서 반환
+   typeF: '' | 'book' | 'voca',  bookF: '' | 교재id(문자열) */
+function _buildIncompleteForStudent(student, untilDate, typeF, bookF) {
   const items = [];
   S.assigns.forEach(a => {
     if (!a || a.studentId !== student.id || !a.date || a.date > untilDate) return;
+    if (bookF && String(a.bookId) !== bookF) return;
     const book = getBook(a.bookId);
+    if (typeF && (book?.mode || a.type) !== typeF) return;
     const reason = _incompleteReason(book, a.result);
     if (reason) items.push({ ...a, _reason: reason });
   });
@@ -5724,12 +5710,14 @@ function renderIncomplete() {
   const body = $('ic-body');
   if (!body) return;
   const untilDate = $('ic-date')?.value || getTodayStr();
+  const typeF = $('ic-type')?.value || '';
+  const bookF = $('ic-book')?.value || '';
 
   if (_icView === 'single') {
     const sid = Number($('ic-student')?.value || 0);
     const student = sid ? S.students.find(s => s.id === sid) : null;
     if (!student) { body.innerHTML = `<div class="distrib-empty">학생을 선택하세요</div>`; return; }
-    const groups = _buildIncompleteForStudent(student, untilDate);
+    const groups = _buildIncompleteForStudent(student, untilDate, typeF, bookF);
     if (!groups.length) {
       body.innerHTML = `<div class="distrib-empty">🎉 ${escHtml(student.name)} 학생은 ${escHtml(untilDate)}까지 미완료 숙제가 없습니다</div>`;
       return;
@@ -5747,7 +5735,7 @@ function renderIncomplete() {
   if (!list.length) { body.innerHTML = `<div class="distrib-empty">학생이 없습니다</div>`; return; }
 
   const blocks = list.map(st => {
-    const groups = _buildIncompleteForStudent(st, untilDate);
+    const groups = _buildIncompleteForStudent(st, untilDate, typeF, bookF);
     if (!groups.length) return null;
     const totalCount = groups.reduce((sum,g) => sum + g.items.length, 0);
     return `<div class="st-block">
