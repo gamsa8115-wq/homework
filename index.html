@@ -4553,17 +4553,24 @@ function _applyScoreImport() {
   //     - 기준 점수 이상만 대상 (_processScoreImport에서 이미 필터됨)
   //     - 오늘 날짜로 배정
   if (toAutoAssign.length) {
-    const bid = Number($('hist-book')?.value || 0);
-    if (bid > 0) {
+    const bid  = Number($('hist-book')?.value || 0);
+    const book = getBook(bid);
+    if (bid > 0 && book) {
       const now = new Date();
       const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
       toAutoAssign.forEach(item => {
+        const rowIdx = (book.rows||[]).indexOf(item.label);
         S.assigns.push({
           id: S.nid++,
+          type: 'book', // ★ 누락돼 있던 필드 — 이게 없으면 배정 목록·오늘 배정 등에서 교재형 배정으로 인식되지 않음
           bookId: bid,
+          bookName: book.name, // ★ 누락돼 있던 필드 — books 목록 자동 보정 등에서 사용
           studentId: item.studentId,
+          studentName: item.name, // ★ 누락돼 있던 필드
           date: todayStr,
+          unitFrom: '', unitTo: '',
+          problems: rowIdx >= 0 ? [rowIdx] : [],
           probLabels: [item.label],
           result: item.score
         });
@@ -5704,6 +5711,30 @@ function sanitizeAssignsArray(arr) {
   return (Array.isArray(arr) ? arr : []).filter(a => a && typeof a === 'object' && a.id != null);
 }
 
+/* ★ "점수 가져오기"의 예전 버그로 type/bookName/studentName/problems가 빠진 배정 기록을 bookId 기준으로 복구 */
+function repairMalformedAssigns() {
+  let fixed = 0;
+  S.assigns.forEach(a => {
+    if (!a) return;
+    const missingCore = !a.bookName || !a.type || !a.studentName;
+    if (!missingCore) return;
+    const book = S.books.find(b => b.id === a.bookId);
+    const st   = S.students.find(s => s.id === a.studentId);
+    let changed = false;
+    if (book) {
+      if (!a.bookName) { a.bookName = book.name; changed = true; }
+      if (!a.type)     { a.type = book.mode;     changed = true; }
+      if (book.mode === 'book' && (!a.problems || !a.problems.length) && (a.probLabels||[]).length) {
+        const rowIdx = (book.rows||[]).indexOf(a.probLabels[0]);
+        if (rowIdx >= 0) { a.problems = [rowIdx]; changed = true; }
+      }
+    }
+    if (st && !a.studentName) { a.studentName = st.name; changed = true; }
+    if (changed) fixed++;
+  });
+  return fixed;
+}
+
 /* ★ "언제 이 교재를 배정했는지" 날짜가 없는 기존 데이터에, 가장 이른 배정 기록으로 추정치를 채워넣음
    (배정 기록조차 없으면 그냥 비워둠 → 화면엔 "기록 없음"으로 표시) */
 function backfillBookDates() {
@@ -5777,6 +5808,10 @@ async function pullInitialFromFirebase() {
       if (!Array.isArray(s.books)) s.books = [];
     });
 
+    // ★ 손상된 배정 기록(점수 가져오기 예전 버그로 type/bookName 등 누락) 먼저 복구
+    //   — 아래 books 목록 보정이 bookName에 의존하므로 반드시 먼저 실행
+    const repairedAssigns = repairMalformedAssigns();
+
     // ★ 복구: 배정 기록은 있는데 학생의 books 목록에 교재명이 빠진 경우 자동 보정
     //   (보카형은 예전엔 배부 단계 없이 배정만 가능해서, 배정이력 탭에 안 보이는 문제가 있었음)
     //   단, "완료 처리"로 일부러 뺀 교재(completedBooks에 기록됨)는 다시 채워넣지 않음
@@ -5795,10 +5830,11 @@ async function pullInitialFromFirebase() {
 
     const filledDates = backfillBookDates();
 
-    if (migrated > 0 || fixedBooks > 0 || filledDates > 0) {
-      if (migrated > 0)    console.log(`[Firebase 마이그레이션] ${migrated}명에게 접근 키 부여`);
-      if (fixedBooks > 0)  console.log(`[Firebase 마이그레이션] 배정 기록 기준으로 books 목록 ${fixedBooks}건 보정`);
-      if (filledDates > 0) console.log(`[Firebase 마이그레이션] 배정일 추정치 ${filledDates}건 채움`);
+    if (migrated > 0 || fixedBooks > 0 || filledDates > 0 || repairedAssigns > 0) {
+      if (migrated > 0)       console.log(`[Firebase 마이그레이션] ${migrated}명에게 접근 키 부여`);
+      if (repairedAssigns > 0) console.log(`[Firebase 마이그레이션] 손상된 배정 기록 ${repairedAssigns}건 복구`);
+      if (fixedBooks > 0)     console.log(`[Firebase 마이그레이션] 배정 기록 기준으로 books 목록 ${fixedBooks}건 보정`);
+      if (filledDates > 0)    console.log(`[Firebase 마이그레이션] 배정일 추정치 ${filledDates}건 채움`);
       saveToFirebase(); // 마이그레이션 결과 다시 업로드
     }
     // localStorage에도 반영
@@ -6022,6 +6058,12 @@ function load() {
     });
     if (migrated > 0) {
       console.log(`[마이그레이션] ${migrated}명의 학생에게 접근 키 자동 부여`);
+    }
+
+    // ★ 손상된 배정 기록(점수 가져오기 예전 버그로 type/bookName 등 누락) 먼저 복구
+    const repairedAssigns = repairMalformedAssigns();
+    if (repairedAssigns > 0) {
+      console.log(`[마이그레이션] 손상된 배정 기록 ${repairedAssigns}건 복구`);
     }
 
     // ★ 복구: 실제 배정 기록은 있는데 학생의 books 목록에 교재명이 빠져있는 경우 자동 보정
