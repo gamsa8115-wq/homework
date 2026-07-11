@@ -5667,16 +5667,18 @@ async function pullInitialFromFirebase() {
 
     // ★ 복구: 배정 기록은 있는데 학생의 books 목록에 교재명이 빠진 경우 자동 보정
     //   (보카형은 예전엔 배부 단계 없이 배정만 가능해서, 배정이력 탭에 안 보이는 문제가 있었음)
+    //   단, "완료 처리"로 일부러 뺀 교재(completedBooks에 기록됨)는 다시 채워넣지 않음
     let fixedBooks = 0;
     S.assigns.forEach(a => {
       if (!a || !a.bookName) return; // ★ bookName이 비어있는 손상된 기록은 건너뜀 (undefined 저장 방지)
       const st = S.students.find(s => s.id === a.studentId);
       if (!st) return;
       if (!Array.isArray(st.books)) st.books = [];
-      if (!st.books.includes(a.bookName)) {
-        st.books.push(a.bookName);
-        fixedBooks++;
-      }
+      if (st.books.includes(a.bookName)) return;
+      const wasCompleted = Array.isArray(st.completedBooks) && st.completedBooks.some(c => c.bookName === a.bookName);
+      if (wasCompleted) return; // ★ 일부러 완료 처리한 교재는 복구하지 않음
+      st.books.push(a.bookName);
+      fixedBooks++;
     });
 
     if (migrated > 0 || fixedBooks > 0) {
@@ -5892,16 +5894,18 @@ function load() {
 
     // ★ 복구: 실제 배정 기록은 있는데 학생의 books 목록에 교재명이 빠져있는 경우 자동 보정
     //   (보카형은 예전엔 배부 단계 없이 배정만 가능해서, 배정이력 탭에 안 보이는 문제가 있었음)
+    //   단, "완료 처리"로 일부러 뺀 교재(completedBooks에 기록됨)는 다시 채워넣지 않음
     let fixedBooks = 0;
     S.assigns.forEach(a => {
       if (!a || !a.bookName) return; // ★ bookName이 비어있는 손상된 기록은 건너뜀 (undefined 저장 방지)
       const st = S.students.find(s => s.id === a.studentId);
       if (!st) return;
       if (!Array.isArray(st.books)) st.books = [];
-      if (!st.books.includes(a.bookName)) {
-        st.books.push(a.bookName);
-        fixedBooks++;
-      }
+      if (st.books.includes(a.bookName)) return;
+      const wasCompleted = Array.isArray(st.completedBooks) && st.completedBooks.some(c => c.bookName === a.bookName);
+      if (wasCompleted) return; // ★ 일부러 완료 처리한 교재는 복구하지 않음
+      st.books.push(a.bookName);
+      fixedBooks++;
     });
     if (fixedBooks > 0) {
       console.log(`[마이그레이션] 배정 기록 기준으로 books 목록 ${fixedBooks}건 보정`);
