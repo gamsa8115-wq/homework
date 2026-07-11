@@ -1996,6 +1996,9 @@ function addVoca() {
   S.selStudents.forEach(sid => {
     const st = S.students.find(s=>s.id===sid);
     if (!st) return;
+    // ★ 배정이력 탭에 표시되려면 학생의 books 목록에 교재명이 있어야 함 (교재형 배부와 동일하게 자동 추가)
+    if (!Array.isArray(st.books)) st.books = [];
+    if (!st.books.includes(book.name)) st.books.push(book.name);
     dates.forEach((d, i) => {
       const unit = fmtUnit(i);
       const isDup = S.assigns.some(a =>
@@ -5408,8 +5411,23 @@ async function pullInitialFromFirebase() {
       if (!s.accessKey) { s.accessKey = genAccessKey(); migrated++; }
       if (!Array.isArray(s.books)) s.books = [];
     });
-    if (migrated > 0) {
-      console.log(`[Firebase 마이그레이션] ${migrated}명에게 접근 키 부여`);
+
+    // ★ 복구: 배정 기록은 있는데 학생의 books 목록에 교재명이 빠진 경우 자동 보정
+    //   (보카형은 예전엔 배부 단계 없이 배정만 가능해서, 배정이력 탭에 안 보이는 문제가 있었음)
+    let fixedBooks = 0;
+    S.assigns.forEach(a => {
+      const st = S.students.find(s => s.id === a.studentId);
+      if (!st) return;
+      if (!Array.isArray(st.books)) st.books = [];
+      if (!st.books.includes(a.bookName)) {
+        st.books.push(a.bookName);
+        fixedBooks++;
+      }
+    });
+
+    if (migrated > 0 || fixedBooks > 0) {
+      if (migrated > 0)   console.log(`[Firebase 마이그레이션] ${migrated}명에게 접근 키 부여`);
+      if (fixedBooks > 0) console.log(`[Firebase 마이그레이션] 배정 기록 기준으로 books 목록 ${fixedBooks}건 보정`);
       saveToFirebase(); // 마이그레이션 결과 다시 업로드
     }
     // localStorage에도 반영
@@ -5572,6 +5590,22 @@ function load() {
     });
     if (migrated > 0) {
       console.log(`[마이그레이션] ${migrated}명의 학생에게 접근 키 자동 부여`);
+    }
+
+    // ★ 복구: 실제 배정 기록은 있는데 학생의 books 목록에 교재명이 빠져있는 경우 자동 보정
+    //   (보카형은 예전엔 배부 단계 없이 배정만 가능해서, 배정이력 탭에 안 보이는 문제가 있었음)
+    let fixedBooks = 0;
+    S.assigns.forEach(a => {
+      const st = S.students.find(s => s.id === a.studentId);
+      if (!st) return;
+      if (!Array.isArray(st.books)) st.books = [];
+      if (!st.books.includes(a.bookName)) {
+        st.books.push(a.bookName);
+        fixedBooks++;
+      }
+    });
+    if (fixedBooks > 0) {
+      console.log(`[마이그레이션] 배정 기록 기준으로 books 목록 ${fixedBooks}건 보정`);
     }
 
   } catch (e) {
