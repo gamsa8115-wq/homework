@@ -5606,6 +5606,7 @@ async function pullInitialFromFirebase() {
     //   (보카형은 예전엔 배부 단계 없이 배정만 가능해서, 배정이력 탭에 안 보이는 문제가 있었음)
     let fixedBooks = 0;
     S.assigns.forEach(a => {
+      if (!a || !a.bookName) return; // ★ bookName이 비어있는 손상된 기록은 건너뜀 (undefined 저장 방지)
       const st = S.students.find(s => s.id === a.studentId);
       if (!st) return;
       if (!Array.isArray(st.books)) st.books = [];
@@ -5639,6 +5640,7 @@ function saveToFirebase() {
   if (!_fbReady) return;
   clearTimeout(_saveDebounceTimer);
   _saveDebounceTimer = setTimeout(async () => {
+    sanitizeStudentsBeforeSave(); // ★ 저장 전 정합성 정리 (undefined 저장 오류 방지)
     _isSavingToFb = true;
     _setFbStatus('saving', '저장 중...');
     try {
@@ -5754,7 +5756,21 @@ function rerenderAll() {
  * save() — 데이터 변경 후 항상 호출
  * UI 상태(selDate, selStudents 등)는 저장하지 않음
  */
+/* ★ 저장 직전 방어 로직: 학생 books/completedBooks 배열에 undefined·null·빈값이
+   섞여있으면 Firebase update()가 통째로 실패하므로, 저장 전에 항상 한 번 걸러냄 */
+function sanitizeStudentsBeforeSave() {
+  S.students.forEach(s => {
+    if (Array.isArray(s.books)) {
+      s.books = s.books.filter(n => typeof n === 'string' && n.length > 0);
+    }
+    if (Array.isArray(s.completedBooks)) {
+      s.completedBooks = s.completedBooks.filter(c => c && c.bookName);
+    }
+  });
+}
+
 function save() {
+  sanitizeStudentsBeforeSave(); // ★ 저장 전 정합성 정리 (undefined 저장 오류 방지)
   try {
     const payload = {};
     PERSIST_KEYS.forEach(k => { payload[k] = S[k]; });
@@ -5814,6 +5830,7 @@ function load() {
     //   (보카형은 예전엔 배부 단계 없이 배정만 가능해서, 배정이력 탭에 안 보이는 문제가 있었음)
     let fixedBooks = 0;
     S.assigns.forEach(a => {
+      if (!a || !a.bookName) return; // ★ bookName이 비어있는 손상된 기록은 건너뜀 (undefined 저장 방지)
       const st = S.students.find(s => s.id === a.studentId);
       if (!st) return;
       if (!Array.isArray(st.books)) st.books = [];
