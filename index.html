@@ -402,9 +402,9 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
   </div>
   <div>
     <div class="nav-sec">메뉴</div>
-    <button class="nb active" data-page="p-assign" onclick="goPage('p-assign')">📅 숙제 배정</button>
-    <button class="nb" data-page="p-list" onclick="goPage('p-list')">📋 배정 목록</button>
-    <button class="nb" data-page="p-history" onclick="goPage('p-history')">📊 배정 이력</button>
+    <button class="nb active" data-page="p-assign" onclick="goPage('p-assign')">📅 교재 배정</button>
+    <button class="nb" data-page="p-list" onclick="goPage('p-list')">📋 교재 배정 목록</button>
+    <button class="nb" data-page="p-history" onclick="goPage('p-history')">📊 숙제 배정 내역</button>
     <button class="nb" data-page="p-today" onclick="goPage('p-today')">🎯 오늘 배정</button>
 
     <button class="nb" data-page="p-students" onclick="goPage('p-students')">👥 학생 관리</button>
@@ -420,11 +420,11 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 
 <main class="main">
 
-<!-- ════ 숙제 배정 ════ -->
+<!-- ════ 교재 배정 ════ -->
 <div class="page active" id="p-assign">
   <div style="display:flex;align-items:baseline;gap:.6rem;margin-bottom:.8rem;">
-    <h1 style="font-size:1.2rem;font-weight:700;">숙제 배정</h1>
-    <span style="font-size:.75rem;color:var(--mu)">보카형 · 교재형은 📊 배정 이력 탭에서 배정</span>
+    <h1 style="font-size:1.2rem;font-weight:700;">교재 배정</h1>
+    <span style="font-size:.75rem;color:var(--mu)">보카형 · 교재형은 📊 숙제 배정 내역 탭에서 배정</span>
   </div>
 
   <div class="assign-layout">
@@ -543,7 +543,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         </div>
 
         <div class="distrib-info">
-          ⓘ <b>배부</b>는 아직 <b>숙제 배정이 아닙니다</b>. 배부된 학생은 📊 배정 이력 탭의 매트릭스에 나타나며, 거기서 셀을 클릭해야 실제 숙제가 배정됩니다.
+          ⓘ <b>배부</b>는 아직 <b>숙제 배정 내역이 아닙니다</b>. 배부된 학생은 📊 숙제 배정 내역 탭의 매트릭스에 나타나며, 거기서 셀을 클릭해야 실제 숙제가 배정됩니다.
         </div>
       </div>
 
@@ -562,9 +562,9 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
   </div>
 </div>
 
-<!-- ════ 배정 목록 ════ -->
+<!-- ════ 교재 배정 목록 ════ -->
 <div class="page" id="p-list">
-  <div class="ph"><h1>배정 목록</h1><p>지금 진행 중인 학생·교재를 모아보기 — 날짜/점수 조정은 배정 이력 탭에서</p></div>
+  <div class="ph"><h1>교재 배정 목록</h1><p>지금 진행 중인 학생·교재를 모아보기 — 날짜/점수 조정은 숙제 배정 내역 탭에서</p></div>
   <div style="display:flex;gap:.45rem;margin-bottom:.9rem;flex-wrap:wrap;align-items:center">
     <select style="width:auto" id="fl-group" onchange="onGroupFilterChange()"><option value="">전체 반</option></select>
     <select style="width:auto" id="fl-st" onchange="renderList()"><option value="">전체 학생</option></select>
@@ -746,11 +746,11 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
   </div>
 </div>
 
-<!-- ════ 배정 이력 ════ -->
+<!-- ════ 숙제 배정 내역 ════ -->
 <div class="page" id="p-history">
   <!-- 제목 + 부제목 한 줄 -->
   <div style="display:flex;align-items:baseline;gap:.65rem;margin-bottom:.9rem">
-    <h1 style="font-size:1.25rem;font-weight:700;white-space:nowrap">배정 이력</h1>
+    <h1 style="font-size:1.25rem;font-weight:700;white-space:nowrap">숙제 배정 내역</h1>
     <span style="font-size:.78rem;color:var(--mu)">교재형 숙제 배정 · 결과 입력 · 이력 확인</span>
   </div>
 
@@ -1268,12 +1268,16 @@ function doDistribute() {
   if (!ids.length) { toast('배부할 학생을 선택하세요'); return; }
 
   let added = 0, already = 0;
+  const today = getTodayStr();
   ids.forEach(sid => {
     const st = S.students.find(s => s.id === sid);
     if (!st) return;
     if (!Array.isArray(st.books)) st.books = [];
     if (st.books.includes(book.name)) { already++; return; }
     st.books.push(book.name);
+    // ★ 언제 이 교재를 배정(배부)했는지 기록 — "교재 배정" 개념을 위한 날짜
+    if (!st.bookDates) st.bookDates = {};
+    st.bookDates[book.name] = today;
     added++;
   });
 
@@ -2015,9 +2019,12 @@ function addVoca() {
   S.selStudents.forEach(sid => {
     const st = S.students.find(s=>s.id===sid);
     if (!st) return;
-    // ★ 배정이력 탭에 표시되려면 학생의 books 목록에 교재명이 있어야 함 (교재형 배부와 동일하게 자동 추가)
+    // ★ 숙제 배정 내역 탭에 표시되려면 학생의 books 목록에 교재명이 있어야 함 (교재형 배부와 동일하게 자동 추가)
     if (!Array.isArray(st.books)) st.books = [];
     if (!st.books.includes(book.name)) st.books.push(book.name);
+    // ★ 언제 이 교재를 배정했는지 기록 (교재 배정 개념의 날짜) — 이미 있으면 유지, 없으면 시작일로 채움
+    if (!st.bookDates) st.bookDates = {};
+    if (!st.bookDates[book.name]) st.bookDates[book.name] = startDate;
     dates.forEach((d, i) => {
       const unit = fmtUnit(i);
       const isDup = S.assigns.some(a =>
@@ -2236,10 +2243,32 @@ function renderList() {
     groups[key].items.push(r);
   });
 
+  // ★ 배부만 받고 아직 배정 기록이 없는 학생도 "0건" 상태로 함께 표시 (배정 이력 탭과 기준 통일)
+  let candStudents = S.students;
+  if (grpF) candStudents = candStudents.filter(s => s.group === grpF);
+  if (stF)  candStudents = candStudents.filter(s => String(s.id) === stF);
+  candStudents.forEach(s => {
+    (s.books||[]).forEach(bookName => {
+      const book = S.books.find(b => b.name === bookName);
+      if (!book) return;
+      if (bkF && String(book.id) !== bkF) return;
+      if (tyF && book.mode !== tyF) return;
+      const key = `${s.id}_${book.id}`;
+      if (groups[key]) return; // 이미 배정 기록이 있으면 건너뜀
+      groups[key] = {
+        studentId: s.id, studentName: s.name,
+        group: s.group, bookId: book.id, bookName: book.name,
+        type: book.mode, items: []
+      };
+    });
+  });
+
   let groupList = Object.values(groups).map(g => {
     g.count = g.items.length;
     g.doneCount = g.items.filter(a => a.result !== '' && a.result !== null && a.result !== undefined).length;
-    g.latestDate = g.items.reduce((m, a) => (a.date > m ? a.date : m), g.items[0].date);
+    g.latestDate = g.items.length
+      ? g.items.reduce((m, a) => (a.date > m ? a.date : m), g.items[0].date)
+      : null;
     const st = S.students.find(s => s.id === g.studentId);
     g.isActive = !!(st && (st.books||[]).includes(g.bookName)); // ★ 지금 진행 중인지 (완료 처리 안 됨)
     return g;
@@ -2262,7 +2291,7 @@ function renderList() {
   const shownRowCount = groupList.reduce((sum,g) => sum + g.count, 0);
   const studentCount = new Set(groupList.map(g => g.studentId)).size;
   if (tb) tb.style.display = groupList.length ? '' : 'none';
-  if (summary) summary.textContent = `학생 ${studentCount}명 · 교재 ${groupList.length}개 묶음 · ${shownRowCount}건 배정 — 날짜·점수 조정은 각 줄의 "배정 이력에서 조정" 버튼으로`;
+  if (summary) summary.textContent = `학생 ${studentCount}명 · 교재 ${groupList.length}개 묶음 · ${shownRowCount}건 배정 — 날짜·점수 조정은 각 줄의 "숙제 배정 내역에서 조정" 버튼으로`;
 
   listEl.innerHTML = groupList.length
     ? renderStudentBlocks(groupList)
@@ -2318,7 +2347,7 @@ function groupCard(g) {
       <span class="ai-group-count">${g.count}건${doneTxt} · 최근 ${shortAiDate(g.latestDate)}</span>
       <div class="ai-actions" style="display:flex;gap:.35rem">
         ${completeBtn}
-        <button class="btn bs bsm" style="font-size:.7rem" onclick="jumpToHistoryFromList(${g.bookId}, '${groupEsc}', '${nameEsc}')">📊 배정 이력에서 조정</button>
+        <button class="btn bs bsm" style="font-size:.7rem" onclick="jumpToHistoryFromList(${g.bookId}, '${groupEsc}', '${nameEsc}')">📊 숙제 배정 내역에서 조정</button>
         <button class="btn bd2 bsm" style="font-size:.7rem" onclick="deleteGroupAssigns(${g.studentId}, ${g.bookId})">🗑 전체 삭제</button>
       </div>
     </div>
@@ -2334,17 +2363,26 @@ function groupRow(g) {
   const groupEsc = escHtml(g.group).replace(/'/g,"\\'");
   const nameEsc  = escHtml(g.studentName).replace(/'/g,"\\'");
   const isActive = g.isActive;
+  const st = S.students.find(s => s.id === g.studentId);
+  const assignedDate = st?.bookDates?.[g.bookName];
+  const assignedTxt = assignedDate ? `배정일 ${shortAiDate(assignedDate)}` : `<span style="color:var(--mu)">배정일 기록 없음</span>`;
+  const countTxt = g.count
+    ? `${assignedTxt} · ${g.count}건${doneTxt} · 최근 ${shortAiDate(g.latestDate)}`
+    : `${assignedTxt} · <span style="color:var(--amb)">아직 배정 없음 (배부만 됨)</span>`;
   const completeBtn = (!isVoca && isActive)
-    ? `<button class="btn bg bsm" style="font-size:.68rem" onclick="completeGroupAssign(${g.studentId}, ${g.bookId})">✅ 완료 처리</button>`
+    ? `<button class="btn bg bsm" style="font-size:.68rem" onclick="completeGroupAssign(${g.studentId}, ${g.bookId})">✅ ${g.count ? '완료 처리' : '배부 취소'}</button>`
     : (!isVoca && !isActive ? `<span class="ai-retired-badge">종료됨</span>` : '');
+  const delBtn = g.count
+    ? `<button class="btn bd2 bsm" style="font-size:.68rem" onclick="deleteGroupAssigns(${g.studentId}, ${g.bookId})">🗑 전체 삭제</button>`
+    : '';
   return `<div class="ai-sub-row" id="aig-${g.studentId}-${g.bookId}">
     <span class="badge ${badgeCls}">${badgeTxt}</span>
     <span class="ai-book" title="${escHtml(g.bookName)}">${escHtml(g.bookName)}</span>
-    <span class="ai-group-count">${g.count}건${doneTxt} · 최근 ${shortAiDate(g.latestDate)}</span>
+    <span class="ai-group-count">${countTxt}</span>
     <div class="ai-actions" style="display:flex;gap:.35rem">
       ${completeBtn}
-      <button class="btn bs bsm" style="font-size:.68rem" onclick="jumpToHistoryFromList(${g.bookId}, '${groupEsc}', '${nameEsc}')">📊 배정 이력에서 조정</button>
-      <button class="btn bd2 bsm" style="font-size:.68rem" onclick="deleteGroupAssigns(${g.studentId}, ${g.bookId})">🗑 전체 삭제</button>
+      <button class="btn bs bsm" style="font-size:.68rem" onclick="jumpToHistoryFromList(${g.bookId}, '${groupEsc}', '${nameEsc}')">📊 숙제 배정 내역에서 조정</button>
+      ${delBtn}
     </div>
   </div>`;
 }
@@ -3760,7 +3798,7 @@ function renderHistory() {
     const groupHasStudents = S.students.some(s => s.group === group);
     if (groupHasStudents) {
       showHistMsg(container,
-        `'${group}' 반에서 '${book.name}'을(를) 배부받은 학생이 없습니다. 📅 숙제 배정 탭 → 📖 교재형 배부에서 먼저 배부하세요.${_histShowRetired ? '' : ' (위 "보기 범위"를 🗂 종료 기록도 포함으로 바꾸면 종료된 기록도 볼 수 있어요)'}`);
+        `'${group}' 반에서 '${book.name}'을(를) 배부받은 학생이 없습니다. 📅 교재 배정 탭 → 📖 교재형 배부에서 먼저 배부하세요.${_histShowRetired ? '' : ' (위 "보기 범위"를 🗂 종료 기록도 포함으로 바꾸면 종료된 기록도 볼 수 있어요)'}`);
       return;
     } else {
       showHistMsg(container, '해당 반에 학생이 없습니다');
@@ -3788,7 +3826,7 @@ function renderHistory() {
     : book.rows;
 
   if (isVoca && !rows.length) {
-    showHistMsg(container, `아직 '${book.name}'으로 배정된 회차가 없습니다. 📅 숙제 배정 탭에서 먼저 자동 배정하세요.`);
+    showHistMsg(container, `아직 '${book.name}'으로 배정된 회차가 없습니다. 📅 교재 배정 탭에서 먼저 자동 배정하세요.`);
     return;
   }
 
@@ -3925,7 +3963,7 @@ function histAssignCell(el, info) {
 
   // 빈 셀 → 신규 배정 (보카형은 숙제 배정 탭의 자동배정만 허용 — 여긴 레이블 개념이 없어 수동 배정 불가)
   if (book.mode === 'voca') {
-    toast('보카형은 📅 숙제 배정 탭에서 자동 배정하세요 (기존 항목의 결과 입력·날짜 변경·삭제는 여기서 가능)');
+    toast('보카형은 📅 교재 배정 탭에서 자동 배정하세요 (기존 항목의 결과 입력·날짜 변경·삭제는 여기서 가능)');
     return;
   }
 
@@ -5298,7 +5336,7 @@ function _taCardHtml(c, student, dateStr) {
     const opts = (b.rows||[]).map(l=>`<option value="${escHtml(l)}">${escHtml(l)}</option>`).join('');
     return `<div class="ta-card ta-pick">
       <div class="ta-card-top"><span class="ta-book-name">📕 ${escHtml(b.name)}</span><span class="ta-badge ta-badge-pick">시작 필요</span></div>
-      <div class="ta-card-sub">아직 배정 이력이 없습니다</div>
+      <div class="ta-card-sub">아직 숙제 배정 내역이 없습니다</div>
       <div class="ta-card-actions">
         <select class="ta-pick-sel" id="ta-pick-${student.id}-${b.id}">${opts}</select>
         <button class="btn bp bsm" onclick="taAssignPick(${student.id},${b.id},'${dateStr}')">배정</button>
@@ -5662,6 +5700,27 @@ function sanitizeAssignsArray(arr) {
   return (Array.isArray(arr) ? arr : []).filter(a => a && typeof a === 'object' && a.id != null);
 }
 
+/* ★ "언제 이 교재를 배정했는지" 날짜가 없는 기존 데이터에, 가장 이른 배정 기록으로 추정치를 채워넣음
+   (배정 기록조차 없으면 그냥 비워둠 → 화면엔 "기록 없음"으로 표시) */
+function backfillBookDates() {
+  let filled = 0;
+  S.students.forEach(st => {
+    if (!Array.isArray(st.books) || !st.books.length) return;
+    if (!st.bookDates) st.bookDates = {};
+    st.books.forEach(bookName => {
+      if (st.bookDates[bookName]) return; // 이미 기록 있음
+      const dates = S.assigns
+        .filter(a => a && a.studentId === st.id && a.bookName === bookName && a.date)
+        .map(a => a.date);
+      if (dates.length) {
+        st.bookDates[bookName] = dates.reduce((min,d) => d < min ? d : min, dates[0]);
+        filled++;
+      }
+    });
+  });
+  return filled;
+}
+
 /* 최초 진입: Firebase에서 데이터 읽어와 S에 반영 */
 async function pullInitialFromFirebase() {
   if (!_fbReady) return;
@@ -5723,9 +5782,12 @@ async function pullInitialFromFirebase() {
       fixedBooks++;
     });
 
-    if (migrated > 0 || fixedBooks > 0) {
-      if (migrated > 0)   console.log(`[Firebase 마이그레이션] ${migrated}명에게 접근 키 부여`);
-      if (fixedBooks > 0) console.log(`[Firebase 마이그레이션] 배정 기록 기준으로 books 목록 ${fixedBooks}건 보정`);
+    const filledDates = backfillBookDates();
+
+    if (migrated > 0 || fixedBooks > 0 || filledDates > 0) {
+      if (migrated > 0)    console.log(`[Firebase 마이그레이션] ${migrated}명에게 접근 키 부여`);
+      if (fixedBooks > 0)  console.log(`[Firebase 마이그레이션] 배정 기록 기준으로 books 목록 ${fixedBooks}건 보정`);
+      if (filledDates > 0) console.log(`[Firebase 마이그레이션] 배정일 추정치 ${filledDates}건 채움`);
       saveToFirebase(); // 마이그레이션 결과 다시 업로드
     }
     // localStorage에도 반영
@@ -5951,6 +6013,11 @@ function load() {
     });
     if (fixedBooks > 0) {
       console.log(`[마이그레이션] 배정 기록 기준으로 books 목록 ${fixedBooks}건 보정`);
+    }
+
+    const filledDates = backfillBookDates();
+    if (filledDates > 0) {
+      console.log(`[마이그레이션] 배정일 추정치 ${filledDates}건 채움`);
     }
 
   } catch (e) {
