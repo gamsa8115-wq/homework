@@ -359,9 +359,10 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 .ic-book-name{font-size:.85rem;font-weight:700;}
 .ic-book-count{font-size:.72rem;color:#b91c1c;font-weight:700;margin-left:auto;}
 .ic-item-list{display:flex;flex-direction:column;gap:2px;}
-.ic-item{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.35rem .6rem;background:rgba(220,38,38,.05);border:1px solid rgba(220,38,38,.15);border-radius:6px;font-size:.78rem;}
-.ic-item-label{font-weight:600;}
+.ic-item{display:flex;align-items:center;justify-content:flex-start;gap:1.1rem;padding:.35rem .6rem;background:rgba(220,38,38,.05);border:1px solid rgba(220,38,38,.15);border-radius:6px;font-size:.78rem;}
+.ic-item-label{font-weight:600;min-width:130px;}
 .ic-item-date{color:#b91c1c;font-size:.72rem;white-space:nowrap;}
+.ic-item-reason{font-size:.68rem;font-weight:700;color:#b45309;background:rgba(217,119,6,.12);padding:.1rem .5rem;border-radius:20px;white-space:nowrap;}
 
 .lbl-item-num{font-family:'Space Mono',monospace;font-size:.65rem;color:var(--mu);min-width:22px;flex-shrink:0;}
 .lbl-item-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Space Mono',monospace;}
@@ -3808,6 +3809,21 @@ function renderHistory() {
   const clearBtn = $('hist-name-clear');
   if (clearBtn) clearBtn.style.display = nameQ ? '' : 'none';
 
+  // ★ 보카형은 셀 단위 배정/삭제, 점검(기준점수 강조)이 의미 없으므로 버튼 자체를 숨김
+  const bidBook = bid ? getBook(bid) : null;
+  const isVocaBook = bidBook?.mode === 'voca';
+  ['hmode-assign', 'hmode-delete', 'hist-inspect-btn'].forEach(id => {
+    const btn = $(id);
+    if (btn) btn.style.display = isVocaBook ? 'none' : '';
+  });
+  // 보카형인데 지금 배정/삭제/점검 모드였다면 보기 모드로 되돌림
+  if (isVocaBook && (_histMode === 'assign' || _histMode === 'delete')) {
+    _histMode = 'view';
+  }
+  if (isVocaBook && _inspectActive) {
+    closeInspect();
+  }
+
   if (!bid || !group) return;
 
   const book = getBook(bid);
@@ -5600,12 +5616,32 @@ function _daysSince(dateStr, untilStr) {
   return Math.round((d2 - d1) / 86400000);
 }
 
-/* 학생 1명의 "기준일까지 배정됐지만 결과 없는 것" 을 교재별로 묶어서 반환 */
+/* ★ 미완료 사유 판정: 미수행(결과 없음) / 미통과 / 미수행(완료형) / 점수 미달
+   - 통과·완료형은 값 자체가 의미를 가지므로 항상 판정
+   - 점수형은 "미달 시 재도전"이 켜진 교재에서만 기준점수 판정 (꺼진 교재·보카형은 임의 기준 적용 안 함) */
+function _incompleteReason(book, result) {
+  const hasResult = result !== '' && result !== null && result !== undefined;
+  if (!hasResult) return '미수행';
+  if (!book) return null;
+  if (book.score === '통과' && result !== '통과') return result === '미수행' ? '미수행' : '미통과';
+  if (book.score === '완료' && result !== '완료') return '미수행';
+  if (book.score === '점수' && book.retryEnabled) {
+    const n = Number(result);
+    const threshold = (book.retryThreshold != null) ? Number(book.retryThreshold) : 80;
+    if (!isNaN(n) && n < threshold) return `${n}점 (미달)`;
+  }
+  return null; // 완료로 인정됨
+}
+
+/* 학생 1명의 "기준일까지 배정됐지만 미완료(미수행·미통과·점수미달)인 것" 을 교재별로 묶어서 반환 */
 function _buildIncompleteForStudent(student, untilDate) {
-  const items = S.assigns.filter(a =>
-    a && a.studentId === student.id && a.date && a.date <= untilDate &&
-    (a.result === '' || a.result === null || a.result === undefined)
-  );
+  const items = [];
+  S.assigns.forEach(a => {
+    if (!a || a.studentId !== student.id || !a.date || a.date > untilDate) return;
+    const book = getBook(a.bookId);
+    const reason = _incompleteReason(book, a.result);
+    if (reason) items.push({ ...a, _reason: reason });
+  });
   const byBook = {};
   items.forEach(a => {
     const key = a.bookId;
@@ -5625,7 +5661,11 @@ function _icCardHtml(bookGroup, untilDate) {
     const label = isVoca ? `${escHtml(String(a.unitFrom||''))}회차` : escHtml((a.probLabels||[])[0] || '');
     const days = _daysSince(a.date, untilDate);
     const dayTxt = days <= 0 ? '오늘' : `${days}일 경과`;
-    return `<div class="ic-item"><span class="ic-item-label">${label}</span><span class="ic-item-date">배정 ${shortAiDate(a.date)} · ${dayTxt}</span></div>`;
+    return `<div class="ic-item">
+      <span class="ic-item-label">${label}</span>
+      <span class="ic-item-reason">${escHtml(a._reason)}</span>
+      <span class="ic-item-date">배정 ${shortAiDate(a.date)} · ${dayTxt}</span>
+    </div>`;
   }).join('');
   return `<div class="ic-book-group">
     <div class="ic-book-hd">
