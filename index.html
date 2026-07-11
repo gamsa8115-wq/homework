@@ -415,7 +415,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
     <button class="nb active" data-page="p-assign" onclick="goPage('p-assign')">📅 교재 배정</button>
     <button class="nb" data-page="p-list" onclick="goPage('p-list')">📋 교재 배정 목록</button>
     <button class="nb" data-page="p-history" onclick="goPage('p-history')">📊 숙제 배정 내역</button>
-    <button class="nb" data-page="p-today" onclick="goPage('p-today')">🎯 오늘 배정</button>
+    <button class="nb" data-page="p-today" onclick="goPage('p-today')">🎯 숙제 현황</button>
 
     <button class="nb" data-page="p-students" onclick="goPage('p-students')">👥 학생 관리</button>
     <button class="nb" data-page="p-books" onclick="goPage('p-books')">📖 교재 관리</button>
@@ -683,7 +683,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         <div><label>채점 방식</label>
           <select id="nb-score" onchange="toggleRetryThreshold()">
             <option value="점수">점수 (0~100)</option>
-            <option value="통과">통과/미통과</option>
+            <option value="통과">통과/미통과/미수행</option>
             <option value="완료">완료/미수행</option>
           </select>
         </div>
@@ -712,11 +712,11 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
           <div style="font-size:.66rem;color:var(--mu);margin-top:.3rem">배정된 레이블은 삭제할 수 없습니다</div>
         </div>
 
-        <!-- 🎯 오늘 배정: 미달 시 재도전 설정 (교재형 전용) -->
+        <!-- 🎯 숙제 현황: 미달 시 재도전 설정 (교재형 전용) -->
         <div style="margin-top:.7rem;padding-top:.6rem;border-top:1px dashed var(--bd)">
           <label style="display:flex;align-items:center;gap:.4rem;font-weight:400;cursor:pointer">
             <input type="checkbox" id="nb-retry-enabled" style="width:14px;height:14px" onchange="toggleRetryThreshold()">
-            <span>미달 시 같은 단원 재도전 ("오늘 배정" 탭에 반영)</span>
+            <span>미달 시 같은 단원 재도전 ("숙제 현황" 탭에 반영)</span>
           </label>
           <div id="nb-retry-threshold-wrap" style="display:none;margin-top:.4rem;align-items:center;gap:.4rem">
             <label style="margin:0;white-space:nowrap;font-size:.75rem">기준점수</label>
@@ -872,10 +872,10 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
   </div>
 </div>
 
-<!-- ════ 오늘 배정 ════ -->
+<!-- ════ 숙제 현황 ════ -->
 <div class="page" id="p-today">
   <div style="display:flex;align-items:baseline;gap:.65rem;margin-bottom:.6rem">
-    <h1 style="font-size:1.25rem;font-weight:700;white-space:nowrap">🎯 오늘 배정</h1>
+    <h1 style="font-size:1.25rem;font-weight:700;white-space:nowrap">🎯 숙제 현황</h1>
     <span style="font-size:.78rem;color:var(--mu)">학생이 쓰는 모든 교재를 한 화면에서 확인하고 배정</span>
   </div>
 
@@ -884,7 +884,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
     <button id="tp-mode-incomplete" class="btn bg bsm hist-mode-btn" onclick="setTaPageMode('incomplete')" style="font-size:.76rem">📋 미완료 확인</button>
   </div>
 
-  <!-- ── 오늘 배정하기 (기존 기능) ── -->
+  <!-- ── 오늘 배정하기 (숙제 현황 탭 내 모드) ── -->
   <div id="ta-assign-section">
     <div class="hist-filter">
       <div style="display:flex;align-items:center;gap:.4rem">
@@ -3859,9 +3859,11 @@ function renderHistory() {
   const bookAssigns = S.assigns.filter(a => a.bookId === bid);
   const pivot = {};
   students.forEach(s => { pivot[s.id] = {}; });
+  // ★ 보카 회차는 "01"과 "1"처럼 표기가 섞여있을 수 있어 숫자로 정규화한 값을 키로 사용 (중복 행 방지)
+  const normUnit = v => String(Number(v));
   bookAssigns.forEach(a => {
     if (!pivot[a.studentId]) return;
-    const keys = isVoca ? [a.unitFrom] : (a.probLabels||[]);
+    const keys = isVoca ? [normUnit(a.unitFrom)] : (a.probLabels||[]);
     keys.forEach(lbl => {
       const ex = pivot[a.studentId][lbl];
       if (!ex || a.date > ex.date)
@@ -3869,9 +3871,9 @@ function renderHistory() {
     });
   });
 
-  // 행 목록: 교재형은 book.rows(고정 레이블), 보카형은 실제 배정된 회차를 모아 오름차순 정렬
+  // 행 목록: 교재형은 book.rows(고정 레이블), 보카형은 실제 배정된 회차를 정규화해서 모아 오름차순 정렬
   const rows = isVoca
-    ? [...new Set(bookAssigns.map(a => a.unitFrom))].sort((a,b) => Number(a)-Number(b))
+    ? [...new Set(bookAssigns.map(a => normUnit(a.unitFrom)))].sort((a,b) => Number(a)-Number(b))
     : book.rows;
 
   if (isVoca && !rows.length) {
@@ -4612,7 +4614,7 @@ function _applyScoreImport() {
         const rowIdx = (book.rows||[]).indexOf(item.label);
         S.assigns.push({
           id: S.nid++,
-          type: 'book', // ★ 누락돼 있던 필드 — 이게 없으면 배정 목록·오늘 배정 등에서 교재형 배정으로 인식되지 않음
+          type: 'book', // ★ 누락돼 있던 필드 — 이게 없으면 배정 목록·숙제 현황 등에서 교재형 배정으로 인식되지 않음
           bookId: bid,
           bookName: book.name, // ★ 누락돼 있던 필드 — books 목록 자동 보정 등에서 사용
           studentId: item.studentId,
@@ -5135,6 +5137,7 @@ function openHistInline(el, info, type) {
         <option value="" ${sel('')}>미입력</option>
         <option value="통과" ${sel('통과')}>통과</option>
         <option value="미통과" ${sel('미통과')}>미통과</option>
+        <option value="미수행" ${sel('미수행')}>미수행</option>
       </select>`;
     } else {
       const sel = v => (assign.result===v)?'selected':'';
