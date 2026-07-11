@@ -353,6 +353,16 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 .ta-group-row-name{font-size:.85rem;font-weight:700;}
 .ta-group-row-empty{font-size:.72rem;color:var(--mu);margin-top:.3rem;}
 
+/* 🆕 미완료 확인 */
+.ic-book-group{margin-bottom:.55rem;}
+.ic-book-hd{display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem;}
+.ic-book-name{font-size:.85rem;font-weight:700;}
+.ic-book-count{font-size:.72rem;color:#b91c1c;font-weight:700;margin-left:auto;}
+.ic-item-list{display:flex;flex-direction:column;gap:2px;}
+.ic-item{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.35rem .6rem;background:rgba(220,38,38,.05);border:1px solid rgba(220,38,38,.15);border-radius:6px;font-size:.78rem;}
+.ic-item-label{font-weight:600;}
+.ic-item-date{color:#b91c1c;font-size:.72rem;white-space:nowrap;}
+
 .lbl-item-num{font-family:'Space Mono',monospace;font-size:.65rem;color:var(--mu);min-width:22px;flex-shrink:0;}
 .lbl-item-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Space Mono',monospace;}
 .lbl-item-del{background:none;border:none;color:var(--mu);cursor:pointer;font-size:.8rem;padding:0 .15rem;line-height:1;flex-shrink:0;}
@@ -864,35 +874,71 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 
 <!-- ════ 오늘 배정 ════ -->
 <div class="page" id="p-today">
-  <div style="display:flex;align-items:baseline;gap:.65rem;margin-bottom:.9rem">
+  <div style="display:flex;align-items:baseline;gap:.65rem;margin-bottom:.6rem">
     <h1 style="font-size:1.25rem;font-weight:700;white-space:nowrap">🎯 오늘 배정</h1>
     <span style="font-size:.78rem;color:var(--mu)">학생이 쓰는 모든 교재를 한 화면에서 확인하고 배정</span>
   </div>
 
-  <div class="hist-filter">
-    <div style="display:flex;align-items:center;gap:.4rem">
-      <label style="margin:0;white-space:nowrap">날짜</label>
-      <input type="date" id="ta-date" onchange="renderTodayAssign()">
-    </div>
-    <div style="display:flex;align-items:center;gap:.4rem">
-      <label style="margin:0;white-space:nowrap">반</label>
-      <select id="ta-group" onchange="onTaGroupChange()" style="min-width:110px">
-        <option value="">전체</option>
-      </select>
-    </div>
-    <div id="ta-student-wrap" style="display:flex;align-items:center;gap:.4rem">
-      <label style="margin:0;white-space:nowrap">학생</label>
-      <select id="ta-student" onchange="renderTodayAssign()" style="min-width:140px">
-        <option value="">학생 선택...</option>
-      </select>
-    </div>
-    <div style="display:flex;gap:.3rem;margin-left:auto;align-items:center">
-      <button class="btn bg bsm hist-mode-btn" id="ta-view-single" onclick="setTaView('single')" style="font-size:.72rem">👤 학생별</button>
-      <button class="btn bg bsm hist-mode-btn" id="ta-view-group"  onclick="setTaView('group')"  style="font-size:.72rem">📋 반 전체</button>
-    </div>
+  <div style="display:flex;gap:.35rem;margin-bottom:.8rem">
+    <button id="tp-mode-assign" class="btn bg bsm hist-mode-btn active" onclick="setTaPageMode('assign')" style="font-size:.76rem">🎯 오늘 배정하기</button>
+    <button id="tp-mode-incomplete" class="btn bg bsm hist-mode-btn" onclick="setTaPageMode('incomplete')" style="font-size:.76rem">📋 미완료 확인</button>
   </div>
 
-  <div id="ta-body"></div>
+  <!-- ── 오늘 배정하기 (기존 기능) ── -->
+  <div id="ta-assign-section">
+    <div class="hist-filter">
+      <div style="display:flex;align-items:center;gap:.4rem">
+        <label style="margin:0;white-space:nowrap">날짜</label>
+        <input type="date" id="ta-date" onchange="renderTodayAssign()">
+      </div>
+      <div style="display:flex;align-items:center;gap:.4rem">
+        <label style="margin:0;white-space:nowrap">반</label>
+        <select id="ta-group" onchange="onTaGroupChange()" style="min-width:110px">
+          <option value="">전체</option>
+        </select>
+      </div>
+      <div id="ta-student-wrap" style="display:flex;align-items:center;gap:.4rem">
+        <label style="margin:0;white-space:nowrap">학생</label>
+        <select id="ta-student" onchange="renderTodayAssign()" style="min-width:140px">
+          <option value="">학생 선택...</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:.3rem;margin-left:auto;align-items:center">
+        <button class="btn bg bsm hist-mode-btn" id="ta-view-single" onclick="setTaView('single')" style="font-size:.72rem">👤 학생별</button>
+        <button class="btn bg bsm hist-mode-btn" id="ta-view-group"  onclick="setTaView('group')"  style="font-size:.72rem">📋 반 전체</button>
+      </div>
+    </div>
+
+    <div id="ta-body"></div>
+  </div>
+
+  <!-- ── 🆕 미완료 확인: 그 날짜까지 배정됐지만 아직 결과가 없는 것만 학생별로 모아보기 ── -->
+  <div id="ta-incomplete-section" style="display:none">
+    <div class="hist-filter">
+      <div style="display:flex;align-items:center;gap:.4rem">
+        <label style="margin:0;white-space:nowrap">기준 날짜</label>
+        <input type="date" id="ic-date" onchange="renderIncomplete()" title="이 날짜까지 배정된 것 중 미완료만 표시">
+      </div>
+      <div style="display:flex;align-items:center;gap:.4rem">
+        <label style="margin:0;white-space:nowrap">반</label>
+        <select id="ic-group" onchange="onIcGroupChange()" style="min-width:110px">
+          <option value="">전체</option>
+        </select>
+      </div>
+      <div id="ic-student-wrap" style="display:flex;align-items:center;gap:.4rem">
+        <label style="margin:0;white-space:nowrap">학생</label>
+        <select id="ic-student" onchange="renderIncomplete()" style="min-width:140px">
+          <option value="">학생 선택...</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:.3rem;margin-left:auto;align-items:center">
+        <button class="btn bg bsm hist-mode-btn" id="ic-view-single" onclick="setIcView('single')" style="font-size:.72rem">👤 학생별</button>
+        <button class="btn bg bsm hist-mode-btn" id="ic-view-group"  onclick="setIcView('group')"  style="font-size:.72rem">📋 반 전체</button>
+      </div>
+    </div>
+
+    <div id="ic-body"></div>
+  </div>
 </div>
 
 <!-- ════ 내보내기 ════ -->
@@ -1124,7 +1170,10 @@ function goPage(id) {
   if (id === 'p-students'){ renderAllGroupUIs(); renderStudents(); }
   if (id === 'p-books')   { renderBooks(); }
   if (id === 'p-history') { setupHistory(); renderHistory(); }
-  if (id === 'p-today')   { setupTodayAssign(); renderTodayAssign(); }
+  if (id === 'p-today')   {
+    setupTodayAssign(); renderTodayAssign();
+    if (_tpPageMode === 'incomplete') { setupIncomplete(); renderIncomplete(); }
+  }
   if (id === 'p-export')  { setupExport(); }
 }
 
@@ -5483,6 +5532,151 @@ function taAssignPick(sid, bid, dateStr) {
   renderCal(); updateSidebar();
   renderTodayAssign();
   toast(`✅ ${student.name} · ${label} 배정 (${dateStr})`);
+}
+
+/* ══════════ 🆕 오늘 배정 탭 — 모드 전환 (오늘 배정하기 ↔ 미완료 확인) ══════════ */
+let _tpPageMode = 'assign'; // 'assign' | 'incomplete'
+
+function setTaPageMode(mode) {
+  _tpPageMode = mode;
+  $('tp-mode-assign')?.classList.toggle('active', mode === 'assign');
+  $('tp-mode-incomplete')?.classList.toggle('active', mode === 'incomplete');
+  const assignSec = $('ta-assign-section');
+  const icSec = $('ta-incomplete-section');
+  if (assignSec) assignSec.style.display = mode === 'assign' ? '' : 'none';
+  if (icSec) icSec.style.display = mode === 'incomplete' ? '' : 'none';
+  if (mode === 'incomplete') { setupIncomplete(); renderIncomplete(); }
+}
+
+/* ══════════ 🆕 미완료 확인: 기준 날짜까지 배정됐지만 결과가 없는 것만 학생별로 모아보기 ══════════ */
+let _icView = 'single'; // 'single' | 'group'
+
+function setupIncomplete() {
+  const dateEl = $('ic-date');
+  if (dateEl && !dateEl.value) dateEl.value = getTodayStr();
+
+  const gsel = $('ic-group');
+  if (gsel) {
+    const sortedGroups = [...S.groups].sort((a,b) => a.localeCompare(b,'ko'));
+    gsel.innerHTML = '<option value="">전체</option>' + sortedGroups.map(g=>`<option value="${escHtml(g)}">${escHtml(g)}</option>`).join('');
+  }
+  populateIcStudentSelect();
+  setIcView(_icView);
+}
+
+function onIcGroupChange() {
+  populateIcStudentSelect();
+  renderIncomplete();
+}
+
+function populateIcStudentSelect() {
+  const sel = $('ic-student');
+  if (!sel) return;
+  const group = $('ic-group')?.value || '';
+  const list = S.students
+    .filter(s => !group || s.group === group)
+    .sort((a,b) => a.name.localeCompare(b.name,'ko'));
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">학생 선택...</option>' + list.map(s=>`<option value="${s.id}">${escHtml(s.name)}</option>`).join('');
+  if (list.some(s => String(s.id) === prev)) sel.value = prev;
+}
+
+function setIcView(view) {
+  _icView = view;
+  $('ic-view-single')?.classList.toggle('active', view === 'single');
+  $('ic-view-group')?.classList.toggle('active', view === 'group');
+  const wrap = $('ic-student-wrap');
+  if (wrap) wrap.style.display = view === 'single' ? '' : 'none';
+  renderIncomplete();
+}
+
+/* 두 날짜 사이 경과일 (양수 = 지남) */
+function _daysSince(dateStr, untilStr) {
+  const d1 = new Date(dateStr + 'T00:00:00');
+  const d2 = new Date(untilStr + 'T00:00:00');
+  return Math.round((d2 - d1) / 86400000);
+}
+
+/* 학생 1명의 "기준일까지 배정됐지만 결과 없는 것" 을 교재별로 묶어서 반환 */
+function _buildIncompleteForStudent(student, untilDate) {
+  const items = S.assigns.filter(a =>
+    a && a.studentId === student.id && a.date && a.date <= untilDate &&
+    (a.result === '' || a.result === null || a.result === undefined)
+  );
+  const byBook = {};
+  items.forEach(a => {
+    const key = a.bookId;
+    if (!byBook[key]) byBook[key] = { bookId: a.bookId, bookName: a.bookName || '(교재 정보 없음)', type: a.type, items: [] };
+    byBook[key].items.push(a);
+  });
+  return Object.values(byBook)
+    .map(b => { b.items.sort((x,y) => x.date.localeCompare(y.date)); return b; })
+    .sort((a,b) => a.bookName.localeCompare(b.bookName,'ko'));
+}
+
+function _icCardHtml(bookGroup, untilDate) {
+  const isVoca = bookGroup.type === 'voca';
+  const badgeCls = isVoca ? 'bg2' : 'bb';
+  const badgeTxt = isVoca ? '보카' : '교재';
+  const rows = bookGroup.items.map(a => {
+    const label = isVoca ? `${escHtml(String(a.unitFrom||''))}회차` : escHtml((a.probLabels||[])[0] || '');
+    const days = _daysSince(a.date, untilDate);
+    const dayTxt = days <= 0 ? '오늘' : `${days}일 경과`;
+    return `<div class="ic-item"><span class="ic-item-label">${label}</span><span class="ic-item-date">배정 ${shortAiDate(a.date)} · ${dayTxt}</span></div>`;
+  }).join('');
+  return `<div class="ic-book-group">
+    <div class="ic-book-hd">
+      <span class="badge ${badgeCls}">${badgeTxt}</span>
+      <span class="ic-book-name">${escHtml(bookGroup.bookName)}</span>
+      <span class="ic-book-count">${bookGroup.items.length}건 미완료</span>
+    </div>
+    <div class="ic-item-list">${rows}</div>
+  </div>`;
+}
+
+function renderIncomplete() {
+  const body = $('ic-body');
+  if (!body) return;
+  const untilDate = $('ic-date')?.value || getTodayStr();
+
+  if (_icView === 'single') {
+    const sid = Number($('ic-student')?.value || 0);
+    const student = sid ? S.students.find(s => s.id === sid) : null;
+    if (!student) { body.innerHTML = `<div class="distrib-empty">학생을 선택하세요</div>`; return; }
+    const groups = _buildIncompleteForStudent(student, untilDate);
+    if (!groups.length) {
+      body.innerHTML = `<div class="distrib-empty">🎉 ${escHtml(student.name)} 학생은 ${escHtml(untilDate)}까지 미완료 숙제가 없습니다</div>`;
+      return;
+    }
+    body.innerHTML = `<div class="ta-student-hd">${escHtml(student.name)} <span style="color:var(--mu);font-weight:400;font-size:.78rem">· ${escHtml(untilDate)}까지 미완료</span></div>
+      <div class="ta-card-list">${groups.map(g => _icCardHtml(g, untilDate)).join('')}</div>`;
+    return;
+  }
+
+  // 반 전체 모드 — 밀린 숙제 있는 학생만 카드로 표시 (없는 학생은 생략해 깔끔하게)
+  const group = $('ic-group')?.value || '';
+  const list = S.students
+    .filter(s => !group || s.group === group)
+    .sort((a,b) => a.name.localeCompare(b.name,'ko'));
+  if (!list.length) { body.innerHTML = `<div class="distrib-empty">학생이 없습니다</div>`; return; }
+
+  const blocks = list.map(st => {
+    const groups = _buildIncompleteForStudent(st, untilDate);
+    if (!groups.length) return null;
+    const totalCount = groups.reduce((sum,g) => sum + g.items.length, 0);
+    return `<div class="st-block">
+      <div class="st-block-hd">
+        <span class="ai-group-class">${escHtml(st.group)}</span>
+        <span class="st-block-name">${escHtml(st.name)}</span>
+        <span class="st-block-sum" style="color:#b91c1c;font-weight:700">미완료 ${totalCount}건</span>
+      </div>
+      <div class="st-block-body">${groups.map(g => _icCardHtml(g, untilDate)).join('')}</div>
+    </div>`;
+  }).filter(Boolean);
+
+  body.innerHTML = blocks.length
+    ? blocks.join('')
+    : `<div class="distrib-empty">🎉 ${escHtml(untilDate)}까지 미완료 숙제가 있는 학생이 없습니다</div>`;
 }
 
 
