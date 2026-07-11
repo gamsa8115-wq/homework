@@ -1085,7 +1085,7 @@ const S = {
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2,'0');
 const fmtDate = d => { if(!d) return '—'; const [y,m,dy]=d.split('-'); return `${y}년 ${+m}월 ${+dy}일`; };
-const hwDates = () => new Set(S.assigns.map(a=>a.date));
+const hwDates = () => new Set(S.assigns.filter(a => a && a.date).map(a=>a.date));
 
 function getBook(id) { return S.books.find(b => b.id === Number(id)) || null; }
 
@@ -5551,11 +5551,17 @@ async function migrateAssignsIfNeeded() {
 /* Firebase는 배열을 객체맵 {0:..., 1:...}로 저장/반환 → 배열로 복원 */
 function _toArray(val) {
   if (!val) return [];
-  if (Array.isArray(val)) return val;
+  if (Array.isArray(val)) return val.filter(v => v !== null && v !== undefined); // ★ 배열이어도 null 항목은 걸러냄
   if (typeof val !== 'object') return [];
   return Object.keys(val).sort((a,b)=>Number(a)-Number(b))
                           .map(k => val[k])
                           .filter(v => v !== null && v !== undefined);
+}
+
+/* ★ assigns 배열 전용 정리 — null/id없는 손상 레코드를 항상 걸러냄
+   (로컬 저장소/Firebase 어디서 읽어오든 이 함수를 거치도록 함) */
+function sanitizeAssignsArray(arr) {
+  return (Array.isArray(arr) ? arr : []).filter(a => a && typeof a === 'object' && a.id != null);
 }
 
 /* 최초 진입: Firebase에서 데이터 읽어와 S에 반영 */
@@ -5575,6 +5581,7 @@ async function pullInitialFromFirebase() {
     // 원격 데이터 → S에 병합
     if (Array.isArray(val.assigns))  S.assigns  = val.assigns;
     else if (val.assigns)            S.assigns  = _toArray(val.assigns);
+    S.assigns = sanitizeAssignsArray(S.assigns); // ★ null/손상 레코드 제거
     // ★ 방금 원격에서 읽은 assigns를 "동기화 기준점"으로 저장 (다음 저장 시 이걸 기준으로 diff)
     _lastSyncedAssignsById = {};
     S.assigns.forEach(a => { if (a && a.id != null) _lastSyncedAssignsById[a.id] = a; });
@@ -5707,6 +5714,7 @@ function subscribeToFirebase() {
         if (!newVal.length) newVal = S.classDays; // 빈 값이면 기본값 유지
       } else {
         newVal = val === null ? [] : (Array.isArray(val) ? val : _toArray(val));
+        if (k === 'assigns') newVal = sanitizeAssignsArray(newVal); // ★ null/손상 레코드 제거
       }
       // 실제 변경된 경우만 적용
       if (JSON.stringify(S[k]) !== JSON.stringify(newVal)) {
@@ -5796,7 +5804,7 @@ function load() {
     const saved = JSON.parse(raw);
 
     // 각 키를 타입 검증 후 복원
-    if (Array.isArray(saved.assigns))  S.assigns  = saved.assigns;
+    if (Array.isArray(saved.assigns))  S.assigns  = sanitizeAssignsArray(saved.assigns); // ★ null/손상 레코드 제거
     if (typeof saved.nid === 'number') S.nid      = saved.nid;
     if (Array.isArray(saved.groups))   S.groups   = saved.groups;
     if (Array.isArray(saved.students)) S.students = saved.students;
