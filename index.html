@@ -684,7 +684,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         <div><label>채점 방식</label>
           <select id="nb-score" onchange="toggleRetryThreshold()">
             <option value="점수">점수 (0~100)</option>
-            <option value="통과">통과/미통과/미수행</option>
+            <option value="통과">통과/미통과</option>
             <option value="완료">완료/미수행</option>
           </select>
         </div>
@@ -713,8 +713,8 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
           <div style="font-size:.66rem;color:var(--mu);margin-top:.3rem">배정된 레이블은 삭제할 수 없습니다</div>
         </div>
 
-        <!-- 🎯 숙제 현황: 미달 시 재도전 설정 (교재형 전용) -->
-        <div style="margin-top:.7rem;padding-top:.6rem;border-top:1px dashed var(--bd)">
+        <!-- 🎯 신규 등록 시에만 여기서 설정 가능. 기존 교재는 "숙제 배정 내역" 탭에서 변경 (여기서 바꾸면 조용히 초기화되는 문제 방지) -->
+        <div id="nb-retry-section" style="margin-top:.7rem;padding-top:.6rem;border-top:1px dashed var(--bd)">
           <label style="display:flex;align-items:center;gap:.4rem;font-weight:400;cursor:pointer">
             <input type="checkbox" id="nb-retry-enabled" style="width:14px;height:14px" onchange="toggleRetryThreshold()">
             <span>미달 시 같은 단원 재도전 ("숙제 현황" 탭에 반영)</span>
@@ -724,6 +724,9 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
             <input type="number" id="nb-retry-threshold" value="80" min="0" max="100" style="width:70px">
             <span style="font-size:.72rem;color:var(--mu)">점 미만이면 재도전</span>
           </div>
+        </div>
+        <div id="nb-retry-edit-note" style="display:none;margin-top:.7rem;padding:.5rem .6rem;background:var(--s2);border-radius:6px;font-size:.72rem;color:var(--mu)">
+          ℹ 재도전(기준점수) 설정은 <b>숙제 배정 내역</b> 탭에서 이 교재를 선택하면 바꿀 수 있어요. (여기선 변경 안 됨)
         </div>
       </div>
 
@@ -3364,6 +3367,11 @@ function startBookEdit(id) {
   $('nb-score').value = book.score;
   $('nb-retry-enabled').checked = !!book.retryEnabled;
   $('nb-retry-threshold').value = book.retryThreshold != null ? book.retryThreshold : 80;
+  // ★ 수정 모드에서는 재도전 설정 입력을 숨기고, 어디서 바꾸는지 안내만 표시 (조용한 초기화 방지)
+  const retrySection = $('nb-retry-section');
+  const retryNote = $('nb-retry-edit-note');
+  if (retrySection) retrySection.style.display = 'none';
+  if (retryNote) retryNote.style.display = book.mode === 'book' ? '' : 'none';
 
   // 교재형이면 레이블 편집 UI 표시
   toggleBookMode();
@@ -3411,6 +3419,10 @@ function cancelBookForm() {
   $('lb-existing-wrap').style.display = 'none';
   $('nb-retry-enabled').checked = false;
   $('nb-retry-threshold').value = 80;
+  const retrySection = $('nb-retry-section');
+  const retryNote = $('nb-retry-edit-note');
+  if (retrySection) retrySection.style.display = '';
+  if (retryNote) retryNote.style.display = 'none';
   toggleBookMode();
   toggleRetryThreshold();
 
@@ -3439,13 +3451,13 @@ function saveBookEdit() {
     toast(`'${newName}'은 이미 등록된 교재명입니다`); return;
   }
 
-  const newRetryEnabled   = book.mode === 'book' && !!$('nb-retry-enabled')?.checked;
-  const nrtVal = $('nb-retry-threshold')?.value; const newRetryThreshold = Math.max(0, Math.min(100, (nrtVal === '' || nrtVal == null || isNaN(Number(nrtVal))) ? 80 : Number(nrtVal)));
-
+  // ★ 재도전(기준점수) 설정은 이 폼에서 더 이상 건드리지 않음 — "숙제 배정 내역" 탭에서만 변경
+  //   (예전엔 여기서도 값을 다시 계산해서 덮어썼는데, 그 때문에 다른 이유로 교재를 수정하기만 해도
+  //    기준점수 설정이 조용히 초기화되는 문제가 있었음)
   const oldName = book.name;
   const nameChanged  = oldName !== newName;
   const scoreChanged = book.score !== newScore;
-  const retryChanged = !!book.retryEnabled !== newRetryEnabled || Number(book.retryThreshold||80) !== newRetryThreshold;
+  const retryChanged = false;
 
   // 레이블 추가 파싱 (교재형만)
   let labelsToAdd = [];
@@ -3492,11 +3504,9 @@ function saveBookEdit() {
     });
   }
 
-  // 적용
+  // 적용 (재도전 설정은 손대지 않음 — book.retryEnabled/retryThreshold 그대로 유지)
   book.name  = newName;
   book.score = newScore;
-  book.retryEnabled   = newRetryEnabled;
-  book.retryThreshold = newRetryThreshold;
   if (labelsToAdd.length) {
     book.rows = book.rows.concat(labelsToAdd);
     book.total = book.rows.length;
@@ -3506,7 +3516,6 @@ function saveBookEdit() {
   const parts = [];
   if (nameChanged)  parts.push('이름');
   if (scoreChanged) parts.push('채점');
-  if (retryChanged) parts.push('재도전 설정');
   if (labelsToAdd.length) parts.push(`레이블 ${labelsToAdd.length}개 추가`);
   const summary = parts.join(' · ') || '변경 없음';
 
@@ -3584,7 +3593,9 @@ function renderBooks() {
       </td>
       <td><span class="badge ${mc[b.mode]||'bgy'}">${ml[b.mode]||b.mode}</span></td>
       <td style="font-family:'Space Mono',monospace">${b.rows ? b.rows.length : '-'}</td>
-      <td style="font-size:.75rem;color:var(--mu)">${b.score}</td>
+      <td style="font-size:.75rem;color:var(--mu)">
+        ${escHtml(b.score)}${(b.score==='점수' && b.retryEnabled) ? ` <span style="color:#b45309;font-weight:700">(${b.retryThreshold!=null?b.retryThreshold:80}점 미만 재도전)</span>` : ''}
+      </td>
       <td>
         ${isEditing
           ? '<span style="font-size:.7rem;color:var(--acc)">← 왼쪽 폼에서 편집 중</span>'
@@ -5173,7 +5184,6 @@ function openHistInline(el, info, type) {
         <option value="" ${sel('')}>미입력</option>
         <option value="통과" ${sel('통과')}>통과</option>
         <option value="미통과" ${sel('미통과')}>미통과</option>
-        <option value="미수행" ${sel('미수행')}>미수행</option>
       </select>`;
     } else {
       const sel = v => (assign.result===v)?'selected':'';
