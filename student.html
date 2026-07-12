@@ -228,7 +228,7 @@ body {
 'use strict';
 
 // ══════════════════════════════════════════════════════════
-// 🔥 Firebase 설정 (sotong-academy 프로젝트, 선생님용 v41과 동일)
+// 🔥 Firebase 설정 (sotong-academy 프로젝트, 선생님용과 동일)
 // ⚠️ 이 페이지는 학생이 접속하는 읽기 전용 페이지입니다.
 //   - 학생은 자신의 accessKey로만 자기 데이터 조회
 //   - 쓰기 권한 없음 (읽기만)
@@ -261,7 +261,7 @@ function escHtml(s) {
 
 function _toArray(val) {
   if (!val) return [];
-  if (Array.isArray(val)) return val;
+  if (Array.isArray(val)) return val.filter(v => v !== null && v !== undefined);
   if (typeof val !== 'object') return [];
   return Object.keys(val).sort((a,b)=>Number(a)-Number(b))
                           .map(k => val[k])
@@ -312,6 +312,31 @@ function prettifyLabel(s) {
   return String(s);
 }
 
+/* bookId로 교재 찾기 */
+function getBookById(books, bookId) {
+  return books.find(b => b && b.id === bookId) || null;
+}
+
+/* ★ 선생님용 앱과 동일한 기준으로 "미완료 사유" 판정
+   - 결과 없음 → 미수행
+   - 통과/미통과형인데 미통과 → 미통과
+   - 완료/미수행형인데 미수행 → 미수행
+   - 점수형이고 "미달 시 재도전"이 켜진 교재면 기준점수 미만일 때 → "OO점 (미달)"
+   - 그 외(정상적으로 값이 있음) → null (완료로 인정) */
+function incompleteReason(book, result) {
+  const hasResult = result !== '' && result !== null && result !== undefined;
+  if (!hasResult) return '미수행';
+  if (!book) return null;
+  if (book.score === '통과' && result !== '통과') return result === '미수행' ? '미수행' : '미통과';
+  if (book.score === '완료' && result !== '완료') return '미수행';
+  if (book.score === '점수' && book.retryEnabled) {
+    const n = Number(result);
+    const threshold = (book.retryThreshold != null) ? Number(book.retryThreshold) : 80;
+    if (!isNaN(n) && n < threshold) return `${n}점 (미달)`;
+  }
+  return null;
+}
+
 // ══════════════════════════════════════════════════════════
 // 렌더링
 // ══════════════════════════════════════════════════════════
@@ -325,7 +350,7 @@ function renderError(title, sub) {
   `;
 }
 
-function renderHwCard(a, type) {
+function renderHwCard(a, type, reason) {
   const isVoca = a.type === 'voca';
   const book  = escHtml(a.bookName || '');
   // 보카형: 회차 번호만 / 교재형: 레이블
@@ -347,10 +372,12 @@ function renderHwCard(a, type) {
   let cls = '';
   if (type === 'today') {
     cls = 'today';
-    right = `<div class="s-hw-meta" style="color:#4f46e5;font-weight:700">오늘</div>`;
+    right = reason
+      ? `<div class="s-hw-meta" style="color:#4f46e5">오늘<br><span class="s-hw-result fail" style="margin-top:.15rem">${escHtml(reason)}</span></div>`
+      : `<div class="s-hw-meta" style="color:#4f46e5;font-weight:700">오늘</div>`;
   } else if (type === 'overdue') {
     cls = 'overdue';
-    right = `<div class="s-hw-meta" style="color:#b83224">${dateShort}<br>미완료</div>`;
+    right = `<div class="s-hw-meta" style="color:#b83224">${dateShort}<br><span class="s-hw-result fail" style="margin-top:.15rem">${escHtml(reason || '미완료')}</span></div>`;
   } else if (type === 'done') {
     cls = 'done';
     const resultStr = formatResult(a.result);
@@ -387,38 +414,38 @@ function getResultClass(r) {
   return 'score';
 }
 
-function renderMainView(student, assigns, vacations) {
+function renderMainView(student, assigns, vacations, books) {
   const today = todayStr();
 
   // 이 학생의 배정 전체
   const myAssigns = assigns.filter(a => a.studentId === student.id);
 
-  // 분류
-  const hasResult = (a) =>
-    a.result !== '' && a.result !== null && a.result !== undefined;
+  // ★ "완료"의 기준을 선생님 앱과 동일하게: 미수행·미통과·(기준 설정된) 점수 미달은 모두 미완료로 취급
+  const reasonOf = (a) => incompleteReason(getBookById(books, a.bookId), a.result);
 
-  // 오늘 숙제: 오늘이 수업일이고 + 결과 없는 것
+  // 오늘 숙제: 오늘이 수업일이고 + 미완료인 것 (사유와 함께)
   // (오늘이 방학/공휴일이면 오늘 카드 비워둠 - 빈 상태)
   const isTodayClassDay = !isNonClassDay(today, vacations);
   const todays = isTodayClassDay
-    ? myAssigns.filter(a => a.date === today && !hasResult(a))
+    ? myAssigns.filter(a => a.date === today && reasonOf(a))
     : [];
 
   // 지난 미완료: 미완료 + 과거 + 방학/공휴일에 배정된 것은 제외
   const overdue = myAssigns
-    .filter(a => a.date < today && !hasResult(a))
+    .filter(a => a.date < today && reasonOf(a))
     .filter(a => !isNonClassDay(a.date, vacations))
     .sort((a,b) => b.date.localeCompare(a.date)); // 최근 미완료부터
 
-  // 최근 완료: 결과 있는 것은 날짜 무관하게 표시 (방학/공휴일 필터 안 함)
-  // 실제 했다는 기록이므로 그대로 보여줘야 함
+  // 최근 완료: 결과가 있고 + 미완료 사유가 없는 것 (진짜로 통과/완료/기준 이상인 것만)
   const recentDone = myAssigns
-    .filter(a => hasResult(a))
+    .filter(a => {
+      const hasResult = a.result !== '' && a.result !== null && a.result !== undefined;
+      return hasResult && !reasonOf(a);
+    })
     .sort((a,b) => b.date.localeCompare(a.date))
     .slice(0, 10);
 
   // 헤더
-  const d = new Date();
   const todayKor = fmtDateKor(today);
 
   const html = `
@@ -449,7 +476,7 @@ function renderMainView(student, assigns, vacations) {
                 <div class="s-empty-icon">🏖</div>
                 <div>오늘은 학원 쉬는 날이에요</div>
               </div>`)
-        : `<div class="s-hw-list">${todays.map(a => renderHwCard(a, 'today')).join('')}</div>`
+        : `<div class="s-hw-list">${todays.map(a => renderHwCard(a, 'today', reasonOf(a))).join('')}</div>`
       }
     </div>
 
@@ -462,7 +489,7 @@ function renderMainView(student, assigns, vacations) {
           <span class="s-section-count hot">${overdue.length}개 남음</span>
         </div>
         <div class="s-hw-list">
-          ${overdue.map(a => renderHwCard(a, 'overdue')).join('')}
+          ${overdue.map(a => renderHwCard(a, 'overdue', reasonOf(a))).join('')}
         </div>
       </div>
     ` : ''}
@@ -521,6 +548,7 @@ async function main() {
     const students  = Array.isArray(val.students)  ? val.students  : _toArray(val.students);
     const assigns   = Array.isArray(val.assigns)   ? val.assigns   : _toArray(val.assigns);
     const vacations = Array.isArray(val.vacations) ? val.vacations : _toArray(val.vacations);
+    const books     = Array.isArray(val.books)     ? val.books     : _toArray(val.books); // ★ 미완료 판정에 필요 (채점 방식·기준점수)
 
     // 내 accessKey에 매칭되는 학생 찾기
     const me = students.find(s => s.accessKey === key);
@@ -531,7 +559,7 @@ async function main() {
     }
 
     // 메인 뷰 렌더링
-    renderMainView(me, assigns, vacations);
+    renderMainView(me, assigns, vacations, books);
 
   } catch (err) {
     console.error(err);
