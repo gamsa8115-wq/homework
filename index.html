@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v85</title>
+<title>숙제 관리 v86</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -406,7 +406,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v85</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v86</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -682,7 +682,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
           </select>
         </div>
         <div><label>채점 방식</label>
-          <select id="nb-score" onchange="toggleRetryThreshold()">
+          <select id="nb-score">
             <option value="점수">점수 (0~100)</option>
             <option value="통과">통과/미통과</option>
             <option value="완료">완료/미수행</option>
@@ -713,20 +713,9 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
           <div style="font-size:.66rem;color:var(--mu);margin-top:.3rem">배정된 레이블은 삭제할 수 없습니다</div>
         </div>
 
-        <!-- 🎯 신규 등록 시에만 여기서 설정 가능. 기존 교재는 "숙제 배정 내역" 탭에서 변경 (여기서 바꾸면 조용히 초기화되는 문제 방지) -->
-        <div id="nb-retry-section" style="margin-top:.7rem;padding-top:.6rem;border-top:1px dashed var(--bd)">
-          <label style="display:flex;align-items:center;gap:.4rem;font-weight:400;cursor:pointer">
-            <input type="checkbox" id="nb-retry-enabled" style="width:14px;height:14px" onchange="toggleRetryThreshold()">
-            <span>미달 시 같은 단원 재도전 ("숙제 현황" 탭에 반영)</span>
-          </label>
-          <div id="nb-retry-threshold-wrap" style="display:none;margin-top:.4rem;align-items:center;gap:.4rem">
-            <label style="margin:0;white-space:nowrap;font-size:.75rem">기준점수</label>
-            <input type="number" id="nb-retry-threshold" value="80" min="0" max="100" style="width:70px">
-            <span style="font-size:.72rem;color:var(--mu)">점 미만이면 재도전</span>
-          </div>
-        </div>
-        <div id="nb-retry-edit-note" style="display:none;margin-top:.7rem;padding:.5rem .6rem;background:var(--s2);border-radius:6px;font-size:.72rem;color:var(--mu)">
-          ℹ 재도전(기준점수) 설정은 <b>숙제 배정 내역</b> 탭에서 이 교재를 선택하면 바꿀 수 있어요. (여기선 변경 안 됨)
+        <!-- ℹ 재도전(기준점수)은 반마다 다를 수 있어서 여기서 설정 안 함 — 숙제 배정 내역 탭에서 반별로 설정 -->
+        <div style="margin-top:.7rem;padding:.5rem .6rem;background:var(--s2);border-radius:6px;font-size:.72rem;color:var(--mu)">
+          ℹ 미달 시 재도전 기준점수는 반마다 다를 수 있어서, <b>숙제 배정 내역</b> 탭에서 반을 선택한 뒤 설정해요.
         </div>
       </div>
 
@@ -792,15 +781,15 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         <option value="">교재 선택...</option>
       </select>
     </div>
-    <!-- ★ 점수형 교재 선택 시에만 표시: 여기서 바로 기준점수 설정 → 숙제 현황(미완료 확인)에 미달 점수로 반영 -->
+    <!-- ★ 점수형 교재 선택 시에만 표시: 선택된 "반"마다 별도로 설정됨 (교재 전체 공통 아님) -->
     <div id="hist-threshold-wrap" style="display:none;align-items:center;gap:.35rem;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:.25rem .6rem">
       <label style="display:flex;align-items:center;gap:.3rem;margin:0;font-size:.76rem;cursor:pointer">
         <input type="checkbox" id="hist-threshold-enable" onchange="onHistThresholdChange()" style="width:13px;height:13px">
-        기준점수
+        이 반 기준점수
       </label>
       <input type="number" id="hist-threshold-input" min="0" max="100" style="width:55px;padding:.2rem .35rem;font-size:.78rem"
         onchange="onHistThresholdChange()">
-      <span style="font-size:.7rem;color:var(--mu)">점 미만 → 숙제 현황에 표시</span>
+      <span style="font-size:.7rem;color:var(--mu)">점 미만 → 숙제 현황에 표시 (반마다 따로 설정됨)</span>
     </div>
     <div style="display:flex;gap:.3rem;margin-left:auto;align-items:center">
       <!-- 보기 범위: 진행 중 / 종료 포함 (완료 여부는 진행 중 안에서 표시만, 필터링은 안 함) -->
@@ -3307,15 +3296,6 @@ function toggleBookMode() {
   $('label-editor').style.display = isBook ? '' : 'none';
 }
 
-/* 재도전 체크박스 on/off 시 기준점수 입력 표시 (채점방식이 '점수'일 때만) */
-function toggleRetryThreshold() {
-  const wrap = $('nb-retry-threshold-wrap');
-  if (!wrap) return;
-  const enabled = $('nb-retry-enabled')?.checked;
-  const isScoreType = $('nb-score')?.value === '점수';
-  wrap.style.display = (enabled && isScoreType) ? 'flex' : 'none';
-}
-
 /* 붙여넣기 실시간 감지 수 표시 */
 function onPasteInput() {
   const lines = parseRawLabels($('lb-paste').value || '');
@@ -3343,10 +3323,7 @@ function submitBookForm() {
     rows = [...new Set(rows)]; // 중복 제거
   }
 
-  const retryEnabled   = mode === 'book' && !!$('nb-retry-enabled')?.checked;
-  const rtVal = $('nb-retry-threshold')?.value; const retryThreshold = Math.max(0, Math.min(100, (rtVal === '' || rtVal == null || isNaN(Number(rtVal))) ? 80 : Number(rtVal)));
-
-  S.books.push({ id: S.nid++, name, mode, total: rows.length, score, label: '', rows, retryEnabled, retryThreshold });
+  S.books.push({ id: S.nid++, name, mode, total: rows.length, score, label: '', rows, classThresholds: {} });
 
   cancelBookForm(); // 폼 초기화
   save();
@@ -3365,14 +3342,6 @@ function startBookEdit(id) {
   $('nb-name').value  = book.name;
   $('nb-mode').value  = book.mode;
   $('nb-score').value = book.score;
-  $('nb-retry-enabled').checked = !!book.retryEnabled;
-  $('nb-retry-threshold').value = book.retryThreshold != null ? book.retryThreshold : 80;
-  // ★ 수정 모드에서는 재도전 설정 입력을 숨기고, 어디서 바꾸는지 안내만 표시 (조용한 초기화 방지)
-  const retrySection = $('nb-retry-section');
-  const retryNote = $('nb-retry-edit-note');
-  if (retrySection) retrySection.style.display = 'none';
-  if (retryNote) retryNote.style.display = book.mode === 'book' ? '' : 'none';
-
   // 교재형이면 레이블 편집 UI 표시
   toggleBookMode();
   toggleRetryThreshold();
@@ -3417,14 +3386,7 @@ function cancelBookForm() {
   $('lb-paste').placeholder = '여기에 붙여넣기 (Ctrl+V)\n01pss- 중2 - 01\n01pss- 중2 - 02\n...';
   $('lb-label').textContent = '행 레이블 목록';
   $('lb-existing-wrap').style.display = 'none';
-  $('nb-retry-enabled').checked = false;
-  $('nb-retry-threshold').value = 80;
-  const retrySection = $('nb-retry-section');
-  const retryNote = $('nb-retry-edit-note');
-  if (retrySection) retrySection.style.display = '';
-  if (retryNote) retryNote.style.display = 'none';
   toggleBookMode();
-  toggleRetryThreshold();
 
   $('nb-title').querySelector('span').textContent = '+ 교재 추가';
   $('nb-submit-btn').textContent = '+ 등록';
@@ -3594,7 +3556,13 @@ function renderBooks() {
       <td><span class="badge ${mc[b.mode]||'bgy'}">${ml[b.mode]||b.mode}</span></td>
       <td style="font-family:'Space Mono',monospace">${b.rows ? b.rows.length : '-'}</td>
       <td style="font-size:.75rem;color:var(--mu)">
-        ${escHtml(b.score)}${(b.score==='점수' && b.retryEnabled) ? ` <span style="color:#b45309;font-weight:700">(${b.retryThreshold!=null?b.retryThreshold:80}점 미만 재도전)</span>` : ''}
+        ${(() => {
+          const activeClasses = Object.keys(b.classThresholds||{}).filter(g => b.classThresholds[g]?.enabled);
+          const badge = (b.score==='점수' && activeClasses.length)
+            ? ` <span style="color:#b45309;font-weight:700">(${activeClasses.length}개 반 재도전 설정)</span>`
+            : '';
+          return escHtml(b.score) + badge;
+        })()}
       </td>
       <td>
         ${isEditing
@@ -3788,12 +3756,13 @@ function renderHistCellModes() {
 
 /* renderHistory — 행 레이블 × 학생 매트릭스
    onclick에 문자열 미포함 — _histCellMap[cellId]로 조회 */
-/* ★ 배정 내역 탭에서 기준점수 체크박스/입력값이 바뀌면 해당 교재에 바로 저장
-   → 숙제 현황(미완료 확인)의 "점수 미달" 판정에 즉시 반영됨 */
+/* ★ 배정 내역 탭에서 기준점수 체크박스/입력값이 바뀌면 "지금 선택된 반" 기준으로 해당 교재에 저장
+   → 반마다 다른 기준점수를 가질 수 있음 (같은 교재라도 반별로 따로 설정) */
 async function onHistThresholdChange() {
-  const bid = Number($('hist-book')?.value || 0);
-  const book = getBook(bid);
-  if (!book) return;
+  const bid   = Number($('hist-book')?.value || 0);
+  const group = $('hist-group')?.value || '';
+  const book  = getBook(bid);
+  if (!book || !group) return;
   const chk = $('hist-threshold-enable');
   const inp = $('hist-threshold-input');
   const enabled = !!chk?.checked;
@@ -3802,8 +3771,8 @@ async function onHistThresholdChange() {
   threshold = Math.max(0, Math.min(100, threshold));
   if (inp) inp.value = threshold;
 
-  book.retryEnabled = enabled;
-  book.retryThreshold = threshold;
+  if (!book.classThresholds) book.classThresholds = {};
+  book.classThresholds[group] = { enabled, threshold };
 
   // ★ 로컬(브라우저) 저장은 즉시, Firebase도 디바운스 없이 바로 저장
   //   → "체크하자마자 새로고침"해도 절대 안 풀리도록
@@ -3817,7 +3786,7 @@ async function onHistThresholdChange() {
   toast('저장 중...');
   const ok = await saveToFirebaseNow();
   toast(ok
-    ? (enabled ? `✅ 기준점수 ${threshold}점 미만은 숙제 현황에 표시됩니다 (저장됨)` : '기준점수 적용이 꺼졌습니다 (저장됨)')
+    ? (enabled ? `✅ ${group} 반은 ${threshold}점 미만이면 숙제 현황에 표시됩니다 (저장됨)` : `${group} 반 기준점수 적용이 꺼졌습니다 (저장됨)`)
     : '⚠ 저장 실패 — 인터넷 연결을 확인하고 다시 시도해주세요');
 }
 
@@ -3855,16 +3824,17 @@ function renderHistory() {
     closeInspect();
   }
 
-  // ★ 점수형 교재를 선택했을 때만 "기준점수" 설정 UI 표시 + 현재 값 동기화
+  // ★ 점수형 교재 + 반이 선택됐을 때만 "기준점수" 설정 UI 표시 + 그 반의 현재 값 동기화
   const thWrap = $('hist-threshold-wrap');
   if (thWrap) {
-    const showThreshold = !!bidBook && bidBook.mode === 'book' && bidBook.score === '점수';
+    const showThreshold = !!bidBook && bidBook.mode === 'book' && bidBook.score === '점수' && !!group;
     thWrap.style.display = showThreshold ? 'flex' : 'none';
     if (showThreshold) {
+      const classCfg = bidBook.classThresholds?.[group];
       const chk = $('hist-threshold-enable');
       const inp = $('hist-threshold-input');
-      if (chk) chk.checked = !!bidBook.retryEnabled;
-      if (inp) inp.value = (bidBook.retryThreshold != null) ? bidBook.retryThreshold : 80;
+      if (chk) chk.checked = !!classCfg?.enabled;
+      if (inp) inp.value = (classCfg?.threshold != null) ? classCfg.threshold : 80;
     }
   }
 
@@ -5667,17 +5637,20 @@ function _daysSince(dateStr, untilStr) {
 
 /* ★ 미완료 사유 판정: 미수행(결과 없음) / 미통과 / 미수행(완료형) / 점수 미달
    - 통과·완료형은 값 자체가 의미를 가지므로 항상 판정
-   - 점수형은 "미달 시 재도전"이 켜진 교재에서만 기준점수 판정 (꺼진 교재·보카형은 임의 기준 적용 안 함) */
-function _incompleteReason(book, result) {
+   - 점수형은 "이 반"의 기준점수 설정이 켜져 있을 때만 판정 (반마다 설정이 다를 수 있음) */
+function _incompleteReason(book, result, group) {
   const hasResult = result !== '' && result !== null && result !== undefined;
   if (!hasResult) return '미수행';
   if (!book) return null;
   if (book.score === '통과' && result !== '통과') return result === '미수행' ? '미수행' : '미통과';
   if (book.score === '완료' && result !== '완료') return '미수행';
-  if (book.score === '점수' && book.retryEnabled) {
-    const n = Number(result);
-    const threshold = (book.retryThreshold != null) ? Number(book.retryThreshold) : 80;
-    if (!isNaN(n) && n < threshold) return `${n}점 (미달)`;
+  if (book.score === '점수') {
+    const classCfg = book.classThresholds?.[group];
+    if (classCfg?.enabled) {
+      const n = Number(result);
+      const threshold = (classCfg.threshold != null) ? Number(classCfg.threshold) : 80;
+      if (!isNaN(n) && n < threshold) return `${n}점 (미달)`;
+    }
   }
   return null; // 완료로 인정됨
 }
@@ -5691,7 +5664,7 @@ function _buildIncompleteForStudent(student, untilDate, typeF, bookF) {
     if (bookF && String(a.bookId) !== bookF) return;
     const book = getBook(a.bookId);
     if (typeF && (book?.mode || a.type) !== typeF) return;
-    const reason = _incompleteReason(book, a.result);
+    const reason = _incompleteReason(book, a.result, student.group);
     if (reason) items.push({ ...a, _reason: reason });
   });
   const byBook = {};
@@ -6028,6 +6001,29 @@ function repairMalformedAssigns() {
 
 /* ★ "언제 이 교재를 배정했는지" 날짜가 없는 기존 데이터에, 가장 이른 배정 기록으로 추정치를 채워넣음
    (배정 기록조차 없으면 그냥 비워둠 → 화면엔 "기록 없음"으로 표시) */
+/* ★ 예전엔 재도전 기준점수가 교재 전체에 하나만 있었음 → 반마다 다르게 설정할 수 있도록 구조 변경
+   기존에 켜져 있던 교재는, 그 교재를 쓰고 있는 모든 반에 같은 값을 "초기값"으로 한 번만 옮겨줌
+   (그 이후로는 반별로 각각 조정하면 됨) */
+function migrateBookThresholdsToPerClass() {
+  let migrated = 0;
+  S.books.forEach(book => {
+    if (!book || book.mode !== 'book') return;
+    if (!book.classThresholds) book.classThresholds = {};
+    if (!book.retryEnabled) return; // 예전에 켜둔 적 없으면 옮길 것도 없음
+    const groupsUsingBook = new Set(
+      S.students.filter(s => (s.books||[]).includes(book.name)).map(s => s.group)
+    );
+    groupsUsingBook.forEach(g => {
+      if (!g || book.classThresholds[g]) return; // 이미 반별 설정이 있으면 건드리지 않음
+      book.classThresholds[g] = { enabled: true, threshold: book.retryThreshold != null ? book.retryThreshold : 80 };
+      migrated++;
+    });
+    delete book.retryEnabled;
+    delete book.retryThreshold;
+  });
+  return migrated;
+}
+
 function backfillBookDates() {
   let filled = 0;
   S.students.forEach(st => {
@@ -6123,12 +6119,14 @@ async function pullInitialFromFirebase() {
     });
 
     const filledDates = backfillBookDates();
+    const thresholdsMigrated = migrateBookThresholdsToPerClass();
 
-    if (migrated > 0 || fixedBooks > 0 || filledDates > 0 || repairedAssigns > 0) {
+    if (migrated > 0 || fixedBooks > 0 || filledDates > 0 || repairedAssigns > 0 || thresholdsMigrated > 0) {
       if (migrated > 0)       console.log(`[Firebase 마이그레이션] ${migrated}명에게 접근 키 부여`);
       if (repairedAssigns > 0) console.log(`[Firebase 마이그레이션] 손상된 배정 기록 ${repairedAssigns}건 복구`);
       if (fixedBooks > 0)     console.log(`[Firebase 마이그레이션] 배정 기록 기준으로 books 목록 ${fixedBooks}건 보정`);
       if (filledDates > 0)    console.log(`[Firebase 마이그레이션] 배정일 추정치 ${filledDates}건 채움`);
+      if (thresholdsMigrated > 0) console.log(`[Firebase 마이그레이션] 재도전 기준점수를 반별 설정 ${thresholdsMigrated}건으로 이전`);
       saveToFirebase(); // 마이그레이션 결과 다시 업로드
     }
     // localStorage에도 반영
@@ -6312,6 +6310,17 @@ function sanitizeStudentsBeforeSave() {
       s.bookDates = cleaned;
     }
   });
+  // ★ classThresholds 키(반 이름)에 Firebase 금지문자('.','#','$','/','[',']')가 섞이면 저장이 통째로 실패하므로 걸러냄
+  const FORBIDDEN = /[.#$/\[\]]/;
+  S.books.forEach(b => {
+    if (b.classThresholds && typeof b.classThresholds === 'object') {
+      const cleaned = {};
+      Object.keys(b.classThresholds).forEach(g => {
+        if (g && !FORBIDDEN.test(g)) cleaned[g] = b.classThresholds[g];
+      });
+      b.classThresholds = cleaned;
+    }
+  });
 }
 
 function save() {
@@ -6399,6 +6408,11 @@ function load() {
     const filledDates = backfillBookDates();
     if (filledDates > 0) {
       console.log(`[마이그레이션] 배정일 추정치 ${filledDates}건 채움`);
+    }
+
+    const thresholdsMigrated = migrateBookThresholdsToPerClass();
+    if (thresholdsMigrated > 0) {
+      console.log(`[마이그레이션] 재도전 기준점수를 반별 설정 ${thresholdsMigrated}건으로 이전`);
     }
 
   } catch (e) {
