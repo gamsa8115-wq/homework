@@ -317,22 +317,25 @@ function getBookById(books, bookId) {
   return books.find(b => b && b.id === bookId) || null;
 }
 
-/* ★ 선생님용 앱과 동일한 기준으로 "미완료 사유" 판정
+/* ★ 선생님용 앱과 동일한 기준으로 "미완료 사유" 판정 (반마다 기준점수가 다를 수 있음)
    - 결과 없음 → 미수행
    - 통과/미통과형인데 미통과 → 미통과
    - 완료/미수행형인데 미수행 → 미수행
-   - 점수형이고 "미달 시 재도전"이 켜진 교재면 기준점수 미만일 때 → "OO점 (미달)"
+   - 점수형이고 "이 반"에 대해 재도전 설정이 켜진 교재면 기준점수 미만일 때 → "OO점 (미달)"
    - 그 외(정상적으로 값이 있음) → null (완료로 인정) */
-function incompleteReason(book, result) {
+function incompleteReason(book, result, group) {
   const hasResult = result !== '' && result !== null && result !== undefined;
   if (!hasResult) return '미수행';
   if (!book) return null;
   if (book.score === '통과' && result !== '통과') return result === '미수행' ? '미수행' : '미통과';
   if (book.score === '완료' && result !== '완료') return '미수행';
-  if (book.score === '점수' && book.retryEnabled) {
-    const n = Number(result);
-    const threshold = (book.retryThreshold != null) ? Number(book.retryThreshold) : 80;
-    if (!isNaN(n) && n < threshold) return `${n}점 (미달)`;
+  if (book.score === '점수') {
+    const classCfg = book.classThresholds?.[group];
+    if (classCfg?.enabled) {
+      const n = Number(result);
+      const threshold = (classCfg.threshold != null) ? Number(classCfg.threshold) : 80;
+      if (!isNaN(n) && n < threshold) return `${n}점 (미달)`;
+    }
   }
   return null;
 }
@@ -420,8 +423,8 @@ function renderMainView(student, assigns, vacations, books) {
   // 이 학생의 배정 전체
   const myAssigns = assigns.filter(a => a.studentId === student.id);
 
-  // ★ "완료"의 기준을 선생님 앱과 동일하게: 미수행·미통과·(기준 설정된) 점수 미달은 모두 미완료로 취급
-  const reasonOf = (a) => incompleteReason(getBookById(books, a.bookId), a.result);
+  // ★ "완료"의 기준을 선생님 앱과 동일하게: 미수행·미통과·(반별 기준 설정된) 점수 미달은 모두 미완료로 취급
+  const reasonOf = (a) => incompleteReason(getBookById(books, a.bookId), a.result, student.group);
 
   // 오늘 숙제: 오늘이 수업일이고 + 미완료인 것 (사유와 함께)
   // (오늘이 방학/공휴일이면 오늘 카드 비워둠 - 빈 상태)
