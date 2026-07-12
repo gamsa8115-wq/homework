@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v43</title>
+<title>숙제 관리 v85</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -406,7 +406,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v43</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v85</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -6081,9 +6081,12 @@ async function pullInitialFromFirebase() {
 
     // ★ 방금 원격에서 읽은 id-배열들(assigns/books/students)을 "동기화 기준점"으로 저장
     //   (다음 저장 시 이걸 기준으로 diff — books/students도 assigns와 동일하게 레코드 단위 보호)
+    //   ★★ 반드시 깊은 복사본으로 저장! S[key]의 객체를 그대로 참조하면, 나중에 그 객체를
+    //      직접 수정(book.retryEnabled = true 같은)할 때 이 "기준점"도 같이 바뀌어버려서
+    //      "바뀐 게 없다"고 착각하고 Firebase 전송을 건너뛰는 버그가 생김
     RECORD_KEYS.forEach(key => {
       const map = {};
-      (S[key] || []).forEach(rec => { if (rec && rec.id != null) map[rec.id] = rec; });
+      (S[key] || []).forEach(rec => { if (rec && rec.id != null) map[rec.id] = JSON.parse(JSON.stringify(rec)); });
       _lastSyncedById[key] = map;
     });
 
@@ -6186,7 +6189,11 @@ async function _doFirebaseWrite() {
           updates[`${FB_PATH}/${key}/${id}`] = null; // 삭제된 레코드만 콕 집어서 null
         }
       });
-      newSyncedById[key] = currentById;
+      // ★★ 여기도 반드시 깊은 복사본으로! currentById는 S[key]의 실제 객체를 그대로 참조하고
+      //    있어서, 이걸 그대로 다음 기준점으로 삼으면 이후 그 객체를 또 수정할 때 똑같은 버그가 재발함
+      const clonedById = {};
+      Object.keys(currentById).forEach(id => { clonedById[id] = JSON.parse(JSON.stringify(currentById[id])); });
+      newSyncedById[key] = clonedById;
     });
 
     await _fbDB.ref('/').update(updates);
@@ -6243,7 +6250,7 @@ function subscribeToFirebase() {
         //   (다른 선생님의 변경분을 다시 덮어쓰지 않기 위해)
         if (RECORD_KEYS.includes(k)) {
           const map = {};
-          (S[k] || []).forEach(rec => { if (rec && rec.id != null) map[rec.id] = rec; });
+          (S[k] || []).forEach(rec => { if (rec && rec.id != null) map[rec.id] = JSON.parse(JSON.stringify(rec)); });
           _lastSyncedById[k] = map;
         }
         // localStorage도 갱신
