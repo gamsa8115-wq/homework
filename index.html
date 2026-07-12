@@ -3790,7 +3790,7 @@ function renderHistCellModes() {
    onclick에 문자열 미포함 — _histCellMap[cellId]로 조회 */
 /* ★ 배정 내역 탭에서 기준점수 체크박스/입력값이 바뀌면 해당 교재에 바로 저장
    → 숙제 현황(미완료 확인)의 "점수 미달" 판정에 즉시 반영됨 */
-function onHistThresholdChange() {
+async function onHistThresholdChange() {
   const bid = Number($('hist-book')?.value || 0);
   const book = getBook(bid);
   if (!book) return;
@@ -3804,8 +3804,21 @@ function onHistThresholdChange() {
 
   book.retryEnabled = enabled;
   book.retryThreshold = threshold;
-  save();
-  toast(enabled ? `✅ 기준점수 ${threshold}점 미만은 숙제 현황에 표시됩니다` : '기준점수 적용이 꺼졌습니다');
+
+  // ★ 로컬(브라우저) 저장은 즉시, Firebase도 디바운스 없이 바로 저장
+  //   → "체크하자마자 새로고침"해도 절대 안 풀리도록
+  sanitizeStudentsBeforeSave();
+  try {
+    const payload = {};
+    PERSIST_KEYS.forEach(k => { payload[k] = S[k]; });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  } catch (e) {}
+
+  toast('저장 중...');
+  const ok = await saveToFirebaseNow();
+  toast(ok
+    ? (enabled ? `✅ 기준점수 ${threshold}점 미만은 숙제 현황에 표시됩니다 (저장됨)` : '기준점수 적용이 꺼졌습니다 (저장됨)')
+    : '⚠ 저장 실패 — 인터넷 연결을 확인하고 다시 시도해주세요');
 }
 
 function renderHistory() {
@@ -6130,65 +6143,78 @@ async function pullInitialFromFirebase() {
 }
 
 /* Firebase에 저장 (호출 시 debounce 300ms) */
+/* 실제 Firebase 쓰기 로직 (디바운스와 분리 — saveToFirebase와 saveToFirebaseNow 양쪽에서 재사용) */
+async function _doFirebaseWrite() {
+  sanitizeStudentsBeforeSave(); // ★ 저장 전 정합성 정리 (undefined 저장 오류 방지)
+  _isSavingToFb = true;
+  _setFbStatus('saving', '저장 중...');
+  try {
+    const updates = {};
+    PERSIST_KEYS.forEach(k => {
+      if (RECORD_KEYS.includes(k)) return; // ★ id 있는 배열은 아래에서 레코드 단위로 별도 처리
+      const path = `${FB_PATH}/${k}`;
+      _validatePath(path);
+      const val = S[k];
+      // 빈 배열은 null로 → Firebase에서 해당 키 삭제
+      if (Array.isArray(val) && val.length === 0) {
+        updates[path] = null;
+      } else {
+        updates[path] = val !== undefined ? val : null;
+      }
+    });
+
+    // ★ id 있는 배열(assigns/books/students)은 통째로 덮어쓰지 않고,
+    //   실제로 바뀐/추가/삭제된 레코드만 개별 경로로 기록
+    //   → 다른 선생님이 동시에 다른 걸(다른 배정, 다른 학생, 다른 교재) 저장해도 서로 안 덮어씀
+    const newSyncedById = {};
+    RECORD_KEYS.forEach(key => {
+      const currentById = {};
+      (S[key] || []).forEach(rec => { if (rec && rec.id != null) currentById[rec.id] = rec; });
+      const lastSynced = _lastSyncedById[key] || {};
+
+      Object.keys(currentById).forEach(id => {
+        const cur  = currentById[id];
+        const prev = lastSynced[id];
+        if (!prev || JSON.stringify(prev) !== JSON.stringify(cur)) {
+          _validatePath(`${FB_PATH}/${key}/${id}`);
+          updates[`${FB_PATH}/${key}/${id}`] = cur;
+        }
+      });
+      Object.keys(lastSynced).forEach(id => {
+        if (!(id in currentById)) {
+          _validatePath(`${FB_PATH}/${key}/${id}`);
+          updates[`${FB_PATH}/${key}/${id}`] = null; // 삭제된 레코드만 콕 집어서 null
+        }
+      });
+      newSyncedById[key] = currentById;
+    });
+
+    await _fbDB.ref('/').update(updates);
+    _lastSyncedById = newSyncedById; // 성공 시 동기화 기준점 갱신
+    _setFbStatus('connected', '연결됨 (실시간 공유)');
+    return true;
+  } catch (e) {
+    console.error('[Firebase] 저장 오류:', e);
+    _setFbStatus('offline', '저장 실패');
+    return false;
+  } finally {
+    // echo 무시 기간을 약간 더 줌
+    setTimeout(() => { _isSavingToFb = false; }, 500);
+  }
+}
+
 function saveToFirebase() {
   if (!_fbReady) return;
   clearTimeout(_saveDebounceTimer);
-  _saveDebounceTimer = setTimeout(async () => {
-    sanitizeStudentsBeforeSave(); // ★ 저장 전 정합성 정리 (undefined 저장 오류 방지)
-    _isSavingToFb = true;
-    _setFbStatus('saving', '저장 중...');
-    try {
-      const updates = {};
-      PERSIST_KEYS.forEach(k => {
-        if (RECORD_KEYS.includes(k)) return; // ★ id 있는 배열은 아래에서 레코드 단위로 별도 처리
-        const path = `${FB_PATH}/${k}`;
-        _validatePath(path);
-        const val = S[k];
-        // 빈 배열은 null로 → Firebase에서 해당 키 삭제
-        if (Array.isArray(val) && val.length === 0) {
-          updates[path] = null;
-        } else {
-          updates[path] = val !== undefined ? val : null;
-        }
-      });
+  _saveDebounceTimer = setTimeout(_doFirebaseWrite, 300);
+}
 
-      // ★ id 있는 배열(assigns/books/students)은 통째로 덮어쓰지 않고,
-      //   실제로 바뀐/추가/삭제된 레코드만 개별 경로로 기록
-      //   → 다른 선생님이 동시에 다른 걸(다른 배정, 다른 학생, 다른 교재) 저장해도 서로 안 덮어씀
-      const newSyncedById = {};
-      RECORD_KEYS.forEach(key => {
-        const currentById = {};
-        (S[key] || []).forEach(rec => { if (rec && rec.id != null) currentById[rec.id] = rec; });
-        const lastSynced = _lastSyncedById[key] || {};
-
-        Object.keys(currentById).forEach(id => {
-          const cur  = currentById[id];
-          const prev = lastSynced[id];
-          if (!prev || JSON.stringify(prev) !== JSON.stringify(cur)) {
-            _validatePath(`${FB_PATH}/${key}/${id}`);
-            updates[`${FB_PATH}/${key}/${id}`] = cur;
-          }
-        });
-        Object.keys(lastSynced).forEach(id => {
-          if (!(id in currentById)) {
-            _validatePath(`${FB_PATH}/${key}/${id}`);
-            updates[`${FB_PATH}/${key}/${id}`] = null; // 삭제된 레코드만 콕 집어서 null
-          }
-        });
-        newSyncedById[key] = currentById;
-      });
-
-      await _fbDB.ref('/').update(updates);
-      _lastSyncedById = newSyncedById; // 성공 시 동기화 기준점 갱신
-      _setFbStatus('connected', '연결됨 (실시간 공유)');
-    } catch (e) {
-      console.error('[Firebase] 저장 오류:', e);
-      _setFbStatus('offline', '저장 실패');
-    } finally {
-      // echo 무시 기간을 약간 더 줌
-      setTimeout(() => { _isSavingToFb = false; }, 500);
-    }
-  }, 300);
+/* ★ 디바운스 없이 즉시 저장 — 중요한 설정(재도전 기준점수 등)처럼
+   "체크하자마자 새로고침해도 절대 안 풀려야 하는" 값에 사용 */
+async function saveToFirebaseNow() {
+  if (!_fbReady) return false;
+  clearTimeout(_saveDebounceTimer); // 대기 중이던 디바운스 저장은 취소 (아래에서 한번에 처리)
+  return await _doFirebaseWrite();
 }
 
 /* 다른 선생님의 변경사항 실시간 반영 */
