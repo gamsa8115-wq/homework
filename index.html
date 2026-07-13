@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v86</title>
+<title>숙제 관리 v91</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -406,7 +406,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v86</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v91</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -550,7 +550,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 
         <div style="display:flex;gap:.4rem;margin-top:.55rem">
           <button class="btn bp" style="flex:1" onclick="doDistribute()">📥 배부</button>
-          <button class="btn bg" style="flex:1" onclick="doRetrieve()">📤 회수</button>
+          <button class="btn bg" style="flex:1" onclick="doRetrieve()">✅ 교재완료 처리</button>
         </div>
 
         <div class="distrib-info">
@@ -586,7 +586,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
       <option value="book">교재형</option>
     </select>
     <button id="fl-toggle-retired" class="btn bg bsm" onclick="toggleListShowRetired()"
-      title="완료 처리된 교재도 함께 보기" style="font-size:.76rem">🗂 종료 항목 숨김</button>
+      title="교재완료된 학생도 함께 보기" style="font-size:.76rem">🗂 교재완료 항목 숨김</button>
     <button class="btn bg bsm" onclick="clearFilters()">초기화</button>
     <button class="btn bs bsm" style="margin-left:auto" onclick="goPage('p-export')">💾 내보내기</button>
   </div>
@@ -685,7 +685,6 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
           <select id="nb-score">
             <option value="점수">점수 (0~100)</option>
             <option value="통과">통과/미통과</option>
-            <option value="완료">완료/미수행</option>
           </select>
         </div>
       </div>
@@ -797,7 +796,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         title="어느 범위까지 보여줄지 선택"
         style="font-size:.72rem;padding:.28rem .5rem;margin-right:.35rem;width:auto">
         <option value="active">🟢 진행 중</option>
-        <option value="retired">🗂 종료 포함</option>
+        <option value="retired">🗂 교재완료 포함</option>
       </select>
       <button class="btn bg bsm hist-mode-btn" id="hmode-view"   onclick="setHistMode('view')"   style="font-size:.72rem">👁 보기</button>
       <button class="btn bg bsm hist-mode-btn" id="hmode-assign" onclick="setHistMode('assign')" style="font-size:.72rem">📌 배정</button>
@@ -1329,8 +1328,8 @@ function doDistribute() {
   toast(msg);
 }
 
-/* 📤 회수: 체크된 학생의 books에서 교재명 제거
-   단, 실제 배정 내역이 있으면 확인 후 진행 */
+/* ✅ 교재 완료: 체크된 학생들을 한 번에 "완료 처리" — books에서 제거 + completedBooks에 기록
+   (배정 목록 탭의 "완료 처리"와 완전히 같은 개념의 다건 버전. 배정 기록은 그대로 유지됨) */
 function doRetrieve() {
   const bid   = Number(($('d-book')||{}).value || 0);
   const group = ($('d-group')||{}).value || '';
@@ -1341,36 +1340,39 @@ function doRetrieve() {
   if (!book) return;
 
   const ids = getDistribCheckedIds();
-  if (!ids.length) { toast('회수할 학생을 선택하세요'); return; }
+  if (!ids.length) { toast('교재완료 처리할 학생을 선택하세요'); return; }
 
-  // 대상: 실제로 배부된 학생만
+  // 대상: 실제로 배부된(진행 중인) 학생만
   const targets = ids
     .map(sid => S.students.find(s => s.id === sid))
     .filter(st => st && (st.books||[]).includes(book.name));
 
-  if (!targets.length) { toast('선택된 학생 중 배부된 학생이 없습니다'); return; }
+  if (!targets.length) { toast('선택된 학생 중 진행 중인 학생이 없습니다'); return; }
 
-  // 배정 내역이 있는 학생 확인
+  // 배정 내역이 있는 학생 확인 (안내용)
   const withAssigns = targets.filter(st =>
     S.assigns.some(a => a.bookId === bid && a.studentId === st.id)
   );
 
-  let msg = `'${book.name}' 배부를 ${targets.length}명에게서 회수하시겠습니까?`;
+  let msg = `'${book.name}'을(를) ${targets.length}명에게 교재완료 처리하시겠습니까?\n배정 기록은 그대로 남고, 배부 목록에서만 제거됩니다.`;
   if (withAssigns.length) {
-    msg += `\n\n⚠️ ${withAssigns.length}명은 이 교재로 이미 배정된 숙제가 있습니다:\n` +
-      withAssigns.map(s => s.name).join(', ') +
-      `\n\n회수해도 기존 배정 내역은 유지됩니다.`;
+    msg += `\n\n${withAssigns.length}명은 이 교재로 이미 배정된 숙제가 있습니다:\n` + withAssigns.map(s => s.name).join(', ');
   }
   if (!confirm(msg)) return;
 
+  const today = getTodayStr();
   targets.forEach(st => {
     st.books = (st.books||[]).filter(n => n !== book.name);
+    if (!Array.isArray(st.completedBooks)) st.completedBooks = [];
+    st.completedBooks.push({ bookId: bid, bookName: book.name, date: today });
   });
 
   save();
   renderDistribStudents();
   updateSidebar();
-  toast(`📤 ${targets.length}명에게서 '${book.name}' 회수 완료`);
+  renderList();
+  if ($('p-history')?.classList.contains('active')) renderHistory();
+  toast(`✅ ${targets.length}명 '${book.name}' 교재완료 처리 완료`);
 }
 
 // ══════════ CALENDAR ══════════
@@ -2365,8 +2367,8 @@ function groupCard(g) {
   const isActive = !!(st && (st.books||[]).includes(g.bookName));
   // 교재형만 "완료 처리" 대상 (보카형은 날짜 지나면 자동으로 끝나서 별도 조치 불필요)
   const completeBtn = (!isVoca && isActive)
-    ? `<button class="btn bg bsm" style="font-size:.7rem" onclick="completeGroupAssign(${g.studentId}, ${g.bookId})">✅ 완료 처리</button>`
-    : (!isVoca && !isActive ? `<span class="ai-retired-badge">종료됨</span>` : '');
+    ? `<button class="btn bg bsm" style="font-size:.7rem" onclick="completeGroupAssign(${g.studentId}, ${g.bookId})">✅ 교재완료 처리</button>`
+    : (!isVoca && !isActive ? `<span class="ai-retired-badge">교재완료</span>` : '');
   return `<div class="ai" id="aig-${g.studentId}-${g.bookId}">
     <div class="ai-row">
       <span class="badge ${badgeCls}">${badgeTxt}</span>
@@ -2399,9 +2401,12 @@ function groupRow(g) {
     ? `${assignedTxt} · ${g.count}건${doneTxt} · 최근 ${shortAiDate(g.latestDate)}`
     : `${assignedTxt} · <span style="color:var(--amb)">아직 배정 없음 (배부만 됨)</span>`;
   const completeBtn = (!isVoca && isActive)
-    ? `<button class="btn bg bsm" style="font-size:.68rem" onclick="completeGroupAssign(${g.studentId}, ${g.bookId})">✅ ${g.count ? '완료 처리' : '배부 취소'}</button>`
-    : (!isVoca && !isActive ? `<span class="ai-retired-badge">종료됨</span>` : '');
-  const delBtn = g.count
+    ? `${g.count ? `<button class="btn bg bsm" style="font-size:.68rem" onclick="completeGroupAssign(${g.studentId}, ${g.bookId})">✅ 교재완료 처리</button>` : ''}
+       <button class="btn bd2 bsm" style="font-size:.68rem" onclick="cancelDistribution(${g.studentId}, ${g.bookId})">↩ 배부 취소</button>`
+    : (!isVoca && !isActive ? `<span class="ai-retired-badge">교재완료</span>` : '');
+  // ★ "전체 삭제"는 배부 취소가 같은 역할을 대신하므로, 진행 중인 항목에는 숨기고
+  //   이미 종료된(완료 처리된) 학생의 남은 기록을 정리할 때만 사용
+  const delBtn = (g.count && !isActive)
     ? `<button class="btn bd2 bsm" style="font-size:.68rem" onclick="deleteGroupAssigns(${g.studentId}, ${g.bookId})">🗑 전체 삭제</button>`
     : '';
   return `<div class="ai-sub-row" id="aig-${g.studentId}-${g.bookId}">
@@ -2431,8 +2436,8 @@ function completeGroupAssign(studentId, bookId) {
   const st = S.students.find(s => s.id === studentId);
   const book = getBook(bookId);
   if (!st || !book) return;
-  if (!(st.books||[]).includes(book.name)) { toast('이미 완료 처리된 교재입니다'); return; }
-  if (!confirm(`${st.name} · ${book.name}을(를) 완료 처리하시겠습니까?\n배정 기록은 그대로 남고, 배부 목록에서만 제거됩니다.`)) return;
+  if (!(st.books||[]).includes(book.name)) { toast('이미 교재완료 처리된 교재입니다'); return; }
+  if (!confirm(`${st.name} · ${book.name}을(를) 교재완료 처리하시겠습니까?\n배정 기록은 그대로 남고, 배부 목록에서만 제거됩니다.`)) return;
 
   st.books = (st.books||[]).filter(n => n !== book.name);
   if (!Array.isArray(st.completedBooks)) st.completedBooks = [];
@@ -2442,7 +2447,35 @@ function completeGroupAssign(studentId, bookId) {
   updateSidebar();
   renderList();
   if ($('p-history')?.classList.contains('active')) renderHistory();
-  toast(`✅ ${st.name} · ${book.name} 완료 처리`);
+  toast(`✅ ${st.name} · ${book.name} 교재완료 처리`);
+}
+
+/* ★ 배정 기록이 아직 0건인(배부만 되고 아무것도 안 한) 경우 전용 — "완료"가 아니라 "배부한 적 자체가 없던 것"으로
+   되돌리는 거라, completedBooks에 기록을 남기지 않음 (종료 배지도 안 남고 목록에서 그냥 사라짐) */
+/* ★ "배부 취소" — 배정 기록이 있든 없든, 전부 삭제하고 배부한 적 자체가 없던 것으로 완전히 되돌림
+   (완료 처리와 달리 completedBooks에 기록을 남기지 않음) */
+function cancelDistribution(studentId, bookId) {
+  const st = S.students.find(s => s.id === studentId);
+  const book = getBook(bookId);
+  if (!st || !book) return;
+  if (!(st.books||[]).includes(book.name)) { toast('이미 배부 취소된 교재입니다'); return; }
+
+  const count = S.assigns.filter(a => a.studentId === studentId && a.bookId === bookId).length;
+  const msg = count
+    ? `${st.name} 학생의 '${book.name}' 배정 기록 ${count}건을 전부 삭제하고, 배부한 적 자체가 없는 것으로 되돌리시겠습니까?\n\n⚠️ 배정 기록(날짜·점수)이 모두 함께 삭제됩니다. 이 작업은 되돌릴 수 없습니다.`
+    : `${st.name} 학생에게 '${book.name}'을(를) 배부한 적 자체가 없는 것으로 되돌리시겠습니까?`;
+  if (!confirm(msg)) return;
+
+  S.assigns = S.assigns.filter(a => !(a.studentId === studentId && a.bookId === bookId));
+  st.books = (st.books||[]).filter(n => n !== book.name);
+  if (Array.isArray(st.completedBooks)) st.completedBooks = st.completedBooks.filter(c => c.bookName !== book.name);
+  // ★ completedBooks에는 새로 남기지 않음 — "완료"가 아니라 "배부한 적 없음"이므로
+
+  save();
+  renderCal(); renderTodayPreview(); updateSidebar();
+  renderList();
+  if ($('p-history')?.classList.contains('active')) renderHistory();
+  toast(count ? `✅ ${st.name} · ${book.name} 배부 취소 완료 (기록 ${count}건 함께 삭제)` : `✅ ${st.name} · ${book.name} 배부 취소 완료`);
 }
 
 /* ★ 반 전체 일괄 완료 처리 — 배정 이력 탭의 "전원 완료" 안내에서 호출 */
@@ -2450,8 +2483,8 @@ function completeGroupAll(bid, group) {
   const book = getBook(bid);
   if (!book) return;
   const targets = S.students.filter(s => s.group === group && (s.books||[]).includes(book.name));
-  if (!targets.length) { toast('완료 처리할 학생이 없습니다'); return; }
-  if (!confirm(`${group} 반 전체 ${targets.length}명의 '${book.name}' 배정을 완료 처리하시겠습니까?\n배정 기록은 그대로 남고, 배부 목록에서만 제거됩니다.`)) return;
+  if (!targets.length) { toast('교재완료 처리할 학생이 없습니다'); return; }
+  if (!confirm(`${group} 반 전체 ${targets.length}명의 '${book.name}' 배정을 교재완료 처리하시겠습니까?\n배정 기록은 그대로 남고, 배부 목록에서만 제거됩니다.`)) return;
 
   const today = getTodayStr();
   targets.forEach(st => {
@@ -2463,7 +2496,7 @@ function completeGroupAll(bid, group) {
   save();
   updateSidebar();
   renderHistory();
-  toast(`✅ ${targets.length}명 완료 처리 완료`);
+  toast(`✅ ${targets.length}명 교재완료 처리 완료`);
 }
 
 /* ★ 배정 이력 탭에서 지금 선택된 반+교재 조합 전체를 완전히 삭제
@@ -2514,13 +2547,13 @@ function deleteGroupAssigns(studentId, bookId) {
   toast(`✅ ${count}건 삭제 완료 (배부 기록도 함께 제거됨)`);
 }
 
-let _listShowRetired = false; // ★ 완료 처리된(종료된) 묶음도 함께 표시할지
+let _listShowRetired = false; // ★ 완료 처리된 묶음도 함께 표시할지
 
 function toggleListShowRetired() {
   _listShowRetired = !_listShowRetired;
   const btn = $('fl-toggle-retired');
   if (btn) {
-    btn.textContent = _listShowRetired ? '🗂 종료 항목 포함' : '🗂 종료 항목 숨김';
+    btn.textContent = _listShowRetired ? '🗂 교재완료 항목 포함' : '🗂 교재완료 항목 숨김';
     btn.classList.toggle('active', _listShowRetired);
   }
   renderList();
@@ -3623,7 +3656,7 @@ function showHistMsg(container, msg) {
 let _histMode             = 'view';
 let _histCellMap          = {};
 let _histAssignDate       = '';
-let _histShowRetired      = false;  // ★ 종료(완료 처리)된 학생도 함께 표시할지 (완료 여부와 무관 — 진행 중인 학생은 진도와 상관없이 항상 다 보임)
+let _histShowRetired      = false;  // ★ 완료 처리된 학생도 함께 표시할지 (완료 여부와 무관 — 진행 중인 학생은 진도와 상관없이 항상 다 보임)
 
 /* ★ 보기 범위 선택 — 'active'(진행중, 종료된 학생 숨김) / 'retired'(종료된 학생도 포함) */
 function setHistViewMode(mode) {
@@ -3877,7 +3910,7 @@ function renderHistory() {
     const groupHasStudents = S.students.some(s => s.group === group);
     if (groupHasStudents) {
       showHistMsg(container,
-        `'${group}' 반에서 '${book.name}'을(를) 배부받은 학생이 없습니다. 📅 교재 배정 탭 → 📖 교재형 배부에서 먼저 배부하세요.${_histShowRetired ? '' : ' (위 "보기 범위"를 🗂 종료 기록도 포함으로 바꾸면 종료된 기록도 볼 수 있어요)'}`);
+        `'${group}' 반에서 '${book.name}'을(를) 배부받은 학생이 없습니다. 📅 교재 배정 탭 → 📖 교재형 배부에서 먼저 배부하세요.${_histShowRetired ? '' : ' (위 "보기 범위"를 🗂 교재완료 포함으로 바꾸면 완료된 기록도 볼 수 있어요)'}`);
       return;
     } else {
       showHistMsg(container, '해당 반에 학생이 없습니다');
@@ -3930,7 +3963,7 @@ function renderHistory() {
       const activeCount = activeStudents.filter(s => !nameQ || s.name.toLowerCase().includes(nameQ)).length;
       allDoneBanner = `<div class="hist-alldone-banner">
         🎉 ${escHtml(group)} 반의 모든 학생이 ${escHtml(book.name)}을 완료했습니다!
-        <button class="btn bp bsm" onclick="completeGroupAll(${bid}, '${group.replace(/'/g,"\\'")}')">✅ ${activeCount}명 전체 종료 처리</button>
+        <button class="btn bp bsm" onclick="completeGroupAll(${bid}, '${group.replace(/'/g,"\\'")}')">✅ ${activeCount}명 전체 교재완료 처리</button>
       </div>`;
     }
   }
@@ -3972,10 +4005,10 @@ function renderHistory() {
     const isRetired = retiredIdSet.has(s.id);
     // ★ 진도를 다 채웠고, 아직 종료 처리 안 된 학생은 헤더에서 바로 종료 처리 가능
     const completeBtn = (isComplete && !isRetired)
-      ? `<button class="hc-complete-btn" onclick="event.stopPropagation();completeGroupAssign(${s.id},${bid})" title="이 학생 종료 처리">✅ 종료</button>`
+      ? `<button class="hc-complete-btn" onclick="event.stopPropagation();completeGroupAssign(${s.id},${bid})" title="이 학생 교재완료 처리">✅ 교재완료</button>`
       : '';
     return `<th class="hc-th-st${isComplete ? ' completed' : ''}${isRetired ? ' retired' : ''}">
-      ${escHtml(s.name)}${isRetired ? ' <span class="hc-retired-tag">종료</span>' : ''}
+      ${escHtml(s.name)}${isRetired ? ' <span class="hc-retired-tag">교재완료</span>' : ''}
       ${isVoca ? '' : `<span class="hc-progress">${pctText}${isComplete ? ' ✓' : ''}</span>`}
       ${completeBtn}
     </th>`;
@@ -4383,6 +4416,11 @@ function _previewScoreImport() {
   groupStudents.forEach(s => studentMap.set(_normName(s.name), s));
 
   const bookLabelSet = new Set(book.rows);
+  // ★ 공백 여러 개, 하이픈 앞뒤 공백 차이 등은 실제 의미가 다르지 않으므로 정규화해서 비교
+  //   (숫자는 절대 건드리지 않음 — 같은 텍스트에 앞뒤 숫자만 다른 진짜 별개 레이블이 있을 수 있어서 위험함)
+  const _normLabel = s => String(s).replace(/\s+/g, ' ').replace(/\s*-\s*/g, '-').trim();
+  const normLabelMap = new Map(); // 정규화된 텍스트 → 교재에 실제 등록된 원문 레이블
+  book.rows.forEach(r => { if (!normLabelMap.has(_normLabel(r))) normLabelMap.set(_normLabel(r), r); });
 
   // 결과 버킷
   const out = {
@@ -4433,17 +4471,18 @@ function _previewScoreImport() {
       return;
     }
 
-    // 세트명이 교재의 행 레이블에 있는지
-    if (!bookLabelSet.has(setName)) {
+    // 세트명이 교재의 행 레이블에 있는지 (정확 일치 우선, 안 되면 공백/하이픈 정규화해서 재시도)
+    let matchedLabel = bookLabelSet.has(setName) ? setName : normLabelMap.get(_normLabel(setName));
+    if (!matchedLabel) {
       out.unknownLabel.add(setName);
       return;
     }
 
-    // 기존 배정 찾기 (현재 반 + 현재 교재 + 학생 + 레이블)
+    // 기존 배정 찾기 (현재 반 + 현재 교재 + 학생 + 레이블) — 이후로는 항상 "정규 레이블명"으로 처리
     const assigns = S.assigns.filter(a =>
       a.bookId === bid &&
       a.studentId === student.id &&
-      (a.probLabels||[]).includes(setName)
+      (a.probLabels||[]).includes(matchedLabel)
     );
 
     if (!assigns.length) {
@@ -4455,7 +4494,7 @@ function _previewScoreImport() {
       out.toAutoAssign.push({
         studentId: student.id,
         name: student.name,
-        label: setName,
+        label: matchedLabel,
         score: score
       });
       return;
@@ -4472,7 +4511,7 @@ function _previewScoreImport() {
     const hasResult = target.result !== '' && target.result !== null && target.result !== undefined;
 
     if (hasResult && !overwrite) {
-      out.skipFilled.push({ name: student.name, label: setName, current: target.result, score });
+      out.skipFilled.push({ name: student.name, label: matchedLabel, current: target.result, score });
       return;
     }
 
@@ -4481,7 +4520,7 @@ function _previewScoreImport() {
       oldResult: hasResult ? target.result : null,
       newResult: score,
       name: student.name,
-      label: setName,
+      label: matchedLabel,
     });
   });
 
@@ -6004,6 +6043,22 @@ function repairMalformedAssigns() {
 /* ★ 예전엔 재도전 기준점수가 교재 전체에 하나만 있었음 → 반마다 다르게 설정할 수 있도록 구조 변경
    기존에 켜져 있던 교재는, 그 교재를 쓰고 있는 모든 반에 같은 값을 "초기값"으로 한 번만 옮겨줌
    (그 이후로는 반별로 각각 조정하면 됨) */
+/* ★ "완료/미수행" 채점 방식 폐지 → "통과/미통과"로 자동 전환 (의미가 사실상 같음: 했다/안했다) */
+function migrateCompleteScoreType() {
+  let migrated = 0;
+  S.books.forEach(book => {
+    if (!book || book.score !== '완료') return;
+    book.score = '통과';
+    migrated++;
+  });
+  S.assigns.forEach(a => {
+    if (!a) return;
+    if (a.result === '완료') { a.result = '통과'; }
+    else if (a.result === '미수행' && getBook(a.bookId)?.score === '통과') { a.result = '미통과'; }
+  });
+  return migrated;
+}
+
 function migrateBookThresholdsToPerClass() {
   let migrated = 0;
   S.books.forEach(book => {
@@ -6120,13 +6175,15 @@ async function pullInitialFromFirebase() {
 
     const filledDates = backfillBookDates();
     const thresholdsMigrated = migrateBookThresholdsToPerClass();
+    const scoreTypeMigrated = migrateCompleteScoreType();
 
-    if (migrated > 0 || fixedBooks > 0 || filledDates > 0 || repairedAssigns > 0 || thresholdsMigrated > 0) {
+    if (migrated > 0 || fixedBooks > 0 || filledDates > 0 || repairedAssigns > 0 || thresholdsMigrated > 0 || scoreTypeMigrated > 0) {
       if (migrated > 0)       console.log(`[Firebase 마이그레이션] ${migrated}명에게 접근 키 부여`);
       if (repairedAssigns > 0) console.log(`[Firebase 마이그레이션] 손상된 배정 기록 ${repairedAssigns}건 복구`);
       if (fixedBooks > 0)     console.log(`[Firebase 마이그레이션] 배정 기록 기준으로 books 목록 ${fixedBooks}건 보정`);
       if (filledDates > 0)    console.log(`[Firebase 마이그레이션] 배정일 추정치 ${filledDates}건 채움`);
       if (thresholdsMigrated > 0) console.log(`[Firebase 마이그레이션] 재도전 기준점수를 반별 설정 ${thresholdsMigrated}건으로 이전`);
+      if (scoreTypeMigrated > 0)  console.log(`[Firebase 마이그레이션] 완료/미수행 채점방식 ${scoreTypeMigrated}건을 통과/미통과로 전환`);
       saveToFirebase(); // 마이그레이션 결과 다시 업로드
     }
     // localStorage에도 반영
@@ -6413,6 +6470,11 @@ function load() {
     const thresholdsMigrated = migrateBookThresholdsToPerClass();
     if (thresholdsMigrated > 0) {
       console.log(`[마이그레이션] 재도전 기준점수를 반별 설정 ${thresholdsMigrated}건으로 이전`);
+    }
+
+    const scoreTypeMigrated = migrateCompleteScoreType();
+    if (scoreTypeMigrated > 0) {
+      console.log(`[마이그레이션] 완료/미수행 채점방식 ${scoreTypeMigrated}건을 통과/미통과로 전환`);
     }
 
   } catch (e) {
