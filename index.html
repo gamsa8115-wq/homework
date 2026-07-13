@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v94</title>
+<title>숙제 관리 v95</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -406,7 +406,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v94</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v95</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4772,6 +4772,7 @@ let _bulkRows = null;        // 업로드된 엑셀의 원본 행들
 let _bulkClasses = [];       // 고유 클래스명별 요약 {name, count, samples:[{setName, studyDate}], rows:[...]}
 let _bulkDraftMap = {};      // 편집 중인 매핑 (className → {mode, bookId, vocaRuleType, vocaRulePattern})
 let _bulkPreview = null;     // 미리보기 결과
+let _bulkOverwriteMode = 'skip'; // ★ 'skip' | 'overwrite' — 재렌더링해도 유지되도록 DOM이 아닌 변수로 관리
 
 function openBulkImport() {
   if (typeof XLSX === 'undefined') {
@@ -4780,7 +4781,7 @@ function openBulkImport() {
   }
   const old = document.getElementById('bulk-import-modal');
   if (old) old.remove();
-  _bulkRows = null; _bulkClasses = []; _bulkDraftMap = {}; _bulkPreview = null;
+  _bulkRows = null; _bulkClasses = []; _bulkDraftMap = {}; _bulkPreview = null; _bulkOverwriteMode = 'skip';
 
   const modal = document.createElement('div');
   modal.id = 'bulk-import-modal';
@@ -4908,9 +4909,14 @@ function _extractRound(setName, rule) {
 }
 
 /* ★ 검색창 입력을 살짝 지연시켜서(디바운스) 다시 그리기 — 매 타이핑마다 즉시 다시 그리면
-   한글 조합 중(예: "중" 입력 중)에 화면이 갱신되면서 자모가 분리돼 보이는 문제가 있었음 */
+   한글 조합 중(예: "중" 입력 중)에 화면이 갱신되면서 자모가 분리돼 보이는 문제가 있었음
+   → 한글 조합 중(isComposing)에는 아예 다시 그리지 않고, 조합이 끝난 뒤에만 그림 */
 let _bulkSearchDebounce = null;
+let _bulkSearchComposing = false;
+function _onBulkSearchCompositionStart() { _bulkSearchComposing = true; }
+function _onBulkSearchCompositionEnd() { _bulkSearchComposing = false; _onBulkSearchInput(); }
 function _onBulkSearchInput() {
+  if (_bulkSearchComposing) return; // 한글 조합 중이면 절대 다시 그리지 않음
   clearTimeout(_bulkSearchDebounce);
   _bulkSearchDebounce = setTimeout(() => _renderBulkStep2(), 250);
 }
@@ -4972,7 +4978,14 @@ function _renderBulkStep2() {
           </div>`;
       }
 
-      return `<div style="border:1px solid var(--bd);border-radius:8px;padding:.6rem .7rem;margin-bottom:.5rem;background:${draft.mode ? 'var(--surface)' : 'rgba(217,119,6,.05)'}">
+      const cardStyle = {
+        ''      : { border:'2px solid rgba(217,119,6,.4)',  bg:'rgba(217,119,6,.06)'  }, // 미설정 — 주황
+        ignore  : { border:'2px solid var(--bd)',            bg:'var(--s2)'            }, // 무시 — 회색
+        book    : { border:'2px solid #2563eb',              bg:'rgba(37,99,235,.06)'  }, // 교재형 — 파랑
+        voca    : { border:'2px solid #059669',              bg:'rgba(5,150,105,.06)'  }, // 보카형 — 초록
+      }[draft.mode || ''];
+
+      return `<div style="border:${cardStyle.border};border-radius:8px;padding:.6rem .7rem;margin-bottom:.5rem;background:${cardStyle.bg};transition:all .15s">
         <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
           <div style="flex:1;min-width:200px">
             <div style="font-weight:700;font-size:.82rem">${escHtml(c.name)}</div>
@@ -5002,7 +5015,10 @@ function _renderBulkStep2() {
       <span style="color:var(--mu)">무시 ${ignoredCount}</span> ·
       <span style="color:${pendingCount?'var(--amb)':'var(--mu)'}">미설정 ${pendingCount}</span>
     </div>
-    <input type="text" id="bulk-map-search" data-fk="search" placeholder="🔍 클래스명 검색..." oninput="_onBulkSearchInput()"
+    <input type="text" id="bulk-map-search" data-fk="search" placeholder="🔍 클래스명 검색..."
+      oninput="_onBulkSearchInput()"
+      oncompositionstart="_onBulkSearchCompositionStart()"
+      oncompositionend="_onBulkSearchCompositionEnd()"
       value="${escHtml(search)}"
       style="width:100%;margin-bottom:.7rem;padding:.4rem .6rem;font-size:.8rem">
     <div>${rowsHtml || '<div style="color:var(--mu);font-size:.8rem;text-align:center;padding:1rem">검색 결과가 없습니다</div>'}</div>
@@ -5096,7 +5112,7 @@ function _computeBulkPreview() {
     skippedInvalidScore: 0,
   };
 
-  const overwrite = document.querySelector('input[name="bulk-overwrite"]:checked')?.value === 'overwrite';
+  const overwrite = _bulkOverwriteMode === 'overwrite';
 
   _bulkClasses.forEach(c => {
     const map = _bulkDraftMap[c.name];
@@ -5186,6 +5202,13 @@ function _computeBulkPreview() {
   _bulkPreview = out;
 }
 
+/* 건너뛰기/덮어쓰기 전환 — 변수로 관리해서 재렌더링해도 선택이 안 풀림 */
+function _setBulkOverwriteMode(mode) {
+  _bulkOverwriteMode = mode;
+  _computeBulkPreview();
+  _renderBulkStep3();
+}
+
 function _renderBulkStep3() {
   const out = _bulkPreview;
   const updatesHtml = out.updates.slice(0, 200).map(u =>
@@ -5208,14 +5231,26 @@ function _renderBulkStep3() {
 
     <div style="margin-bottom:.8rem">
       <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:.4rem">이미 결과가 입력된 항목</label>
-      <label style="display:flex;align-items:center;gap:.4rem;font-size:.8rem;cursor:pointer;margin-bottom:.25rem;font-weight:400">
-        <input type="radio" name="bulk-overwrite" value="skip" checked onchange="_computeBulkPreview();_renderBulkStep3()">
-        건너뛰기 <span style="color:var(--mu)">(안전 · 추천)</span>
-      </label>
-      <label style="display:flex;align-items:center;gap:.4rem;font-size:.8rem;cursor:pointer;font-weight:400">
-        <input type="radio" name="bulk-overwrite" value="overwrite" onchange="_computeBulkPreview();_renderBulkStep3()">
-        덮어쓰기 <span style="color:var(--red)">(아래 "기존값→새값" 꼭 확인하세요)</span>
-      </label>
+      <div style="display:flex;gap:.6rem">
+        <div onclick="_setBulkOverwriteMode('skip')"
+          style="flex:1;cursor:pointer;border-radius:8px;padding:.6rem .8rem;
+          border:2px solid ${_bulkOverwriteMode==='skip' ? 'var(--acc)' : 'var(--bd)'};
+          background:${_bulkOverwriteMode==='skip' ? 'rgba(79,70,229,.08)' : 'var(--surface)'}">
+          <div style="font-weight:700;font-size:.82rem;color:${_bulkOverwriteMode==='skip' ? 'var(--acc)' : 'var(--tx)'}">
+            ${_bulkOverwriteMode==='skip' ? '🔵' : '⚪'} 건너뛰기 <span style="font-weight:400;font-size:.7rem">(안전 · 추천)</span>
+          </div>
+          <div style="font-size:.7rem;color:var(--mu);margin-top:.2rem">기존 값은 그대로 두고, 빈 칸만 새로 채워요</div>
+        </div>
+        <div onclick="_setBulkOverwriteMode('overwrite')"
+          style="flex:1;cursor:pointer;border-radius:8px;padding:.6rem .8rem;
+          border:2px solid ${_bulkOverwriteMode==='overwrite' ? '#dc2626' : 'var(--bd)'};
+          background:${_bulkOverwriteMode==='overwrite' ? 'rgba(220,38,38,.06)' : 'var(--surface)'}">
+          <div style="font-weight:700;font-size:.82rem;color:${_bulkOverwriteMode==='overwrite' ? '#dc2626' : 'var(--tx)'}">
+            ${_bulkOverwriteMode==='overwrite' ? '🔴' : '⚪'} 덮어쓰기
+          </div>
+          <div style="font-size:.7rem;color:var(--mu);margin-top:.2rem">기존 값도 새 값으로 바꿔요 (아래 "기존값→새값" 꼭 확인)</div>
+        </div>
+      </div>
     </div>
 
     <div class="g2" style="gap:.6rem;margin-bottom:.9rem">
