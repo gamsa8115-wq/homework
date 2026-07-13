@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v93</title>
+<title>숙제 관리 v94</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -406,7 +406,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v93</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v94</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4907,6 +4907,14 @@ function _extractRound(setName, rule) {
   return null;
 }
 
+/* ★ 검색창 입력을 살짝 지연시켜서(디바운스) 다시 그리기 — 매 타이핑마다 즉시 다시 그리면
+   한글 조합 중(예: "중" 입력 중)에 화면이 갱신되면서 자모가 분리돼 보이는 문제가 있었음 */
+let _bulkSearchDebounce = null;
+function _onBulkSearchInput() {
+  clearTimeout(_bulkSearchDebounce);
+  _bulkSearchDebounce = setTimeout(() => _renderBulkStep2(), 250);
+}
+
 /* ── ② 클래스명 → 교재 매핑 화면 ── */
 function _renderBulkStep2() {
   // 다시 그리기 전에 지금 포커스된 입력창 상태 저장 (data-fk 속성으로 식별 — 검색창/정규식 입력창 모두 해당)
@@ -4994,7 +5002,7 @@ function _renderBulkStep2() {
       <span style="color:var(--mu)">무시 ${ignoredCount}</span> ·
       <span style="color:${pendingCount?'var(--amb)':'var(--mu)'}">미설정 ${pendingCount}</span>
     </div>
-    <input type="text" id="bulk-map-search" data-fk="search" placeholder="🔍 클래스명 검색..." oninput="_renderBulkStep2()"
+    <input type="text" id="bulk-map-search" data-fk="search" placeholder="🔍 클래스명 검색..." oninput="_onBulkSearchInput()"
       value="${escHtml(search)}"
       style="width:100%;margin-bottom:.7rem;padding:.4rem .6rem;font-size:.8rem">
     <div>${rowsHtml || '<div style="color:var(--mu);font-size:.8rem;text-align:center;padding:1rem">검색 결과가 없습니다</div>'}</div>
@@ -5010,12 +5018,25 @@ function _renderBulkStep2() {
 
   $('bulk-import-footer').innerHTML = `
     <button onclick="_closeBulkImport()" class="btn bg bsm" style="font-size:.78rem">취소</button>
+    <button onclick="_resetAllBulkMappings()" class="btn bd2 bsm" style="font-size:.78rem">🔄 매핑 전체 초기화</button>
     <button onclick="_renderBulkStep1()" class="btn bg bsm" style="font-size:.78rem">← 다른 파일</button>
     <button onclick="_saveBulkMappingsAndPreview()" class="btn bs bsm"
       style="font-size:.78rem;background:#0e7490;color:#fff;border-color:#0e7490">
       매핑 저장하고 미리보기 →
     </button>
   `;
+}
+
+/* ★ 잘못 저장된 매핑(예: 예전 버그로 전부 "무시"가 되어버린 것) 전체 초기화 */
+function _resetAllBulkMappings() {
+  if (!confirm('저장해둔 클래스명↔교재 매핑을 전부 지우시겠습니까?\n(엑셀 파일이나 배정 기록에는 영향 없습니다 — 매핑 정보만 초기화돼요)')) return;
+  S.classcardMappings = [];
+  save();
+  _bulkClasses.forEach(c => {
+    _bulkDraftMap[c.name] = { mode: '', bookId: null, vocaRuleType: 'paren', vocaRulePattern: '' };
+  });
+  toast('✅ 매핑이 전부 초기화됐습니다');
+  _renderBulkStep2();
 }
 
 function _updateBulkMode(className, mode) {
@@ -5030,12 +5051,15 @@ function _updateBulkVocaRule(className, type) {
   _bulkDraftMap[className].vocaRuleType = type;
   _renderBulkStep2();
 }
+let _bulkPatternDebounce = null;
 function _updateBulkVocaPattern(className, pattern) {
   _bulkDraftMap[className].vocaRulePattern = pattern;
-  _renderBulkStep2(); // 정규식은 미리보기 정확도가 중요하므로 즉시 반영
+  clearTimeout(_bulkPatternDebounce);
+  _bulkPatternDebounce = setTimeout(() => _renderBulkStep2(), 250); // 정규식은 미리보기 정확도가 중요하므로 반영은 하되, 조합 깨짐 방지 위해 살짝 지연
 }
 
-/* 매핑 저장 → S.classcardMappings에 반영 → 미리보기로 이동 */
+/* 매핑 저장 → S.classcardMappings에 반영 → 미리보기로 이동
+   ★ 아직 "선택 안 함" 상태인 클래스는 저장하지 않음 — "무시"로 잘못 굳어버리는 것 방지 */
 function _saveBulkMappingsAndPreview() {
   const incomplete = _bulkClasses.filter(c => {
     const d = _bulkDraftMap[c.name];
@@ -5048,8 +5072,9 @@ function _saveBulkMappingsAndPreview() {
 
   _bulkClasses.forEach(c => {
     const d = _bulkDraftMap[c.name];
+    if (!d.mode) return; // ★ "선택 안 함" 상태는 그대로 미설정으로 남김 (저장 안 함)
     const idx = S.classcardMappings.findIndex(m => m.className === c.name);
-    const rec = { className: c.name, mode: d.mode || 'ignore', bookId: d.bookId || null,
+    const rec = { className: c.name, mode: d.mode, bookId: d.bookId || null,
                   vocaRuleType: d.vocaRuleType, vocaRulePattern: d.vocaRulePattern };
     if (idx >= 0) S.classcardMappings[idx] = rec; else S.classcardMappings.push(rec);
   });
