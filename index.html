@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v98</title>
+<title>숙제 관리 v99</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -406,7 +406,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v98</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v99</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4954,18 +4954,16 @@ function _renderBulkStep2() {
       <span style="color:var(--mu)">무시 ${ignoredCount}</span> ·
       <span style="color:${pendingCount?'var(--amb)':'var(--mu)'}">미설정 ${pendingCount}</span>
     </div>
-    <div style="display:flex;gap:.5rem;margin-bottom:.7rem">
-      <input type="text" id="bulk-map-search" placeholder="🔍 클래스명 검색..." oninput="_renderBulkClassList()"
-        style="flex:1;padding:.4rem .6rem;font-size:.8rem">
-      <select id="bulk-filter-mode" onchange="_renderBulkClassList()" style="font-size:.8rem;padding:.4rem .5rem" title="연결이 잘 됐는지 확인할 때 유용해요">
-        <option value="">전체 보기</option>
-        <option value="mapped">✅ 연결된 것만 (교재형+보카형)</option>
-        <option value="book">📘 교재형만</option>
-        <option value="voca">📗 보카형만</option>
-        <option value="ignore">🚫 무시한 것만</option>
-        <option value="pending">⬜ 미설정만</option>
-      </select>
-    </div>
+    <input type="text" id="bulk-map-search" placeholder="🔍 클래스명 검색... (예: 5형식, HOME보카)" oninput="_renderBulkClassList()"
+      style="width:100%;padding:.5rem .7rem;font-size:.85rem;margin-bottom:.5rem;border:1.5px solid var(--acc);border-radius:6px">
+    <select id="bulk-filter-mode" onchange="_renderBulkClassList()" style="width:100%;font-size:.8rem;padding:.4rem .5rem;margin-bottom:.7rem" title="연결이 잘 됐는지 확인할 때 유용해요">
+      <option value="">전체 보기</option>
+      <option value="mapped">✅ 연결된 것만 (교재형+보카형)</option>
+      <option value="book">📘 교재형만</option>
+      <option value="voca">📗 보카형만</option>
+      <option value="ignore">🚫 무시한 것만</option>
+      <option value="pending">⬜ 미설정만</option>
+    </select>
     <div id="bulk-class-list"></div>
   `;
   _renderBulkClassList();
@@ -4987,6 +4985,7 @@ function _renderBulkClassList() {
   if (!listEl) return;
   const search = $('bulk-map-search')?.value || '';
   const q = search.trim().toLowerCase();
+  const filterMode = $('bulk-filter-mode')?.value || '';
   const bookOptions = (mode) => S.books
     .filter(b => mode === 'voca' ? b.mode === 'voca' : b.mode === 'book')
     .sort((a,b) => a.name.localeCompare(b.name,'ko'))
@@ -5003,6 +5002,13 @@ function _renderBulkClassList() {
   let _lastGroup = null;
   const rowsHtml = _bulkClasses
     .filter(c => !q || c.name.toLowerCase().includes(q))
+    .filter(c => {
+      if (!filterMode) return true;
+      const m = _bulkDraftMap[c.name]?.mode || '';
+      if (filterMode === 'mapped') return m === 'book' || m === 'voca';
+      if (filterMode === 'pending') return !m;
+      return m === filterMode; // 'book' | 'voca' | 'ignore'
+    })
     .slice()
     .sort((a, b) => {
       const oa = _modeOrder[_bulkDraftMap[a.name]?.mode || ''];
