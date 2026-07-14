@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v125</title>
+<title>숙제 관리 v126</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v125</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v126</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4350,13 +4350,16 @@ function renderHistory() {
         return `<td class="hc-td-empty" id="${cellId}" onclick="onHistCellClick(this)" title="${escHtml(s.name)} — 미배정">—</td>`;
       }
       const hasResult = info.result !== '' && info.result !== null && info.result !== undefined;
-      const isFailResult = info.result === '미통과'; // ★ 통과/미통과 방식에서 실패한 셀은 빨간 박스로 표시
+      const todayStr = getTodayStr();
+      const isOverdueNoResult = !hasResult && info.date && info.date < todayStr; // ★ 날짜가 지났는데 결과가 없으면 "미수행"
+      const isFailResult = info.result === '미통과' || isOverdueNoResult; // ★ 실패로 볼 셀은 빨간 박스로 표시
       const isPassFailText = info.result === '통과' || info.result === '미통과';
-      return `<td class="hc-td-done${hasResult?' has-result':''}${isFailResult?' fail-result':''}" id="${cellId}"
+      const displayResult = hasResult ? String(info.result) : (isOverdueNoResult ? '미수행' : '');
+      return `<td class="hc-td-done${hasResult?' has-result':''}${isOverdueNoResult?' has-result':''}${isFailResult?' fail-result':''}" id="${cellId}"
         onclick="onHistCellClick(this)"
-        title="${escHtml(s.name)}: ${fmtCell(info.date)}${hasResult?' · '+String(info.result):''}">
+        title="${escHtml(s.name)}: ${fmtCell(info.date)}${hasResult?' · '+String(info.result):(isOverdueNoResult?' · 미수행':'')}">
         <span class="hc-date">${fmtCell(info.date)}</span>
-        ${hasResult ? `<span class="hc-result${isPassFailText?' pf-text':''}">${escHtml(String(info.result))}</span>` : ''}
+        ${displayResult ? `<span class="hc-result${isPassFailText?' pf-text':''}${isOverdueNoResult?' pf-text':''}">${escHtml(displayResult)}</span>` : ''}
       </td>`;
     }).join('');
     // 오른쪽 남은 공간 채우는 spacer 셀
