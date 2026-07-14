@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v102</title>
+<title>숙제 관리 v103</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -420,7 +420,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v102</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v103</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -3410,6 +3410,7 @@ function startBookEdit(id) {
   const book = getBook(id);
   if (!book) return;
   _editBookId = id;
+  _editingLabelIdx = null; // ★ 다른 교재 수정하러 들어올 때 이전 레이블 편집 상태 초기화
 
   // 폼 값 채우기
   $('nb-name').value  = book.name;
@@ -3449,6 +3450,7 @@ function startBookEdit(id) {
 /* 수정 취소 or 신규 등록 완료 후 폼 초기화 */
 function cancelBookForm() {
   _editBookId = null;
+  _editingLabelIdx = null;
   $('nb-name').value   = '';
   $('nb-mode').value   = 'voca';
   $('nb-mode').disabled = false;
@@ -3577,14 +3579,69 @@ function renderExistingLabels() {
   list.innerHTML = rows.map((lbl, idx) => {
     const inUse = S.assigns.some(a =>
       a.bookId === _editBookId && (a.problems || []).includes(idx));
+    const isEditingThis = _editingLabelIdx === idx;
+    if (isEditingThis) {
+      return `<div class="lbl-item" style="background:rgba(79,70,229,.06)">
+        <span class="lbl-item-num">${idx + 1}</span>
+        <input type="text" id="lbl-edit-input" value="${escHtml(lbl)}" style="flex:1;font-size:.76rem;padding:.15rem .35rem"
+          onkeydown="if(event.key==='Enter')saveEditedLabel(${idx});if(event.key==='Escape')cancelEditLabel();">
+        <button class="btn bp bsm" style="font-size:.65rem;padding:.15rem .4rem" onclick="saveEditedLabel(${idx})">저장</button>
+        <button class="btn bg bsm" style="font-size:.65rem;padding:.15rem .4rem" onclick="cancelEditLabel()">취소</button>
+      </div>`;
+    }
     return `<div class="lbl-item">
       <span class="lbl-item-num">${idx + 1}</span>
       <span class="lbl-item-text" title="${escHtml(lbl)}">${escHtml(lbl)}</span>
-      ${inUse
-        ? '<span style="font-size:.62rem;color:var(--amb);flex-shrink:0" title="배정된 레이블">배정됨</span>'
-        : `<button class="lbl-item-del" title="삭제" onclick="deleteExistingLabel(${idx})">✕</button>`}
+      ${inUse ? '<span style="font-size:.62rem;color:var(--amb);flex-shrink:0" title="배정된 레이블 — 삭제는 안 되지만 이름은 고칠 수 있어요">배정됨</span>' : ''}
+      <button class="lbl-item-edit" title="이름 수정" onclick="startEditLabel(${idx})" style="flex-shrink:0;background:none;border:none;cursor:pointer;color:var(--acc);font-size:.72rem;padding:.1rem .3rem">✏</button>
+      ${!inUse ? `<button class="lbl-item-del" title="삭제" onclick="deleteExistingLabel(${idx})">✕</button>` : ''}
     </div>`;
   }).join('') || '<div style="font-size:.72rem;color:var(--mu);text-align:center;padding:.4rem">레이블 없음</div>';
+}
+
+let _editingLabelIdx = null;
+
+/* 기존 레이블 이름 수정 시작 — 배정 여부와 상관없이 가능 (텍스트만 바꾸는 거라 안전) */
+function startEditLabel(idx) {
+  _editingLabelIdx = idx;
+  renderExistingLabels();
+  setTimeout(() => { const el = $('lbl-edit-input'); if (el) { el.focus(); el.select(); } }, 0);
+}
+
+function cancelEditLabel() {
+  _editingLabelIdx = null;
+  renderExistingLabels();
+}
+
+/* 레이블 이름 저장 — book.rows뿐 아니라, 이미 배정된 기록의 probLabels도 같이 갱신해서 일관성 유지 */
+function saveEditedLabel(idx) {
+  const book = getBook(_editBookId);
+  if (!book) return;
+  const input = $('lbl-edit-input');
+  const newText = (input?.value || '').trim();
+  if (!newText) { toast('레이블을 입력하세요'); return; }
+  if (book.rows.some((r,i) => i !== idx && r === newText)) { toast('이미 있는 레이블 이름이에요'); return; }
+
+  const oldText = book.rows[idx];
+  if (oldText === newText) { cancelEditLabel(); return; }
+
+  book.rows[idx] = newText;
+  // ★ 이 레이블로 이미 배정된 기록들의 probLabels(텍스트 스냅샷)도 같이 갱신 — 안 하면 매트릭스 등에서 옛날 이름으로 남아 어긋남
+  let updatedAssigns = 0;
+  S.assigns.forEach(a => {
+    if (a.bookId !== _editBookId || !Array.isArray(a.problems)) return;
+    const pos = a.problems.indexOf(idx);
+    if (pos === -1) return;
+    if (!Array.isArray(a.probLabels)) a.probLabels = [];
+    if (a.probLabels[pos] === oldText) { a.probLabels[pos] = newText; updatedAssigns++; }
+  });
+
+  save();
+  _editingLabelIdx = null;
+  renderExistingLabels();
+  renderBooks();
+  populateBookSelects();
+  toast(`✅ 레이블 이름 수정 완료${updatedAssigns ? ` (배정 기록 ${updatedAssigns}건도 함께 갱신)` : ''}`);
 }
 
 /* 기존 레이블 개별 삭제 */
@@ -6510,7 +6567,7 @@ function _icCardHtml(bookGroup, untilDate) {
 }
 
 /* 최근 완료 내역 카드(들) — 미완료 카드와 같은 톤이지만 초록색 계열로 */
-function _icCompletedHtml(items) {
+function _icCompletedHtml(items, uid) {
   if (!items.length) return '';
   const rows = items.map(a => {
     const isVoca = a.type === 'voca';
@@ -6521,13 +6578,24 @@ function _icCompletedHtml(items) {
       <span class="ic-item-date">${shortAiDate(a.date)}</span>
     </div>`;
   }).join('');
+  const bodyId = `ic-done-${uid}`;
   return `<div class="ic-book-group" style="margin-top:.9rem">
-    <div class="ic-book-hd">
-      <span style="font-size:.82rem;font-weight:700;color:#059669">✅ 최근 완료</span>
-      <span class="ic-book-count" style="color:#059669">${items.length}건</span>
-    </div>
-    <div class="ic-item-list">${rows}</div>
+    <button onclick="_toggleIcCompleted('${bodyId}', this)" class="btn bg bsm" style="font-size:.75rem;background:rgba(5,150,105,.08);border-color:rgba(5,150,105,.3);color:#059669;width:100%;justify-content:space-between;display:flex;align-items:center">
+      <span>✅ 최근 완료 ${items.length}건</span>
+      <span class="ic-done-arrow">▶ 보기</span>
+    </button>
+    <div id="${bodyId}" class="ic-item-list" style="display:none;margin-top:.4rem">${rows}</div>
   </div>`;
+}
+
+/* 최근 완료 섹션 펼치기/접기 */
+function _toggleIcCompleted(bodyId, btn) {
+  const el = $(bodyId);
+  if (!el) return;
+  const opening = el.style.display === 'none';
+  el.style.display = opening ? '' : 'none';
+  const arrow = btn.querySelector('.ic-done-arrow');
+  if (arrow) arrow.textContent = opening ? '▲ 접기' : '▶ 보기';
 }
 
 function renderIncomplete() {
@@ -6548,7 +6616,7 @@ function renderIncomplete() {
       : `<div class="distrib-empty" style="padding:1rem .5rem">🎉 ${escHtml(untilDate)}까지 미완료 숙제가 없습니다</div>`;
     body.innerHTML = `<div class="ta-student-hd">${escHtml(student.name)} <span style="color:var(--mu);font-weight:400;font-size:.78rem">· ${escHtml(untilDate)}까지 미완료</span></div>
       ${incompleteHtml}
-      ${_icCompletedHtml(completed)}`;
+      ${_icCompletedHtml(completed, `single-${student.id}`)}`;
     return;
   }
 
@@ -6570,7 +6638,7 @@ function renderIncomplete() {
         <span class="st-block-name">${escHtml(st.name)}</span>
         <span class="st-block-sum" style="color:${totalCount?'#b91c1c':'var(--mu)'};font-weight:700">${totalCount ? `미완료 ${totalCount}건` : '미완료 없음'}</span>
       </div>
-      <div class="st-block-body">${groups.map(g => _icCardHtml(g, untilDate)).join('')}${_icCompletedHtml(completed)}</div>
+      <div class="st-block-body">${groups.map(g => _icCardHtml(g, untilDate)).join('')}${_icCompletedHtml(completed, `grp-${st.id}`)}</div>
     </div>`;
   }).filter(Boolean);
 
