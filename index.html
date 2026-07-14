@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v108</title>
+<title>숙제 관리 v110</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -420,7 +420,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v108</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v110</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -2494,10 +2494,10 @@ function groupRow(g) {
   const countTxt = g.count
     ? `${assignedTxt} · ${g.count}건${doneTxt} · 최근 ${shortAiDate(g.latestDate)}`
     : `${assignedTxt} · <span style="color:var(--amb)">아직 배정 없음 (배부만 됨)</span>`;
-  const completeBtn = (!isVoca && isActive)
+  const completeBtn = isActive
     ? `${g.count ? `<button class="btn bg bsm" style="font-size:.68rem" onclick="completeGroupAssign(${g.studentId}, ${g.bookId})">✅ 교재완료 처리</button>` : ''}
        <button class="btn bd2 bsm" style="font-size:.68rem" onclick="cancelDistribution(${g.studentId}, ${g.bookId})">↩ 배부 취소</button>`
-    : (!isVoca && !isActive ? `<span class="ai-retired-badge">교재완료</span>` : '');
+    : `<span class="ai-retired-badge">교재완료</span>`;
   // ★ "전체 삭제"는 배부 취소가 같은 역할을 대신하므로, 진행 중인 항목에는 숨기고
   //   이미 종료된(완료 처리된) 학생의 남은 기록을 정리할 때만 사용
   const delBtn = (g.count && !isActive)
@@ -4539,7 +4539,8 @@ function openScoreImport() {
   if (!bid)   { toast('먼저 교재를 선택하세요'); return; }
 
   const book = getBook(bid);
-  if (!book?.rows?.length) {
+  const isVoca = book?.mode === 'voca';
+  if (!isVoca && !book?.rows?.length) {
     toast('이 교재에는 행 레이블이 없어 점수 가져오기를 사용할 수 없습니다');
     return;
   }
@@ -4556,6 +4557,10 @@ function openScoreImport() {
   _scoreImportData = null;
   _scoreImportPreview = null;
 
+  // ★ 보카형은 텍스트 레이블이 없으므로, "세트명에서 회차 숫자를 어떻게 뽑을지" 규칙이 필요함
+  //   (전체 리포트 업로드에서 쓰는 것과 같은 방식) — 교재에 저장해두면 다음에도 기억함
+  const vocaRule = book?.vocaExtractRule || { type: 'paren', pattern: '' };
+
   const modal = document.createElement('div');
   modal.id = 'score-import-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem';
@@ -4567,7 +4572,7 @@ function openScoreImport() {
       </div>
       <div id="score-import-body" style="padding:1rem 1.1rem;overflow-y:auto;flex:1">
         <div style="background:var(--s2);border-radius:8px;padding:.6rem .8rem;margin-bottom:.9rem;font-size:.78rem;color:var(--mu)">
-          <b style="color:var(--tx)">현재 대상</b>: ${escHtml(group)} 반 · ${escHtml(book.name)} 교재<br>
+          <b style="color:var(--tx)">현재 대상</b>: ${escHtml(group)} 반 · ${escHtml(book.name)} 교재 ${isVoca ? '<span style="color:var(--grn);font-weight:700">(보카형)</span>' : ''}<br>
           <span style="color:var(--mu)">엑셀에 있는 ${escHtml(group)} 반 학생들의 점수만 가져옵니다 (다른 반 학생은 무시됨)</span>
         </div>
 
@@ -4579,8 +4584,24 @@ function openScoreImport() {
           <div id="score-import-file-info" style="font-size:.72rem;color:var(--mu);margin-top:.35rem"></div>
         </div>
 
+        ${isVoca ? `
+        <div id="score-import-voca-rule" style="margin-bottom:.9rem;padding:.6rem .7rem;background:var(--s2);border-radius:8px">
+          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:.4rem">② 세트명에서 회차 숫자 뽑는 방식 <span style="font-weight:400;color:var(--mu);font-size:.7rem">(보카형이라 레이블 대신 회차로 매칭해요)</span></label>
+          <select id="score-import-voca-type" onchange="_updateScoreImportVocaRule()" style="font-size:.78rem;padding:.25rem .4rem;margin-bottom:.4rem">
+            <option value="paren" ${vocaRule.type==='paren'?'selected':''}>괄호 안 숫자 — "DAY (03)" → 3</option>
+            <option value="last"  ${vocaRule.type==='last'?'selected':''}>마지막 숫자 — "DAY 03" → 3</option>
+            <option value="first" ${vocaRule.type==='first'?'selected':''}>첫 숫자 — "1차 DAY03" → 1</option>
+            <option value="regex" ${vocaRule.type==='regex'?'selected':''}>직접 정규식 입력</option>
+          </select>
+          ${vocaRule.type==='regex' ? `
+            <input type="text" id="score-import-voca-pattern" value="${escHtml(vocaRule.pattern||'')}" placeholder="예: DAY\\\\s*0*(\\\\d+)"
+              oninput="_updateScoreImportVocaRule()" style="width:100%;font-size:.74rem;padding:.25rem .4rem;margin-bottom:.4rem;font-family:monospace">
+          ` : ''}
+          <div id="score-import-voca-preview" style="font-size:.7rem;color:var(--mu)">파일을 선택하면 실제 세트명으로 미리 확인할 수 있어요</div>
+        </div>` : ''}
+
         <div style="margin-bottom:.9rem">
-          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:.4rem">② 점수 기준</label>
+          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:.4rem">${isVoca?'③':'②'} 점수 기준</label>
           <div style="display:flex;align-items:center;gap:.5rem;font-size:.82rem">
             <input type="number" id="score-import-threshold" value="80" min="0" max="100"
               style="width:70px;padding:.3rem .4rem;text-align:center">
@@ -4589,7 +4610,7 @@ function openScoreImport() {
         </div>
 
         <div style="margin-bottom:.9rem">
-          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:.4rem">③ 이미 결과가 입력된 셀</label>
+          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:.4rem">${isVoca?'④':'③'} 이미 결과가 입력된 셀</label>
           <div style="display:flex;gap:.6rem">
             <label style="flex:1;cursor:pointer;border-radius:8px;padding:.6rem .7rem;border:2px solid var(--acc);background:rgba(79,70,229,.08);display:block">
               <input type="radio" name="score-import-overwrite" value="skip" checked
@@ -4635,6 +4656,52 @@ function openScoreImport() {
   }, 0);
 }
 
+/* 보카형 회차 추출 규칙 변경 시 교재에 저장 + 미리보기 갱신 */
+function _updateScoreImportVocaRule() {
+  const bid = Number($('hist-book')?.value || 0);
+  const book = getBook(bid);
+  if (!book) return;
+  const type = $('score-import-voca-type')?.value || 'paren';
+  const pattern = $('score-import-voca-pattern')?.value || '';
+  book.vocaExtractRule = { type, pattern };
+  save();
+  // 정규식 입력창은 type이 바뀔 때만 다시 그림 (매번 다시 그리면 입력 중 조합이 깨질 수 있어서)
+  const wrap = $('score-import-voca-rule');
+  const showPattern = type === 'regex';
+  const existingInput = $('score-import-voca-pattern');
+  if (showPattern && !existingInput) {
+    // openScoreImport를 다시 안 부르고 필요한 부분만 삽입
+    const sel = $('score-import-voca-type');
+    if (sel && !sel.nextElementSibling?.id?.includes('voca-pattern')) {
+      const input = document.createElement('input');
+      input.type = 'text'; input.id = 'score-import-voca-pattern';
+      input.placeholder = '예: DAY\\\\s*0*(\\\\d+)';
+      input.value = pattern;
+      input.oninput = _updateScoreImportVocaRule;
+      input.style.cssText = 'width:100%;font-size:.74rem;padding:.25rem .4rem;margin-bottom:.4rem;margin-top:.4rem;font-family:monospace';
+      sel.insertAdjacentElement('afterend', input);
+    }
+  } else if (!showPattern && existingInput) {
+    existingInput.remove();
+  }
+  _updateScoreImportVocaPreview();
+}
+
+function _updateScoreImportVocaPreview() {
+  const wrap = $('score-import-voca-preview');
+  if (!wrap) return;
+  const bid = Number($('hist-book')?.value || 0);
+  const book = getBook(bid);
+  if (!book || !_scoreImportData || !_scoreImportData.length) return;
+  const rule = book.vocaExtractRule || { type: 'paren', pattern: '' };
+  const samples = [...new Set(_scoreImportData.map(r => String(r['세트명']||'').trim()).filter(Boolean))].slice(0, 3);
+  if (!samples.length) { wrap.textContent = '세트명 컬럼을 찾을 수 없습니다'; return; }
+  wrap.innerHTML = samples.map(s => {
+    const round = _extractRound(s, rule);
+    return `<div style="padding:.1rem 0">${escHtml(s)} → ${round!=null ? `<b>${round}회차</b>` : '<span style="color:var(--red)">추출 실패</span>'}</div>`;
+  }).join('');
+}
+
 function _closeScoreImport() {
   const m = document.getElementById('score-import-modal');
   if (m) m.remove();
@@ -4670,13 +4737,16 @@ async function _onScoreImportFileSelect(ev) {
     const sheet = wb.Sheets[sheetName];
     const rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
 
-    // 컬럼 존재 확인 (최소 학생이름, 세트명, 테스트 최고가 있어야 함)
+    // 컬럼 존재 확인 (최소 학생이름, 세트명, 테스트 최고 계열 컬럼이 있어야 함)
     if (!rows.length) {
       throw new Error('빈 파일입니다');
     }
     const firstRow = rows[0];
-    const required = ['학생이름', '세트명', '테스트 최고'];
-    const missing = required.filter(c => !(c in firstRow));
+    const hasScoreCol = ('테스트 최고' in firstRow) || ('테스트최고' in firstRow) || ('테스트 (최고점)' in firstRow);
+    const missing = [];
+    if (!('학생이름' in firstRow)) missing.push('학생이름');
+    if (!('세트명' in firstRow)) missing.push('세트명');
+    if (!hasScoreCol) missing.push('테스트 최고');
     if (missing.length) {
       throw new Error(`필수 컬럼 누락: ${missing.join(', ')}`);
     }
@@ -4684,6 +4754,7 @@ async function _onScoreImportFileSelect(ev) {
     _scoreImportData = rows;
     if (infoEl) infoEl.innerHTML = `✅ ${escHtml(file.name)} · ${rows.length}개 행 읽음 · 시트: ${escHtml(sheetName)}`;
     if (previewBtn) previewBtn.disabled = false;
+    _updateScoreImportVocaPreview(); // ★ 보카형이면 회차 추출 미리보기도 갱신 (아니면 내부에서 조용히 무시됨)
   } catch (e) {
     _scoreImportData = null;
     if (infoEl) infoEl.innerHTML = `<span style="color:var(--red)">⚠ 오류: ${escHtml(e.message || String(e))}</span>`;
@@ -4748,11 +4819,14 @@ function _previewScoreImport() {
   const studentMap = new Map(); // normName → student
   groupStudents.forEach(s => studentMap.set(_normName(s.name), s));
 
-  const bookLabelSet = new Set(book.rows);
+  const isVoca = book.mode === 'voca';
+  const vocaRule = book.vocaExtractRule || { type: 'paren', pattern: '' };
+
+  const bookLabelSet = new Set(book.rows || []);
   // ★ 공백 여러 개, 하이픈 앞뒤 공백 차이 등은 실제 의미가 다르지 않으므로 정규화해서 비교
   //   (숫자는 절대 건드리지 않음 — 같은 텍스트에 앞뒤 숫자만 다른 진짜 별개 레이블이 있을 수 있어서 위험함)
   const normLabelMap = new Map(); // 정규화된 텍스트 → 교재에 실제 등록된 원문 레이블
-  book.rows.forEach(r => { if (!normLabelMap.has(_normLabel(r))) normLabelMap.set(_normLabel(r), r); });
+  (book.rows || []).forEach(r => { if (!normLabelMap.has(_normLabel(r))) normLabelMap.set(_normLabel(r), r); });
 
   // 결과 버킷
   const out = {
@@ -4760,7 +4834,7 @@ function _previewScoreImport() {
     toAutoAssign: [],   // 🆕 v47: 책 배부됐는데 배정 없음 + 기준 점수 이상 → 오늘 자동 배정 + 점수 입력
     skipFilled: [],     // 이미 채워져 있어서 건너뜀
     skipLowScore: 0,    // 기준 미달 (카운트만)
-    unknownLabel: new Set(), // 교재에 없는 세트명
+    unknownLabel: new Set(), // 교재에 없는 세트명 (보카형은 회차 추출 실패한 세트명)
     nameSuggestions: new Map(), // 이름 매칭 안 됨 + 추천 후보
     otherGroupCount: 0, // 다른 반 학생 (정상적으로 무시)
     invalidScoreCount: 0, // 점수 파싱 실패 (빈 값 등)
@@ -4769,7 +4843,7 @@ function _previewScoreImport() {
   _scoreImportData.forEach(row => {
     const rawName = String(row['학생이름'] || '');
     const setName = String(row['세트명'] || '').trim();
-    const scoreRaw = row['테스트 최고'];
+    const scoreRaw = row['테스트 최고'] ?? row['테스트최고'] ?? row['테스트 (최고점)'];
 
     if (!rawName.trim() || !setName) return;
 
@@ -4800,6 +4874,36 @@ function _previewScoreImport() {
         rec.distance = bestD;
       }
       out.nameSuggestions.set(key, rec);
+      return;
+    }
+
+    if (isVoca) {
+      // ★ 보카형: 텍스트 레이블이 없으므로, 세트명에서 회차 숫자를 뽑아서 매칭
+      const round = _extractRound(setName, vocaRule);
+      if (round == null) {
+        out.unknownLabel.add(setName);
+        return;
+      }
+      const assigns = S.assigns.filter(a =>
+        a.bookId === bid && a.studentId === student.id && a.type === 'voca' && String(a.unitFrom) === String(round)
+      );
+
+      if (!assigns.length) {
+        if (score < threshold) { out.skipLowScore++; return; }
+        out.toAutoAssign.push({ studentId: student.id, name: student.name, round, score });
+        return;
+      }
+
+      const target = assigns.reduce((latest, a) => (!latest || a.date > latest.date) ? a : latest, null);
+      const hasResult = target.result !== '' && target.result !== null && target.result !== undefined;
+      if (hasResult && !overwrite) {
+        out.skipFilled.push({ name: student.name, label: `${round}회차`, current: target.result, score });
+        return;
+      }
+      out.toUpdate.push({
+        assignId: target.id, oldResult: hasResult ? target.result : null, newResult: score,
+        name: student.name, label: `${round}회차`,
+      });
       return;
     }
 
@@ -4892,14 +4996,15 @@ function _renderScoreImportPreview(out, threshold, overwrite) {
     </div>`;
   }
 
-  // 모르는 세트명
+  // 모르는 세트명 (보카형은 회차 추출 실패, 교재형은 레이블 불일치)
   if (out.unknownLabel.size > 0) {
+    const isVocaBook = getBook(Number($('hist-book')?.value||0))?.mode === 'voca';
     const labels = [...out.unknownLabel].slice(0, 5).map(l => `"${escHtml(l)}"`).join(', ');
     const more = out.unknownLabel.size > 5 ? ` 외 ${out.unknownLabel.size-5}개` : '';
     warnHtml += `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:.5rem .65rem;margin-top:.55rem;color:#991b1b">
-      <div style="font-size:.74rem;font-weight:600;margin-bottom:.25rem">⚠ 교재에 없는 세트명 (${out.unknownLabel.size}개)</div>
+      <div style="font-size:.74rem;font-weight:600;margin-bottom:.25rem">⚠ ${isVocaBook ? '회차 숫자 추출 실패한 세트명' : '교재에 없는 세트명'} (${out.unknownLabel.size}개)</div>
       <div style="font-size:.72rem">${labels}${more}</div>
-      <div style="font-size:.68rem;margin-top:.3rem">현재 교재의 행 레이블과 일치하지 않습니다</div>
+      <div style="font-size:.68rem;margin-top:.3rem">${isVocaBook ? '위 "회차 추출 방식" 설정을 조정해보세요' : '현재 교재의 행 레이블과 일치하지 않습니다'}</div>
     </div>`;
   }
 
@@ -4915,7 +5020,7 @@ function _renderScoreImportPreview(out, threshold, overwrite) {
     const previewStudents = studentNames.slice(0, 6);
     const itemsHtml = previewStudents.map(name => {
       const items = byStudent.get(name);
-      const labels = items.slice(0, 3).map(it => `${escHtml(it.label)}(${it.score}점)`).join(', ');
+      const labels = items.slice(0, 3).map(it => `${escHtml(it.label || `${it.round}회차`)}(${it.score}점)`).join(', ');
       const moreInStu = items.length > 3 ? ` 외 ${items.length-3}건` : '';
       return `<div style="font-size:.72rem;padding:.15rem 0"><b>${escHtml(name)}</b> · ${labels}${moreInStu}</div>`;
     }).join('');
@@ -5012,20 +5117,31 @@ function _applyScoreImport() {
       const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
       toAutoAssign.forEach(item => {
-        const rowIdx = (book.rows||[]).indexOf(item.label);
-        S.assigns.push({
-          id: S.nid++,
-          type: 'book', // ★ 누락돼 있던 필드 — 이게 없으면 배정 목록·숙제 현황 등에서 교재형 배정으로 인식되지 않음
-          bookId: bid,
-          bookName: book.name, // ★ 누락돼 있던 필드 — books 목록 자동 보정 등에서 사용
-          studentId: item.studentId,
-          studentName: item.name, // ★ 누락돼 있던 필드
-          date: todayStr,
-          unitFrom: '', unitTo: '',
-          problems: rowIdx >= 0 ? [rowIdx] : [],
-          probLabels: [item.label],
-          result: item.score
-        });
+        if (book.mode === 'voca') {
+          S.assigns.push({
+            id: S.nid++, type: 'voca',
+            bookId: bid, bookName: book.name,
+            studentId: item.studentId, studentName: item.name,
+            date: todayStr,
+            unitFrom: item.round, unitTo: item.round,
+            problems: [], probLabels: [], result: item.score
+          });
+        } else {
+          const rowIdx = (book.rows||[]).indexOf(item.label);
+          S.assigns.push({
+            id: S.nid++,
+            type: 'book', // ★ 누락돼 있던 필드 — 이게 없으면 배정 목록·숙제 현황 등에서 교재형 배정으로 인식되지 않음
+            bookId: bid,
+            bookName: book.name, // ★ 누락돼 있던 필드 — books 목록 자동 보정 등에서 사용
+            studentId: item.studentId,
+            studentName: item.name, // ★ 누락돼 있던 필드
+            date: todayStr,
+            unitFrom: '', unitTo: '',
+            problems: rowIdx >= 0 ? [rowIdx] : [],
+            probLabels: [item.label],
+            result: item.score
+          });
+        }
         autoAssignCount++;
       });
     }
