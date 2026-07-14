@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v99</title>
+<title>숙제 관리 v100</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -306,6 +306,18 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 .hc-td-done.inspect-fail {
   animation: inspectPulse 1.6s ease-in-out infinite;
 }
+/* ★ "이 반 기준점수" 미달 — 점검(수동)과 달리 항상 켜져있는 표시라 애니메이션 없이 은은하게 */
+.hc-td-done.threshold-fail {
+  background: rgba(220, 38, 38, 0.13) !important;
+  box-shadow: inset 0 0 0 1.5px rgba(220, 38, 38, 0.55);
+}
+.hc-td-done.threshold-fail .hc-date,
+.hc-td-done.threshold-fail .hc-result {
+  color: #991b1b !important;
+}
+.hc-td-done.threshold-fail .hc-result {
+  font-weight: 800 !important;
+}
 .hc-td-done.inspect-fail .hc-date,
 .hc-td-done.inspect-fail .hc-result {
   color: #7f1d1d !important;
@@ -406,7 +418,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v99</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v100</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -788,7 +800,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
       </label>
       <input type="number" id="hist-threshold-input" min="0" max="100" style="width:55px;padding:.2rem .35rem;font-size:.78rem"
         onchange="onHistThresholdChange()">
-      <span style="font-size:.7rem;color:var(--mu)">점 미만 → 숙제 현황에 표시 (반마다 따로 설정됨)</span>
+      <span style="font-size:.7rem;color:var(--mu)">점 미만 → 숙제 현황에 표시 + 아래 표에 <span style="color:#dc2626;font-weight:700">빨간색</span>으로 강조 (반마다 따로 설정됨)</span>
     </div>
     <div style="display:flex;gap:.3rem;margin-left:auto;align-items:center">
       <!-- 보기 범위: 진행 중 / 종료 포함 (완료 여부는 진행 중 안에서 표시만, 필터링은 안 함) -->
@@ -3832,6 +3844,7 @@ async function onHistThresholdChange() {
 
   if (!book.classThresholds) book.classThresholds = {};
   book.classThresholds[group] = { enabled, threshold };
+  applyClassThresholdHighlights(); // ★ 매트릭스에 바로 반영 (저장 완료 기다릴 필요 없이)
 
   // ★ 로컬(브라우저) 저장은 즉시, Firebase도 디바운스 없이 바로 저장
   //   → "체크하자마자 새로고침"해도 절대 안 풀리도록
@@ -4065,6 +4078,9 @@ function renderHistory() {
 
   // 🎯 점검 모드 ON이면 매트릭스 재렌더 후 강조 다시 적용 (v45)
   if (_inspectActive) applyInspectHighlights();
+
+  // ★ "이 반 기준점수"가 켜져있으면, 버튼 없이도 항상 미달 점수를 표시
+  applyClassThresholdHighlights();
 
   // 테이블 스크롤 시 팝업 닫기 (위치 어긋남 방지)
   const wrapForScroll = $('hist-wrap-el');
@@ -5479,6 +5495,31 @@ function updateInspectThreshold(v) {
   if (slider && Number(slider.value) !== n) slider.value = n;
   if (input  && Number(input.value)  !== n) input.value  = n;
   if (_inspectActive) applyInspectHighlights();
+}
+
+/* ★ "이 반 기준점수"가 켜져있으면, 점검 버튼을 안 눌러도 미달 점수가 항상 매트릭스에 표시되도록
+   — 점검(수동, 애니메이션)과는 별개로 항상 적용되는 조용한 표시 */
+function applyClassThresholdHighlights() {
+  document.querySelectorAll('.hc-td-done.threshold-fail').forEach(el => el.classList.remove('threshold-fail'));
+
+  const bid   = Number($('hist-book')?.value || 0);
+  const group = $('hist-group')?.value || '';
+  const book  = bid ? getBook(bid) : null;
+  if (!book || book.score !== '점수' || !group) return;
+  const cfg = book.classThresholds?.[group];
+  if (!cfg?.enabled) return;
+  const threshold = cfg.threshold != null ? Number(cfg.threshold) : 80;
+
+  Object.entries(_histCellMap || {}).forEach(([cellId, info]) => {
+    if (!info || !info.assignId) return;
+    if (info.result === '' || info.result === null || info.result === undefined) return;
+    const n = Number(info.result);
+    if (isNaN(n) || !isFinite(n)) return;
+    if (n < threshold) {
+      const el = document.getElementById(cellId);
+      if (el && el.classList.contains('hc-td-done')) el.classList.add('threshold-fail');
+    }
+  });
 }
 
 /* 모든 강조 클래스 제거 */
