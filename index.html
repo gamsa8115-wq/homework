@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v101</title>
+<title>숙제 관리 v102</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -375,6 +375,8 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 .ic-item-label{font-weight:600;min-width:130px;}
 .ic-item-date{color:#b91c1c;font-size:.72rem;white-space:nowrap;}
 .ic-item-reason{font-size:.68rem;font-weight:700;color:#b45309;background:rgba(217,119,6,.12);padding:.1rem .5rem;border-radius:20px;white-space:nowrap;}
+.ic-item-done{background:rgba(5,150,105,.05);border-color:rgba(5,150,105,.18);}
+.ic-item-reason-done{color:#065f46;background:rgba(5,150,105,.14);}
 
 .lbl-item-num{font-family:'Space Mono',monospace;font-size:.65rem;color:var(--mu);min-width:22px;flex-shrink:0;}
 .lbl-item-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Space Mono',monospace;}
@@ -418,7 +420,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v101</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v102</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4404,7 +4406,7 @@ async function _onScoreImportFileSelect(ev) {
 
   try {
     const buf = await file.arrayBuffer();
-    const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
+    const wb = XLSX.read(new Uint8Array(buf), { type: 'array', cellDates: true });
     const sheetName = wb.SheetNames[0];
     const sheet = wb.Sheets[sheetName];
     const rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
@@ -4874,7 +4876,7 @@ async function _onBulkFileSelect(event) {
   info.textContent = '읽는 중...';
   try {
     const buf = await file.arrayBuffer();
-    const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
+    const wb = XLSX.read(new Uint8Array(buf), { type: 'array', cellDates: true });
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
 
@@ -5153,6 +5155,27 @@ function _updateBulkMode(className, mode) {
 function _updateBulkBookId(className, bookId) {
   _bulkDraftMap[className].bookId = bookId ? Number(bookId) : null;
 }
+/* ★ 엑셀에서 읽은 "학습일" 값을 안전하게 YYYY-MM-DD로 변환
+   - Date 객체(cellDates:true 덕분에 보통 이 경우)면 그대로 사용
+   - 혹시 숫자(엑셀 시리얼 날짜)로 넘어와도 정확한 공식으로 변환 (문자열로 잘못 파싱해서 연도가 깨지는 사고 방지)
+   - 문자열이면 "공백 앞부분"만 날짜로 파싱 시도 */
+function _parseExcelDate(rawDate) {
+  if (rawDate == null || rawDate === '') return null;
+  let d = null;
+  if (rawDate instanceof Date) {
+    d = rawDate;
+  } else if (typeof rawDate === 'number') {
+    // 엑셀 시리얼 날짜 → JS Date (1899-12-30 기준)
+    d = new Date(Math.round((rawDate - 25569) * 86400000));
+  } else {
+    d = new Date(String(rawDate).split(' ')[0]);
+  }
+  if (!d || isNaN(d.getTime())) return null;
+  const y = d.getFullYear();
+  if (y < 2020 || y > 2035) return null; // ★ 말이 안 되는 연도면 손상된 값으로 간주 (날짜 오사고 방지)
+  return `${y}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
 function _updateBulkVocaRule(className, type) {
   _bulkDraftMap[className].vocaRuleType = type;
   _renderBulkClassList();
@@ -5251,12 +5274,7 @@ function _computeBulkPreview() {
             studentName: student.name, bookName: book.name, label: `${round}회차` });
         } else {
           // 새 배정: 학습일을 그대로 사용 (실제로 그 날 학습한 기록이므로)
-          let dateStr = getTodayStr();
-          const rawDate = row['학습일'];
-          if (rawDate) {
-            const d = new Date(String(rawDate).split(' ')[0]);
-            if (!isNaN(d.getTime())) dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-          }
+          const dateStr = _parseExcelDate(row['학습일']) || getTodayStr();
           out.newAssigns.push({ studentId: student.id, studentName: student.name, bookId: book.id, bookName: book.name,
             type: 'voca', date: dateStr, unitFrom: round, unitTo: round, score });
         }
@@ -5276,12 +5294,7 @@ function _computeBulkPreview() {
           out.updates.push({ assignId: existing.id, oldResult: hasResult?existing.result:null, newResult: score,
             studentName: student.name, bookName: book.name, label: matchedLabel });
         } else {
-          let dateStr = getTodayStr();
-          const rawDate = row['학습일'];
-          if (rawDate) {
-            const d = new Date(String(rawDate).split(' ')[0]);
-            if (!isNaN(d.getTime())) dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-          }
+          const dateStr = _parseExcelDate(row['학습일']) || getTodayStr();
           out.newAssigns.push({ studentId: student.id, studentName: student.name, bookId: book.id, bookName: book.name,
             type: 'book', date: dateStr, label: matchedLabel, score });
         }
@@ -6399,10 +6412,15 @@ function setIcView(view) {
 }
 
 /* 두 날짜 사이 경과일 (양수 = 지남) */
+/* 두 날짜 사이 경과일 (양수 = 지남)
+   ★ 날짜 데이터가 손상된 경우(예: 엑셀 시리얼 날짜 오류로 연도가 완전히 틀어진 경우) 방어 처리 */
 function _daysSince(dateStr, untilStr) {
   const d1 = new Date(dateStr + 'T00:00:00');
   const d2 = new Date(untilStr + 'T00:00:00');
-  return Math.round((d2 - d1) / 86400000);
+  if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return null;
+  const days = Math.round((d2 - d1) / 86400000);
+  if (Math.abs(days) > 1000) return null; // ★ 1000일(약 3년) 넘게 차이나면 날짜 자체가 손상됐을 가능성 → 표시 안 함
+  return days;
 }
 
 /* ★ 미완료 사유 판정: 미수행(결과 없음) / 미통과 / 미수행(완료형) / 점수 미달
@@ -6448,6 +6466,25 @@ function _buildIncompleteForStudent(student, untilDate, typeF, bookF) {
     .sort((a,b) => a.bookName.localeCompare(b.bookName,'ko'));
 }
 
+/* ★ "미완료였다가 완료된 것" 등 최근 완료 내역 — 기준일까지, 결과가 있고(hasResult) 미완료 사유가 없는(=진짜 통과/완료/기준이상) 것만
+   최근 날짜순으로 최대 limit개 */
+function _buildCompletedForStudent(student, untilDate, typeF, bookF, limit) {
+  const items = [];
+  S.assigns.forEach(a => {
+    if (!a || a.studentId !== student.id || !a.date || a.date > untilDate) return;
+    if (bookF && String(a.bookId) !== bookF) return;
+    const book = getBook(a.bookId);
+    if (typeF && (book?.mode || a.type) !== typeF) return;
+    const hasResult = a.result !== '' && a.result !== null && a.result !== undefined;
+    if (!hasResult) return;
+    const reason = _incompleteReason(book, a.result, student.group);
+    if (reason) return; // 미완료 사유가 있으면 진짜 완료가 아님
+    items.push(a);
+  });
+  items.sort((x,y) => y.date.localeCompare(x.date)); // 최근 것 먼저
+  return items.slice(0, limit || 10);
+}
+
 function _icCardHtml(bookGroup, untilDate) {
   const isVoca = bookGroup.type === 'voca';
   const badgeCls = isVoca ? 'bg2' : 'bb';
@@ -6455,7 +6492,7 @@ function _icCardHtml(bookGroup, untilDate) {
   const rows = bookGroup.items.map(a => {
     const label = isVoca ? `${escHtml(String(a.unitFrom||''))}회차` : escHtml((a.probLabels||[])[0] || '');
     const days = _daysSince(a.date, untilDate);
-    const dayTxt = days <= 0 ? '오늘' : `${days}일 경과`;
+    const dayTxt = days == null ? '날짜 확인 필요' : (days <= 0 ? '오늘' : `${days}일 경과`);
     return `<div class="ic-item">
       <span class="ic-item-label">${label}</span>
       <span class="ic-item-reason">${escHtml(a._reason)}</span>
@@ -6467,6 +6504,27 @@ function _icCardHtml(bookGroup, untilDate) {
       <span class="badge ${badgeCls}">${badgeTxt}</span>
       <span class="ic-book-name">${escHtml(bookGroup.bookName)}</span>
       <span class="ic-book-count">${bookGroup.items.length}건 미완료</span>
+    </div>
+    <div class="ic-item-list">${rows}</div>
+  </div>`;
+}
+
+/* 최근 완료 내역 카드(들) — 미완료 카드와 같은 톤이지만 초록색 계열로 */
+function _icCompletedHtml(items) {
+  if (!items.length) return '';
+  const rows = items.map(a => {
+    const isVoca = a.type === 'voca';
+    const label = isVoca ? `${escHtml(String(a.unitFrom||''))}회차` : escHtml((a.probLabels||[])[0] || '');
+    return `<div class="ic-item ic-item-done">
+      <span class="ic-item-label">${escHtml(a.bookName||'')} · ${label}</span>
+      <span class="ic-item-reason ic-item-reason-done">${escHtml(String(a.result))}</span>
+      <span class="ic-item-date">${shortAiDate(a.date)}</span>
+    </div>`;
+  }).join('');
+  return `<div class="ic-book-group" style="margin-top:.9rem">
+    <div class="ic-book-hd">
+      <span style="font-size:.82rem;font-weight:700;color:#059669">✅ 최근 완료</span>
+      <span class="ic-book-count" style="color:#059669">${items.length}건</span>
     </div>
     <div class="ic-item-list">${rows}</div>
   </div>`;
@@ -6484,12 +6542,13 @@ function renderIncomplete() {
     const student = sid ? S.students.find(s => s.id === sid) : null;
     if (!student) { body.innerHTML = `<div class="distrib-empty">학생을 선택하세요</div>`; return; }
     const groups = _buildIncompleteForStudent(student, untilDate, typeF, bookF);
-    if (!groups.length) {
-      body.innerHTML = `<div class="distrib-empty">🎉 ${escHtml(student.name)} 학생은 ${escHtml(untilDate)}까지 미완료 숙제가 없습니다</div>`;
-      return;
-    }
+    const completed = _buildCompletedForStudent(student, untilDate, typeF, bookF, 10);
+    const incompleteHtml = groups.length
+      ? `<div class="ta-card-list">${groups.map(g => _icCardHtml(g, untilDate)).join('')}</div>`
+      : `<div class="distrib-empty" style="padding:1rem .5rem">🎉 ${escHtml(untilDate)}까지 미완료 숙제가 없습니다</div>`;
     body.innerHTML = `<div class="ta-student-hd">${escHtml(student.name)} <span style="color:var(--mu);font-weight:400;font-size:.78rem">· ${escHtml(untilDate)}까지 미완료</span></div>
-      <div class="ta-card-list">${groups.map(g => _icCardHtml(g, untilDate)).join('')}</div>`;
+      ${incompleteHtml}
+      ${_icCompletedHtml(completed)}`;
     return;
   }
 
@@ -6502,15 +6561,16 @@ function renderIncomplete() {
 
   const blocks = list.map(st => {
     const groups = _buildIncompleteForStudent(st, untilDate, typeF, bookF);
-    if (!groups.length) return null;
+    const completed = _buildCompletedForStudent(st, untilDate, typeF, bookF, 5);
+    if (!groups.length && !completed.length) return null; // 미완료도 완료 기록도 없으면 아예 생략
     const totalCount = groups.reduce((sum,g) => sum + g.items.length, 0);
     return `<div class="st-block">
       <div class="st-block-hd">
         <span class="ai-group-class">${escHtml(st.group)}</span>
         <span class="st-block-name">${escHtml(st.name)}</span>
-        <span class="st-block-sum" style="color:#b91c1c;font-weight:700">미완료 ${totalCount}건</span>
+        <span class="st-block-sum" style="color:${totalCount?'#b91c1c':'var(--mu)'};font-weight:700">${totalCount ? `미완료 ${totalCount}건` : '미완료 없음'}</span>
       </div>
-      <div class="st-block-body">${groups.map(g => _icCardHtml(g, untilDate)).join('')}</div>
+      <div class="st-block-body">${groups.map(g => _icCardHtml(g, untilDate)).join('')}${_icCompletedHtml(completed)}</div>
     </div>`;
   }).filter(Boolean);
 
