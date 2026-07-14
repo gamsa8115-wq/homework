@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v118</title>
+<title>숙제 관리 v120</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -420,7 +420,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v118</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v120</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -757,6 +757,10 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
   </div>
 
   <div class="card" style="padding:0;overflow:hidden">
+    <div style="padding:.7rem .9rem;border-bottom:1px solid var(--bd)">
+      <input type="text" id="bk-search" placeholder="🔍 교재명 검색..." oninput="renderBooks()"
+        style="width:100%;padding:.4rem .6rem;font-size:.82rem">
+    </div>
     <table><thead><tr><th>교재명</th><th>방식</th><th>레이블 수</th><th>채점</th><th>편집</th><th></th></tr></thead>
     <tbody id="bk-tbody"></tbody></table>
   </div>
@@ -830,10 +834,6 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         onclick="deleteHistClassAll()"
         title="지금 선택된 반 전체가 이 교재를 받은 적 없는 것으로 — 배정 기록·배부 상태 완전 삭제"
         style="font-size:.72rem">🗑 반 전체 배정 삭제</button>
-      <button class="btn bs bsm" id="hist-reschedule-btn"
-        onclick="openVocaReschedule()"
-        title="아직 안 한(미완료) 배정만, 지금 설정된 방학을 반영해서 날짜를 다시 계산합니다. 이미 한 건 절대 안 건드려요."
-        style="display:none;font-size:.72rem;background:#0891b2;color:#fff;border-color:#0891b2">🔄 방학 반영 재조정</button>
       <span style="width:1px;height:18px;background:var(--bd);margin:0 .15rem"></span>
       <button class="btn bs bsm" id="hist-import-btn"
         onclick="openScoreImport()"
@@ -3900,9 +3900,9 @@ function deleteExistingLabel(idx) {
 function renderBooks() {
   const ml = {voca:'📝 보카형', book:'📖 교재형'};
   const mc = {voca:'bg2', book:'bb'};
-  const books = [...S.books].sort((a,b) => a.name.localeCompare(b.name,'ko'));
+  const q = ($('bk-search')?.value || '').trim().toLowerCase();
 
-  $('bk-tbody').innerHTML = books.map(b => {
+  const bookRowHtml = b => {
     const isEditing = _editBookId === b.id;
     return `
     <tr${isEditing ? ' style="background:rgba(79,70,229,.05)"' : ''}>
@@ -3928,8 +3928,21 @@ function renderBooks() {
       </td>
       <td><button class="btn bd2 bsm" onclick="delBook(${b.id})" ${isEditing?'disabled':''}>삭제</button></td>
     </tr>`;
-  }).join('')
-    || '<tr><td colspan="6" style="text-align:center;color:var(--mu);padding:1.5rem">없음</td></tr>';
+  };
+
+  // ★ 검색어로 거르고, "교재형 → 보카형" 순서로 섹션 나눠서 표시 (한꺼번에 쭉 나열하던 것 개선)
+  const filtered = S.books.filter(b => !q || b.name.toLowerCase().includes(q));
+  const bookType = filtered.filter(b => b.mode === 'book').sort((a,b) => a.name.localeCompare(b.name,'ko'));
+  const vocaType = filtered.filter(b => b.mode === 'voca').sort((a,b) => a.name.localeCompare(b.name,'ko'));
+
+  const sectionRow = (label, count) => `<tr><td colspan="6" style="background:var(--s2);font-weight:700;font-size:.76rem;color:var(--mu);padding:.4rem .6rem">${label} (${count})</td></tr>`;
+
+  let html = '';
+  if (bookType.length) html += sectionRow('📖 교재형', bookType.length) + bookType.map(bookRowHtml).join('');
+  if (vocaType.length)  html += sectionRow('📝 보카형', vocaType.length) + vocaType.map(bookRowHtml).join('');
+
+  $('bk-tbody').innerHTML = html
+    || `<tr><td colspan="6" style="text-align:center;color:var(--mu);padding:1.5rem">${q ? '검색 결과가 없습니다' : '없음'}</td></tr>`;
   updateSidebar();
 }
 
@@ -4181,9 +4194,6 @@ function renderHistory() {
   if (isVocaBook && _inspectActive) {
     closeInspect();
   }
-  // ★ 보카형 + 반이 선택됐을 때만 "방학 반영 재조정" 버튼 표시
-  const rescheduleBtn = $('hist-reschedule-btn');
-  if (rescheduleBtn) rescheduleBtn.style.display = (isVocaBook && group) ? '' : 'none';
 
   // ★ 보카형 + 반이 선택됐을 때만 "이 교재 일시정지" 패널 표시 + 목록 갱신
   const pauseWrap = $('hist-pause-wrap');
@@ -4196,7 +4206,7 @@ function renderHistory() {
   // ★ 점수형 교재 + 반이 선택됐을 때만 "기준점수" 설정 UI 표시 + 그 반의 현재 값 동기화
   const thWrap = $('hist-threshold-wrap');
   if (thWrap) {
-    const showThreshold = !!bidBook && bidBook.mode === 'book' && bidBook.score === '점수' && !!group;
+    const showThreshold = !!bidBook && bidBook.score === '점수' && !!group;
     thWrap.style.display = showThreshold ? 'flex' : 'none';
     if (showThreshold) {
       const classCfg = bidBook.classThresholds?.[group];
