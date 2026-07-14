@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v117</title>
+<title>숙제 관리 v118</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -420,7 +420,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v117</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v118</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -5426,10 +5426,6 @@ function _renderBulkClassList() {
   const q = search.trim().toLowerCase();
   const filterMode = $('bulk-filter-mode')?.value || '';
   const gradeFilter = $('bulk-grade-filter')?.value || '';
-  const bookOptions = (mode, selectedId) => S.books
-    .filter(b => mode === 'voca' ? b.mode === 'voca' : b.mode === 'book')
-    .sort((a,b) => a.name.localeCompare(b.name,'ko'))
-    .map(b => `<option value="${b.id}" ${Number(selectedId)===b.id?'selected':''}>${escHtml(b.name)}</option>`).join('');
 
   // 정규식 입력창은 목록 안에 있어서 다시 그리면 조합이 깨질 수 있으므로, 포커스/커서만 최소한으로 복원
   const _active = document.activeElement;
@@ -5528,6 +5524,24 @@ function _renderBulkClassList() {
         ? `<span style="font-size:.68rem;font-weight:800;padding:.1rem .45rem;border-radius:5px;background:#4338ca;color:#fff;flex-shrink:0">${escHtml(gradeMatch[0])}</span>`
         : `<span style="font-size:.62rem;font-weight:700;padding:.1rem .4rem;border-radius:5px;background:var(--s2);color:var(--mu);flex-shrink:0" title="클래스명에서 반 정보를 못 찾았어요">반 미확인</span>`;
 
+      const cnEsc = escHtml(c.name).replace(/'/g,"\\'");
+      // ★ 교재를 "교재형/보카형" 두 그룹으로 나눠서 보여주는 검색 가능한 선택창
+      //   (모드를 먼저 고르고 교재를 고르던 2단계를, "교재 하나 검색해서 고르기" 1단계로 단순화)
+      const bookGroupHtml = mode => S.books
+        .filter(b => b.mode === mode)
+        .sort((a,b) => a.name.localeCompare(b.name,'ko'))
+        .map(b => `<option value="${b.id}" ${draft.bookId===b.id?'selected':''}>${escHtml(b.name)}</option>`).join('');
+      const bookPicker = draft.mode === 'ignore' ? '' : `
+        <div style="display:flex;flex-direction:column;gap:.25rem;min-width:190px">
+          <input type="text" placeholder="🔍 교재 검색..." oninput="_filterBulkBookOptions(this)"
+            style="font-size:.72rem;padding:.2rem .4rem">
+          <select data-cn="${cnEsc}" onchange="_updateBulkBookSelection('${cnEsc}', this.value)" style="font-size:.76rem;padding:.25rem .4rem">
+            <option value="">교재 선택...</option>
+            <optgroup label="📘 교재형">${bookGroupHtml('book')}</optgroup>
+            <optgroup label="📗 보카형">${bookGroupHtml('voca')}</optgroup>
+          </select>
+        </div>`;
+
       return `${sectionHeader}<div style="border:${cardStyle.border};border-radius:8px;padding:.6rem .7rem;margin-bottom:.5rem;background:${cardStyle.bg};transition:all .15s">
         <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
           <div style="flex:1;min-width:200px">
@@ -5538,20 +5552,12 @@ function _renderBulkClassList() {
             </div>
             <div style="font-size:.68rem;color:var(--mu);margin-top:.1rem" title="${sampleTxt}">${c.count}건 · 예: ${sampleTxt.slice(0,60)}${sampleTxt.length>60?'...':''}</div>
             ${prevBadge}
-            ${(draft.mode==='book'||draft.mode==='voca') && draft.bookId ? `<div style="font-size:.72rem;font-weight:700;color:${draft.mode==='voca'?'#059669':'#2563eb'};margin-top:.15rem">→ 지금 선택: ${escHtml(getBook(draft.bookId)?.name||'')}</div>` : ''}
+            ${(draft.mode==='book'||draft.mode==='voca') && draft.bookId ? `<div style="font-size:.72rem;font-weight:700;color:${draft.mode==='voca'?'#059669':'#2563eb'};margin-top:.15rem">→ 지금 선택: ${escHtml(getBook(draft.bookId)?.name||'')} ${draft.mode==='voca'?'(보카형)':'(교재형)'}</div>` : ''}
           </div>
-          <select onchange="_updateBulkMode('${escHtml(c.name).replace(/'/g,"\\'")}', this.value)" style="font-size:.76rem;padding:.25rem .4rem">
-            <option value="" ${!draft.mode?'selected':''}>— 선택 안 함 (나중에 다시 정하기) —</option>
-            <option value="ignore" ${draft.mode==='ignore'?'selected':''}>🚫 이건 숙제랑 상관없는 클래스예요 (다음에 또 안 물어봄)</option>
-            <option value="book" ${draft.mode==='book'?'selected':''}>📘 교재형으로 연결</option>
-            <option value="voca" ${draft.mode==='voca'?'selected':''}>📗 보카형으로 연결</option>
-          </select>
-          ${(draft.mode==='book'||draft.mode==='voca') ? `
-            <select onchange="_updateBulkBookId('${escHtml(c.name).replace(/'/g,"\\'")}', this.value)" style="font-size:.76rem;padding:.25rem .4rem;min-width:160px">
-              <option value="">교재 선택...</option>
-              ${bookOptions(draft.mode, draft.bookId)}
-            </select>
-          ` : ''}
+          <button onclick="_toggleBulkIgnore('${cnEsc}')" class="btn ${draft.mode==='ignore'?'bd2':'bg'} bsm" style="font-size:.7rem;flex-shrink:0">
+            ${draft.mode==='ignore' ? '🚫 무시 중 (해제)' : '🚫 무시'}
+          </button>
+          ${bookPicker}
         </div>
         ${voccaExtra}
       </div>`;
@@ -5581,13 +5587,48 @@ function _resetAllBulkMappings() {
   _renderBulkStep2();
 }
 
-function _updateBulkMode(className, mode) {
-  _bulkDraftMap[className].mode = mode;
-  if (mode === 'book' || mode === 'voca') _bulkDraftMap[className].bookId = null;
+/* ★ "무시" 토글 — 누르면 무시로, 다시 누르면 미설정으로 되돌아감 */
+function _toggleBulkIgnore(className) {
+  const d = _bulkDraftMap[className];
+  if (!d) return;
+  if (d.mode === 'ignore') {
+    d.mode = '';
+  } else {
+    d.mode = 'ignore';
+    d.bookId = null;
+  }
   _renderBulkClassList();
 }
-function _updateBulkBookId(className, bookId) {
-  _bulkDraftMap[className].bookId = bookId ? Number(bookId) : null;
+
+/* 검색창에 입력할 때마다, 바로 옆 <select>의 옵션만 다시 그림(검색창 자체는 안 건드려서 한글 조합 안 깨짐) */
+function _filterBulkBookOptions(inputEl) {
+  const q = inputEl.value.trim().toLowerCase();
+  const selectEl = inputEl.nextElementSibling;
+  if (!selectEl) return;
+  const className = selectEl.dataset.cn;
+  const draft = _bulkDraftMap[className];
+  const currentId = draft?.bookId || null;
+  const groupHtml = mode => S.books
+    .filter(b => b.mode === mode && (!q || b.name.toLowerCase().includes(q)))
+    .sort((a,b) => a.name.localeCompare(b.name,'ko'))
+    .map(b => `<option value="${b.id}" ${currentId===b.id?'selected':''}>${escHtml(b.name)}</option>`).join('');
+  selectEl.innerHTML = `<option value="">교재 선택...</option>
+    <optgroup label="📘 교재형">${groupHtml('book')}</optgroup>
+    <optgroup label="📗 보카형">${groupHtml('voca')}</optgroup>`;
+}
+
+/* 그룹형 선택창에서 교재를 고르면, 그 교재의 실제 유형(교재형/보카형)을 그대로 가져와서 모드도 같이 정해짐
+   — "먼저 유형을 고르고 → 그 다음 교재를 고르는" 2단계를 "교재 하나 검색해서 고르기" 1단계로 단순화 */
+function _updateBulkBookSelection(className, bookIdStr) {
+  const d = _bulkDraftMap[className];
+  if (!d) return;
+  const bookId = bookIdStr ? Number(bookIdStr) : null;
+  if (!bookId) { d.mode = ''; d.bookId = null; _renderBulkClassList(); return; }
+  const book = getBook(bookId);
+  if (!book) return;
+  d.mode = book.mode; // 'book' | 'voca'
+  d.bookId = bookId;
+  _renderBulkClassList();
 }
 /* ★ 엑셀에서 읽은 "학습일" 값을 안전하게 YYYY-MM-DD로 변환
    - Date 객체(cellDates:true 덕분에 보통 이 경우)면 그대로 사용
