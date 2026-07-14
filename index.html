@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v96</title>
+<title>숙제 관리 v98</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -406,7 +406,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v96</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v98</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4874,10 +4874,13 @@ async function _onBulkFileSelect(event) {
     info.innerHTML = `✅ ${file.name} · ${rows.length}개 행 읽음`;
 
     // 클래스명별로 묶기
+    // ★ A. / W. / C. / O. 로 시작하는 클래스만 사용 (그 외 클래스카드 자체 관리반 등은 무관하므로 아예 목록에서 제외)
     const byClass = new Map();
+    let excludedByPrefix = 0;
     rows.forEach(r => {
       const cls = String(r['클래스명'] || '').trim();
       if (!cls) return;
+      if (!/^[AWCO]\./.test(cls)) { excludedByPrefix++; return; }
       const setName = String(r['세트명'] || '').trim();
       if (setName.includes('누적오답')) return; // ★ 누적오답 단어복습 세트는 자동 제외
       if (!byClass.has(cls)) byClass.set(cls, { name: cls, count: 0, samples: [], rows: [] });
@@ -4889,6 +4892,9 @@ async function _onBulkFileSelect(event) {
       }
     });
     _bulkClasses = [...byClass.values()].sort((a,b) => b.count - a.count);
+    if (excludedByPrefix) {
+      info.innerHTML += `<br><span style="color:var(--mu)">A./W./C./O.로 시작 안 하는 클래스의 행 ${excludedByPrefix}건은 자동으로 제외했어요</span>`;
+    }
 
     // 기존 저장된 매핑을 초안으로 불러오기
     _bulkDraftMap = {};
@@ -4948,8 +4954,18 @@ function _renderBulkStep2() {
       <span style="color:var(--mu)">무시 ${ignoredCount}</span> ·
       <span style="color:${pendingCount?'var(--amb)':'var(--mu)'}">미설정 ${pendingCount}</span>
     </div>
-    <input type="text" id="bulk-map-search" placeholder="🔍 클래스명 검색..." oninput="_renderBulkClassList()"
-      style="width:100%;margin-bottom:.7rem;padding:.4rem .6rem;font-size:.8rem">
+    <div style="display:flex;gap:.5rem;margin-bottom:.7rem">
+      <input type="text" id="bulk-map-search" placeholder="🔍 클래스명 검색..." oninput="_renderBulkClassList()"
+        style="flex:1;padding:.4rem .6rem;font-size:.8rem">
+      <select id="bulk-filter-mode" onchange="_renderBulkClassList()" style="font-size:.8rem;padding:.4rem .5rem" title="연결이 잘 됐는지 확인할 때 유용해요">
+        <option value="">전체 보기</option>
+        <option value="mapped">✅ 연결된 것만 (교재형+보카형)</option>
+        <option value="book">📘 교재형만</option>
+        <option value="voca">📗 보카형만</option>
+        <option value="ignore">🚫 무시한 것만</option>
+        <option value="pending">⬜ 미설정만</option>
+      </select>
+    </div>
     <div id="bulk-class-list"></div>
   `;
   _renderBulkClassList();
@@ -4981,10 +4997,27 @@ function _renderBulkClassList() {
   const _focusKey = (_active && _active.dataset && _active.dataset.fk) ? _active.dataset.fk : null;
   const _prevCursor = _focusKey ? _active.selectionStart : null;
 
+  // ★ "아직 확인 안 한 것"이 위로, "이미 매핑 끝난 것"은 아래로 — 뭘 해야 할지 한눈에 보이도록
+  const _modeOrder = { '': 0, book: 1, voca: 1, ignore: 2 };
+  const _sectionLabel = { 0: '⚠ 확인 필요', 1: '✅ 활성화됨 (매핑 완료)', 2: '🚫 무시로 정함' };
+  let _lastGroup = null;
   const rowsHtml = _bulkClasses
     .filter(c => !q || c.name.toLowerCase().includes(q))
+    .slice()
+    .sort((a, b) => {
+      const oa = _modeOrder[_bulkDraftMap[a.name]?.mode || ''];
+      const ob = _modeOrder[_bulkDraftMap[b.name]?.mode || ''];
+      if (oa !== ob) return oa - ob;
+      return b.count - a.count;
+    })
     .map(c => {
       const draft = _bulkDraftMap[c.name];
+      const _group = _modeOrder[draft?.mode || ''];
+      let sectionHeader = '';
+      if (_group !== _lastGroup) {
+        sectionHeader = `<div style="font-size:.72rem;font-weight:800;color:var(--mu);margin:${_lastGroup===null?'0':'.9rem'} 0 .35rem;padding-top:${_lastGroup===null?'0':'.5rem'};border-top:${_lastGroup===null?'none':'1px dashed var(--bd)'}">${_sectionLabel[_group]}</div>`;
+        _lastGroup = _group;
+      }
       const isNew = !S.classcardMappings.find(m => m.className === c.name);
       const sampleTxt = c.samples.map(s => escHtml(s.setName)).join(' · ');
 
@@ -5027,16 +5060,32 @@ function _renderBulkClassList() {
         voca    : { border:'2px solid #059669',              bg:'rgba(5,150,105,.06)'  }, // 보카형 — 초록
       }[draft.mode || ''];
 
-      return `<div style="border:${cardStyle.border};border-radius:8px;padding:.6rem .7rem;margin-bottom:.5rem;background:${cardStyle.bg};transition:all .15s">
+      // ★ "이전 매핑" 안내를 구체적으로: 뭐였는지(무시였는지 교재 연결이었는지) 바로 알 수 있게
+      let prevBadge = '';
+      if (!isNew) {
+        const savedRec = S.classcardMappings.find(m => m.className === c.name);
+        if (savedRec.mode === 'ignore') {
+          prevBadge = '<span style="font-size:.62rem;color:var(--mu);font-weight:700">🕐 이전에 "무시"로 정해둔 클래스</span>';
+        } else {
+          const savedBook = getBook(savedRec.bookId);
+          prevBadge = `<span style="font-size:.62rem;color:var(--grn);font-weight:700">✓ 이전에 "${escHtml(savedBook?.name||'(삭제된 교재)')}"로 연결해둔 매핑</span>`;
+        }
+      }
+
+      return `${sectionHeader}<div style="border:${cardStyle.border};border-radius:8px;padding:.6rem .7rem;margin-bottom:.5rem;background:${cardStyle.bg};transition:all .15s">
         <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
           <div style="flex:1;min-width:200px">
-            <div style="font-weight:700;font-size:.82rem">${escHtml(c.name)}</div>
+            <div style="font-weight:700;font-size:.82rem;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">
+              ${escHtml(c.name)}
+              ${(draft.mode==='book'||draft.mode==='voca') && draft.bookId ? `<span style="font-size:.62rem;font-weight:800;padding:.1rem .4rem;border-radius:20px;background:${draft.mode==='voca'?'#059669':'#2563eb'};color:#fff">✅ 활성화됨</span>` : ''}
+            </div>
             <div style="font-size:.68rem;color:var(--mu);margin-top:.1rem" title="${sampleTxt}">${c.count}건 · 예: ${sampleTxt.slice(0,60)}${sampleTxt.length>60?'...':''}</div>
-            ${!isNew ? '<span style="font-size:.62rem;color:var(--grn);font-weight:700">✓ 이전에 연결해둔 매핑</span>' : ''}
+            ${prevBadge}
+            ${(draft.mode==='book'||draft.mode==='voca') && draft.bookId ? `<div style="font-size:.72rem;font-weight:700;color:${draft.mode==='voca'?'#059669':'#2563eb'};margin-top:.15rem">→ 지금 선택: ${escHtml(getBook(draft.bookId)?.name||'')}</div>` : ''}
           </div>
           <select onchange="_updateBulkMode('${escHtml(c.name).replace(/'/g,"\\'")}', this.value)" style="font-size:.76rem;padding:.25rem .4rem">
             <option value="" ${!draft.mode?'selected':''}>— 선택 안 함 (나중에 다시 정하기) —</option>
-            <option value="ignore" ${draft.mode==='ignore'?'selected':''}>🚫 무시 (숙제와 무관 — 다음에 또 안 물어봄)</option>
+            <option value="ignore" ${draft.mode==='ignore'?'selected':''}>🚫 이건 숙제랑 상관없는 클래스예요 (다음에 또 안 물어봄)</option>
             <option value="book" ${draft.mode==='book'?'selected':''}>📘 교재형으로 연결</option>
             <option value="voca" ${draft.mode==='voca'?'selected':''}>📗 보카형으로 연결</option>
           </select>
