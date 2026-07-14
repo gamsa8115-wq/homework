@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v123</title>
+<title>숙제 관리 v125</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -211,6 +211,13 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 /* 결과가 있으면: 결과가 날짜보다 더 커 보이도록 스왑 */
 .hc-td-done.has-result .hc-date{font-size:.62rem;font-weight:400;color:var(--mu);opacity:.85;display:block;line-height:1.1;}
 .hc-td-done.has-result .hc-result{font-size:.95rem;font-weight:700;color:#065f46;margin-top:.08rem;line-height:1.15;}
+/* ★ "통과"/"미통과" 텍스트는 숫자 점수보다 글자가 길어서, 90% 크기 + 장체(가로로 살짝 압축)로 표시 */
+.hc-result.pf-text{
+  display:inline-block;
+  font-size:90%;
+  transform:scaleX(.82);
+  transform-origin:center;
+}
 /* 이력 모드 버튼 */
 .hist-mode-btn{transition:all .13s;}
 .hist-mode-btn.active{background:var(--acc);color:#fff;border-color:var(--acc);}
@@ -432,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v123</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v125</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -3923,7 +3930,7 @@ function renderBooks() {
         ${isEditing ? '<span class="badge bb" style="margin-left:.4rem;font-size:.6rem">편집 중</span>' : ''}
       </td>
       <td><span class="badge ${mc[b.mode]||'bgy'}">${ml[b.mode]||b.mode}</span></td>
-      <td style="font-family:'Space Mono',monospace">${b.rows ? b.rows.length : '-'}</td>
+      <td style="font-family:'Space Mono',monospace">${b.mode==='voca' ? '-' : (b.rows && b.rows.length ? b.rows.length : '-')}</td>
       <td style="font-size:.75rem;color:var(--mu)">
         ${(() => {
           const activeClasses = Object.keys(b.classThresholds||{}).filter(g => b.classThresholds[g]?.enabled);
@@ -4344,11 +4351,12 @@ function renderHistory() {
       }
       const hasResult = info.result !== '' && info.result !== null && info.result !== undefined;
       const isFailResult = info.result === '미통과'; // ★ 통과/미통과 방식에서 실패한 셀은 빨간 박스로 표시
+      const isPassFailText = info.result === '통과' || info.result === '미통과';
       return `<td class="hc-td-done${hasResult?' has-result':''}${isFailResult?' fail-result':''}" id="${cellId}"
         onclick="onHistCellClick(this)"
         title="${escHtml(s.name)}: ${fmtCell(info.date)}${hasResult?' · '+String(info.result):''}">
         <span class="hc-date">${fmtCell(info.date)}</span>
-        ${hasResult ? `<span class="hc-result">${escHtml(String(info.result))}</span>` : ''}
+        ${hasResult ? `<span class="hc-result${isPassFailText?' pf-text':''}">${escHtml(String(info.result))}</span>` : ''}
       </td>`;
     }).join('');
     // 오른쪽 남은 공간 채우는 spacer 셀
@@ -6984,12 +6992,18 @@ function _daysSince(dateStr, untilStr) {
   return days;
 }
 
-/* ★ 미완료 사유 판정: 미수행(결과 없음) / 미통과 / 미수행(완료형) / 점수 미달
+/* ★ 미완료 사유 판정: 미수행(날짜가 지났는데 결과 없음) / 미통과 / 미수행(완료형) / 점수 미달
    - 통과·완료형은 값 자체가 의미를 가지므로 항상 판정
-   - 점수형은 "이 반"의 기준점수 설정이 켜져 있을 때만 판정 (반마다 설정이 다를 수 있음) */
-function _incompleteReason(book, result, group) {
+   - 점수형은 "이 반"의 기준점수 설정이 켜져 있을 때만 판정 (반마다 설정이 다를 수 있음)
+   - assignDate: 이 배정의 날짜. 결과가 없어도 그 날짜가 아직 안 지났으면(오늘·미래) "미수행"이라고
+     부르면 안 됨 — 아직 할 기회가 남아있는 거라서. 날짜가 진짜 지난 것만 미수행으로 판정함 */
+function _incompleteReason(book, result, group, assignDate) {
   const hasResult = result !== '' && result !== null && result !== undefined;
-  if (!hasResult) return '미수행';
+  if (!hasResult) {
+    const todayStr = getTodayStr();
+    if (assignDate && assignDate >= todayStr) return null; // 오늘·미래 배정 → 아직 미수행이라 부르지 않음
+    return '미수행';
+  }
   if (!book) return null;
   if (book.score === '통과' && result !== '통과') return result === '미수행' ? '미수행' : '미통과';
   if (book.score === '완료' && result !== '완료') return '미수행';
@@ -7013,7 +7027,7 @@ function _buildIncompleteForStudent(student, untilDate, typeF, bookF) {
     if (bookF && String(a.bookId) !== bookF) return;
     const book = getBook(a.bookId);
     if (typeF && (book?.mode || a.type) !== typeF) return;
-    const reason = _incompleteReason(book, a.result, student.group);
+    const reason = _incompleteReason(book, a.result, student.group, a.date);
     if (reason) items.push({ ...a, _reason: reason });
   });
   const byBook = {};
@@ -7038,7 +7052,7 @@ function _buildCompletedForStudent(student, untilDate, typeF, bookF, limit) {
     if (typeF && (book?.mode || a.type) !== typeF) return;
     const hasResult = a.result !== '' && a.result !== null && a.result !== undefined;
     if (!hasResult) return;
-    const reason = _incompleteReason(book, a.result, student.group);
+    const reason = _incompleteReason(book, a.result, student.group, a.date);
     if (reason) return; // 미완료 사유가 있으면 진짜 완료가 아님
     items.push(a);
   });
