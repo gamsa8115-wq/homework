@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v116</title>
+<title>숙제 관리 v117</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -420,7 +420,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v116</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v117</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -5400,6 +5400,7 @@ function _renderBulkStep2() {
         <option value="voca">📗 보카형만</option>
         <option value="ignore">🚫 무시한 것만</option>
         <option value="pending">⬜ 미설정만</option>
+        <option value="incomplete">⚠ 교재 선택 안 된 것만</option>
       </select>
     </div>
     <div id="bulk-class-list"></div>
@@ -5444,9 +5445,11 @@ function _renderBulkClassList() {
     .filter(c => !gradeFilter || (c.name.match(/(초|중|고)\d(?:[,·]\d)*\b/)||[])[0] === gradeFilter)
     .filter(c => {
       if (!filterMode) return true;
-      const m = _bulkDraftMap[c.name]?.mode || '';
+      const d = _bulkDraftMap[c.name] || {};
+      const m = d.mode || '';
       if (filterMode === 'mapped') return m === 'book' || m === 'voca';
       if (filterMode === 'pending') return !m;
+      if (filterMode === 'incomplete') return (m === 'book' || m === 'voca') && !d.bookId;
       return m === filterMode; // 'book' | 'voca' | 'ignore'
     })
     .slice()
@@ -5626,7 +5629,13 @@ function _saveBulkMappingsAndPreview() {
     return (d.mode === 'book' || d.mode === 'voca') && !d.bookId;
   });
   if (incomplete.length) {
-    toast(`⚠ 교재를 선택 안 한 항목이 ${incomplete.length}개 있어요`);
+    toast(`⚠ 교재를 선택 안 한 항목이 ${incomplete.length}개 있어요 — 아래 목록에 바로 보여드릴게요`);
+    // ★ 어디가 문제인지 안 보여서 헷갈렸던 문제 개선 — 검색/필터를 초기화하고, 문제 있는 것만 바로 보이도록
+    const searchEl = $('bulk-map-search');
+    if (searchEl) searchEl.value = '';
+    const filterEl = $('bulk-filter-mode');
+    if (filterEl) filterEl.value = 'incomplete';
+    _renderBulkClassList();
     return;
   }
 
