@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v100</title>
+<title>숙제 관리 v101</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -418,7 +418,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v100</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v101</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -3415,7 +3415,6 @@ function startBookEdit(id) {
   $('nb-score').value = book.score;
   // 교재형이면 레이블 편집 UI 표시
   toggleBookMode();
-  toggleRetryThreshold();
 
   // 기존 레이블 목록 + 텍스트박스(신규 추가용) 비움
   $('lb-paste').value = '';
