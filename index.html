@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v104</title>
+<title>숙제 관리 v105</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -420,7 +420,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v104</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v105</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -820,6 +820,10 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         onclick="deleteHistClassAll()"
         title="지금 선택된 반 전체가 이 교재를 받은 적 없는 것으로 — 배정 기록·배부 상태 완전 삭제"
         style="font-size:.72rem">🗑 반 전체 배정 삭제</button>
+      <button class="btn bs bsm" id="hist-reschedule-btn"
+        onclick="openVocaReschedule()"
+        title="아직 안 한(미완료) 배정만, 지금 설정된 방학을 반영해서 날짜를 다시 계산합니다. 이미 한 건 절대 안 건드려요."
+        style="display:none;font-size:.72rem;background:#0891b2;color:#fff;border-color:#0891b2">🔄 방학 반영 재조정</button>
       <span style="width:1px;height:18px;background:var(--bd);margin:0 .15rem"></span>
       <button class="btn bs bsm" id="hist-import-btn"
         onclick="openScoreImport()"
@@ -2521,6 +2525,121 @@ function completeGroupAll(bid, group) {
 
 /* ★ 배정 이력 탭에서 지금 선택된 반+교재 조합 전체를 완전히 삭제
    — 그 반이 이 교재를 받은 적 자체가 없던 것처럼 (배정 기록 + 배부 상태 모두 제거) */
+/* ════════════════════════════════════════════════════════════════════
+   🆕 방학 반영 재조정 — 보카형에서 이미 자동 배정을 걸어둔 뒤, 나중에
+   방학(시험기간 등)을 표시해도 이미 만들어진 배정 날짜가 자동으로 안 밀리는 문제 해결.
+
+   원칙:
+   - 이미 결과(점수)가 있는 배정은 "확정된 과거 기록"이므로 절대 안 건드림
+   - 아직 결과 없는(미완료) 배정만, 그 학생의 기존 배정 날짜들에서 "무슨 요일에 수업했는지"를
+     역으로 추론해서, 그 요일 패턴 + 지금 설정된 방학을 기준으로 다시 스케줄링
+   - 재조정 시작점은 "미완료 중 가장 이른 날짜" — 이미 지난 완료분은 그대로 두고 이어서 계산
+   ════════════════════════════════════════════════════════════════════ */
+
+/* 학생 1명 × 교재 1개의 재조정 계획 계산 (실제 반영은 안 함, 계획만 리턴) */
+function _planVocaReschedule(studentId, bookId) {
+  const all = S.assigns.filter(a => a.studentId === studentId && a.bookId === bookId && a.type === 'voca');
+  const pending = all
+    .filter(a => a.result === '' || a.result === null || a.result === undefined)
+    .sort((a,b) => a.date.localeCompare(b.date));
+  if (!pending.length) return null;
+
+  // 기존 배정 날짜들(완료+미완료 전체)에서 요일 패턴 역추론
+  const dowSet = new Set();
+  all.forEach(a => { if (a.date) dowSet.add(parseYMD(a.date).getDay()); });
+  if (!dowSet.size) return null;
+
+  const originDate = pending[0].date; // 미완료 중 가장 이른 날짜부터 다시 계산
+  const newDates = generateClassDates(originDate, pending.length, dowSet);
+  if (newDates.length < pending.length) return null; // 배정 가능일이 부족하면(극히 드묾) 건너뜀
+
+  const changes = [];
+  pending.forEach((a, i) => {
+    if (newDates[i] !== a.date) changes.push({ assignId: a.id, unitFrom: a.unitFrom, oldDate: a.date, newDate: newDates[i] });
+  });
+  return changes.length ? changes : null;
+}
+
+let _vocaReschedulePlan = null; // { studentId, studentName, bookId, bookName, changes: [...] }[]
+
+function openVocaReschedule() {
+  const bid = Number($('hist-book')?.value || 0);
+  const group = $('hist-group')?.value || '';
+  const book = getBook(bid);
+  if (!book || book.mode !== 'voca' || !group) return;
+
+  const students = S.students.filter(s => s.group === group && (s.books||[]).includes(book.name));
+  _vocaReschedulePlan = students
+    .map(st => {
+      const changes = _planVocaReschedule(st.id, bid);
+      return changes ? { studentId: st.id, studentName: st.name, changes } : null;
+    })
+    .filter(Boolean);
+
+  const old = document.getElementById('voca-reschedule-modal');
+  if (old) old.remove();
+
+  const totalChanges = _vocaReschedulePlan.reduce((s,p) => s + p.changes.length, 0);
+
+  const modal = document.createElement('div');
+  modal.id = 'voca-reschedule-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem';
+
+  if (!totalChanges) {
+    modal.innerHTML = `
+      <div style="background:var(--surface);border-radius:12px;max-width:420px;width:100%;padding:1.2rem">
+        <div style="font-weight:700;margin-bottom:.6rem">🔄 방학 반영 재조정</div>
+        <div style="font-size:.85rem;color:var(--mu);margin-bottom:1rem">
+          지금 설정된 방학 기준으로 다시 계산해봤는데, 이미 날짜가 다 맞아서 <b>바뀔 게 없어요.</b>
+        </div>
+        <button onclick="document.getElementById('voca-reschedule-modal').remove()" class="btn bg bsm" style="width:100%">확인</button>
+      </div>`;
+    document.body.appendChild(modal);
+    return;
+  }
+
+  const previewHtml = _vocaReschedulePlan.map(p => `
+    <div style="margin-bottom:.6rem">
+      <div style="font-weight:700;font-size:.82rem;margin-bottom:.2rem">${escHtml(p.studentName)} <span style="color:var(--mu);font-weight:400;font-size:.72rem">(${p.changes.length}건)</span></div>
+      ${p.changes.map(c => `<div style="font-size:.72rem;color:var(--mu);padding:.1rem 0">
+        ${escHtml(String(c.unitFrom))}회차 · ${shortAiDate(c.oldDate)} → <b style="color:#0891b2">${shortAiDate(c.newDate)}</b>
+      </div>`).join('')}
+    </div>`).join('');
+
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:12px;max-width:560px;width:100%;max-height:80vh;display:flex;flex-direction:column">
+      <div style="padding:.9rem 1.1rem;border-bottom:1px solid var(--bd)">
+        <div style="font-weight:700;font-size:1rem">🔄 방학 반영 재조정 — 미리보기</div>
+        <div style="font-size:.76rem;color:var(--mu);margin-top:.25rem">
+          아직 안 한 배정 <b>${totalChanges}건</b>의 날짜가 바뀝니다 (${_vocaReschedulePlan.length}명). <b style="color:var(--grn)">이미 점수 입력된 건 전혀 안 건드립니다.</b>
+        </div>
+      </div>
+      <div style="padding:1rem 1.1rem;overflow-y:auto;flex:1">${previewHtml}</div>
+      <div style="padding:.7rem 1.1rem;border-top:1px solid var(--bd);display:flex;gap:.5rem;justify-content:flex-end">
+        <button onclick="document.getElementById('voca-reschedule-modal').remove()" class="btn bg bsm" style="font-size:.78rem">취소</button>
+        <button onclick="_applyVocaReschedule()" class="btn bs bsm" style="font-size:.78rem;background:#0891b2;color:#fff;border-color:#0891b2">✅ ${totalChanges}건 적용</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function _applyVocaReschedule() {
+  if (!_vocaReschedulePlan) return;
+  let applied = 0;
+  _vocaReschedulePlan.forEach(p => {
+    p.changes.forEach(c => {
+      const a = S.assigns.find(x => x.id === c.assignId);
+      if (a) { a.date = c.newDate; applied++; }
+    });
+  });
+  save();
+  renderCal(); updateSidebar();
+  if ($('p-history')?.classList.contains('active')) renderHistory();
+  document.getElementById('voca-reschedule-modal')?.remove();
+  _vocaReschedulePlan = null;
+  toast(`✅ ${applied}건의 날짜를 방학 반영해서 재조정했습니다`);
+}
+
 function deleteHistClassAll() {
   const bid   = Number($('hist-book')?.value || 0);
   const group = $('hist-group')?.value || '';
@@ -3954,6 +4073,9 @@ function renderHistory() {
   if (isVocaBook && _inspectActive) {
     closeInspect();
   }
+  // ★ 보카형 + 반이 선택됐을 때만 "방학 반영 재조정" 버튼 표시
+  const rescheduleBtn = $('hist-reschedule-btn');
+  if (rescheduleBtn) rescheduleBtn.style.display = (isVocaBook && group) ? '' : 'none';
 
   // ★ 점수형 교재 + 반이 선택됐을 때만 "기준점수" 설정 UI 표시 + 그 반의 현재 값 동기화
   const thWrap = $('hist-threshold-wrap');
