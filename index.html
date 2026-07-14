@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v127</title>
+<title>숙제 관리 v128</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v127</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v128</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4904,6 +4904,13 @@ function _normName(s) {
   return String(s||'').replace(/\s+/g, '').trim();
 }
 
+/* ★ 학생이 아닌 학원 관리자/테스트용 계정 이름 — 리포트에 섞여 있어도 학생으로 취급하지 않음
+   (매칭 안 된 학생 이름 경고에도 안 뜨게, 아예 처음부터 건너뜀) */
+const REPORT_EXCLUDED_NAMES = new Set(['더퍼스트']);
+function _isExcludedReportName(name) {
+  return REPORT_EXCLUDED_NAMES.has(String(name||'').trim());
+}
+
 /* ★ 레이블 정규화 — 공백 여러 개·하이픈 앞뒤 공백 차이만 흡수 (숫자는 절대 안 건드림) */
 function _normLabel(s) {
   return String(s).replace(/\s+/g, ' ').replace(/\s*-\s*/g, '-').trim();
@@ -4958,6 +4965,7 @@ function _previewScoreImport() {
     const scoreRaw = row['테스트 최고'] ?? row['테스트최고'] ?? row['테스트 (최고점)'];
 
     if (!rawName.trim() || !setName) return;
+    if (_isExcludedReportName(rawName)) return; // ★ 학원 관리자 계정 등은 학생 아님 → 건너뜀
 
     let score;
     if (sourceMode === 'done') {
@@ -5809,6 +5817,7 @@ function _computeBulkPreview() {
       const rawName = String(row['학생이름'] || '').trim();
       const rawId   = String(row['아이디'] || '').trim();
       if (!rawName) return;
+      if (_isExcludedReportName(rawName)) return; // ★ 학원 관리자 계정 등은 학생 아님 → 건너뜀
 
       // ★ 학생 찾기: 클래스카드 아이디 우선 → 이름 정확 매칭
       let student = null;
