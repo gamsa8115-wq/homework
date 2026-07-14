@@ -323,9 +323,19 @@ function getBookById(books, bookId) {
    - 완료/미수행형인데 미수행 → 미수행
    - 점수형이고 "이 반"에 대해 재도전 설정이 켜진 교재면 기준점수 미만일 때 → "OO점 (미달)"
    - 그 외(정상적으로 값이 있음) → null (완료로 인정) */
-function incompleteReason(book, result, group) {
+/* ★ 선생님용 앱과 동일한 기준으로 "미완료 사유" 판정 (반마다 기준점수가 다를 수 있음)
+   - 결과 없음 + 그 날짜가 이미 지났으면 → 미수행 (오늘·미래 배정은 아직 할 기회가 남아있어 미수행이라 안 부름)
+   - 통과/미통과형인데 미통과 → 미통과
+   - 완료/미수행형인데 미수행 → 미수행
+   - 점수형이고 "이 반"에 대해 재도전 설정이 켜진 교재면 기준점수 미만일 때 → "OO점 (미달)"
+   - 그 외(정상적으로 값이 있음) → null (완료로 인정) */
+function incompleteReason(book, result, group, assignDate) {
   const hasResult = result !== '' && result !== null && result !== undefined;
-  if (!hasResult) return '미수행';
+  if (!hasResult) {
+    const today = todayStr();
+    if (assignDate && assignDate >= today) return null; // 오늘·미래 배정 → 아직 미수행 아님
+    return '미수행';
+  }
   if (!book) return null;
   if (book.score === '통과' && result !== '통과') return result === '미수행' ? '미수행' : '미통과';
   if (book.score === '완료' && result !== '완료') return '미수행';
@@ -424,13 +434,15 @@ function renderMainView(student, assigns, vacations, books) {
   const myAssigns = assigns.filter(a => a.studentId === student.id);
 
   // ★ "완료"의 기준을 선생님 앱과 동일하게: 미수행·미통과·(반별 기준 설정된) 점수 미달은 모두 미완료로 취급
-  const reasonOf = (a) => incompleteReason(getBookById(books, a.bookId), a.result, student.group);
+  const reasonOf = (a) => incompleteReason(getBookById(books, a.bookId), a.result, student.group, a.date);
+  const hasResultOf = (a) => a.result !== '' && a.result !== null && a.result !== undefined;
 
-  // 오늘 숙제: 오늘이 수업일이고 + 미완료인 것 (사유와 함께)
+  // 오늘 숙제: 오늘이 수업일이고 + 아직 결과가 없는 것 (오늘 배정은 "미수행" 딱지 없이도 항상 목록엔 나와야 함 —
+  // reasonOf는 "날짜가 지나야 미수행"이라 오늘 것엔 null을 주는데, 그건 배지 표시용이지 목록 포함 여부완 별개)
   // (오늘이 방학/공휴일이면 오늘 카드 비워둠 - 빈 상태)
   const isTodayClassDay = !isNonClassDay(today, vacations);
   const todays = isTodayClassDay
-    ? myAssigns.filter(a => a.date === today && reasonOf(a))
+    ? myAssigns.filter(a => a.date === today && !hasResultOf(a))
     : [];
 
   // 지난 미완료: 미완료 + 과거 + 방학/공휴일에 배정된 것은 제외
