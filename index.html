@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v107</title>
+<title>숙제 관리 v108</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -420,7 +420,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v107</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v108</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -528,19 +528,6 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
           </label>
           <div class="dow-row" id="v-dow-row">
             <!-- 렌더링 시 생성 -->
-          </div>
-        </div>
-
-        <!-- 🆕 반+교재별 일시정지 기간 (시험기간 등) — 학원 전체 방학과는 별개로, "이 반의 이 교재"만 쉬는 기간 -->
-        <div id="v-pause-section" style="margin-bottom:.55rem;padding:.5rem .6rem;background:var(--s2);border-radius:6px">
-          <div style="font-size:.74rem;font-weight:700;margin-bottom:.3rem">⏸ 이 교재만 일시정지 (시험기간 등)</div>
-          <div id="v-pause-list" style="font-size:.7rem;color:var(--mu);margin-bottom:.35rem">반과 교재를 먼저 선택하세요</div>
-          <div style="display:flex;gap:.3rem;align-items:center;flex-wrap:wrap">
-            <input type="date" id="v-pause-start" style="width:auto;font-size:.72rem;padding:.2rem .3rem">
-            <span style="font-size:.7rem;color:var(--mu)">~</span>
-            <input type="date" id="v-pause-end" style="width:auto;font-size:.72rem;padding:.2rem .3rem">
-            <input type="text" id="v-pause-label" placeholder="예: 기말고사" style="flex:1;min-width:80px;font-size:.72rem;padding:.2rem .4rem">
-            <button class="btn bp bsm" onclick="addClassPause('v', S.chipFilter, Number($('v-book')?.value||0))" style="font-size:.68rem;padding:.2rem .5rem">+ 추가</button>
           </div>
         </div>
 
@@ -1598,7 +1585,6 @@ function selClass(g) {
   renderStudentChips();
   renderAssignGroupBtns();
   renderLastAssignPanel('voca'); // ★ 마지막 배정 맥락 초기화
-  renderClassPauseList('v', S.chipFilter, Number($('v-book')?.value || 0)); // ★ 이 반+교재의 일시정지(시험기간) 목록 갱신
 }
 
 /* ★ 반별 일시정지(시험기간 등) 목록 표시 — 학원 전체 방학과 별개, "이 반만" 잠깐 쉬는 기간 */
@@ -1633,16 +1619,20 @@ function addClassPause(prefix, group, bookId) {
   $(`${prefix}-pause-end`).value = '';
   $(`${prefix}-pause-label`).value = '';
   renderClassPauseList(prefix, group, bookId);
-  if (prefix === 'v') onVocaFormChange(); // 미리보기에도 바로 반영
   const book = getBook(bookId);
   toast(`✅ ${group} · ${book?.name||''} 일시정지 기간(${label||'일시정지'}) 추가됨`);
+
+  // ★ 일시정지만 등록해서는 "이미 만들어진 배정"이 저절로 안 바뀜(과거 완료 기록은 보존해야 하니까).
+  //   그래서 등록 직후 바로 "방학 반영 재조정" 미리보기를 띄워서, 미완료 항목들을 그 자리에서 바로 밀어줄 수 있게 함
+  if (prefix === 'hist') {
+    setTimeout(() => openVocaReschedule(), 150);
+  }
 }
 
 function deleteClassPause(id, prefix, group, bookId) {
   S.classPauses = (S.classPauses || []).filter(p => p.id !== id);
   save();
   renderClassPauseList(prefix, group, bookId);
-  if (prefix === 'v') onVocaFormChange();
   toast('일시정지 기간 삭제됨');
 }
 
@@ -2023,7 +2013,6 @@ function onDowToggle(chk) {
 function onVocaFormChange() {
   renderLastAssignPanel('voca');
   renderVocaPreview();
-  renderClassPauseList('v', S.chipFilter, Number($('v-book')?.value || 0));
 }
 
 /* 회차 문자열 파싱 (숫자만 지원. "01" → {num:1,pad:2}) */
