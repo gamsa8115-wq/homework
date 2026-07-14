@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v103</title>
+<title>숙제 관리 v104</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -420,7 +420,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v103</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v104</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -932,6 +932,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         </select>
       </div>
       <div style="display:flex;gap:.3rem;margin-left:auto;align-items:center">
+        <button class="btn bg bsm hist-mode-btn" id="ic-toggle-completed" onclick="toggleIcShowCompleted()" style="font-size:.72rem">✅ 최근 완료 숨김</button>
         <button class="btn bg bsm hist-mode-btn" id="ic-view-single" onclick="setIcView('single')" style="font-size:.72rem">👤 학생별</button>
         <button class="btn bg bsm hist-mode-btn" id="ic-view-group"  onclick="setIcView('group')"  style="font-size:.72rem">📋 반 전체</button>
       </div>
@@ -6578,24 +6579,25 @@ function _icCompletedHtml(items, uid) {
       <span class="ic-item-date">${shortAiDate(a.date)}</span>
     </div>`;
   }).join('');
-  const bodyId = `ic-done-${uid}`;
   return `<div class="ic-book-group" style="margin-top:.9rem">
-    <button onclick="_toggleIcCompleted('${bodyId}', this)" class="btn bg bsm" style="font-size:.75rem;background:rgba(5,150,105,.08);border-color:rgba(5,150,105,.3);color:#059669;width:100%;justify-content:space-between;display:flex;align-items:center">
-      <span>✅ 최근 완료 ${items.length}건</span>
-      <span class="ic-done-arrow">▶ 보기</span>
-    </button>
-    <div id="${bodyId}" class="ic-item-list" style="display:none;margin-top:.4rem">${rows}</div>
+    <div class="ic-book-hd">
+      <span style="font-size:.82rem;font-weight:700;color:#059669">✅ 최근 완료</span>
+      <span class="ic-book-count" style="color:#059669">${items.length}건</span>
+    </div>
+    <div class="ic-item-list">${rows}</div>
   </div>`;
 }
 
-/* 최근 완료 섹션 펼치기/접기 */
-function _toggleIcCompleted(bodyId, btn) {
-  const el = $(bodyId);
-  if (!el) return;
-  const opening = el.style.display === 'none';
-  el.style.display = opening ? '' : 'none';
-  const arrow = btn.querySelector('.ic-done-arrow');
-  if (arrow) arrow.textContent = opening ? '▲ 접기' : '▶ 보기';
+/* ★ "최근 완료" 전체를 한 번에 보이기/숨기기 — 학생 카드마다 따로 누를 필요 없이 스위치 하나로 */
+let _icShowCompleted = false;
+function toggleIcShowCompleted() {
+  _icShowCompleted = !_icShowCompleted;
+  const btn = $('ic-toggle-completed');
+  if (btn) {
+    btn.textContent = _icShowCompleted ? '✅ 최근 완료 보임' : '✅ 최근 완료 숨김';
+    btn.classList.toggle('active', _icShowCompleted);
+  }
+  renderIncomplete();
 }
 
 function renderIncomplete() {
@@ -6610,17 +6612,18 @@ function renderIncomplete() {
     const student = sid ? S.students.find(s => s.id === sid) : null;
     if (!student) { body.innerHTML = `<div class="distrib-empty">학생을 선택하세요</div>`; return; }
     const groups = _buildIncompleteForStudent(student, untilDate, typeF, bookF);
-    const completed = _buildCompletedForStudent(student, untilDate, typeF, bookF, 10);
+    const completed = _icShowCompleted ? _buildCompletedForStudent(student, untilDate, typeF, bookF, 10) : [];
     const incompleteHtml = groups.length
       ? `<div class="ta-card-list">${groups.map(g => _icCardHtml(g, untilDate)).join('')}</div>`
       : `<div class="distrib-empty" style="padding:1rem .5rem">🎉 ${escHtml(untilDate)}까지 미완료 숙제가 없습니다</div>`;
     body.innerHTML = `<div class="ta-student-hd">${escHtml(student.name)} <span style="color:var(--mu);font-weight:400;font-size:.78rem">· ${escHtml(untilDate)}까지 미완료</span></div>
       ${incompleteHtml}
-      ${_icCompletedHtml(completed, `single-${student.id}`)}`;
+      ${_icShowCompleted ? _icCompletedHtml(completed, `single-${student.id}`) : ''}`;
     return;
   }
 
   // 반 전체 모드 — 밀린 숙제 있는 학생만 카드로 표시 (없는 학생은 생략해 깔끔하게)
+  // ★ "최근 완료" 토글이 켜져있으면, 미완료는 없어도 완료 기록이 있는 학생도 같이 보여줌
   const group = $('ic-group')?.value || '';
   const list = S.students
     .filter(s => !group || s.group === group)
@@ -6629,8 +6632,8 @@ function renderIncomplete() {
 
   const blocks = list.map(st => {
     const groups = _buildIncompleteForStudent(st, untilDate, typeF, bookF);
-    const completed = _buildCompletedForStudent(st, untilDate, typeF, bookF, 5);
-    if (!groups.length && !completed.length) return null; // 미완료도 완료 기록도 없으면 아예 생략
+    const completed = _icShowCompleted ? _buildCompletedForStudent(st, untilDate, typeF, bookF, 5) : [];
+    if (!groups.length && !completed.length) return null; // 미완료도 (표시 중인) 완료 기록도 없으면 생략
     const totalCount = groups.reduce((sum,g) => sum + g.items.length, 0);
     return `<div class="st-block">
       <div class="st-block-hd">
@@ -6638,7 +6641,7 @@ function renderIncomplete() {
         <span class="st-block-name">${escHtml(st.name)}</span>
         <span class="st-block-sum" style="color:${totalCount?'#b91c1c':'var(--mu)'};font-weight:700">${totalCount ? `미완료 ${totalCount}건` : '미완료 없음'}</span>
       </div>
-      <div class="st-block-body">${groups.map(g => _icCardHtml(g, untilDate)).join('')}${_icCompletedHtml(completed, `grp-${st.id}`)}</div>
+      <div class="st-block-body">${groups.map(g => _icCardHtml(g, untilDate)).join('')}${_icShowCompleted ? _icCompletedHtml(completed, `grp-${st.id}`) : ''}</div>
     </div>`;
   }).filter(Boolean);
 
