@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v121</title>
+<title>숙제 관리 v122</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -420,7 +420,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v121</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v122</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4559,6 +4559,26 @@ let _scoreImportPreview = null; // 미리보기 결과
 
 /* 모달 열기 */
 /* 건너뛰기/덮어쓰기 카드 선택 시 테두리·배경색 시각적으로 갱신 */
+/* 가져올 방식(점수/완료여부) 카드 선택 시 시각 갱신 + 점수기준 섹션 표시여부 전환 */
+function _syncScoreImportSourceUI() {
+  const radios = document.querySelectorAll('input[name="score-import-source"]');
+  let mode = 'score';
+  radios.forEach(r => {
+    const card = r.closest('label');
+    if (!card) return;
+    if (r.checked) {
+      mode = r.value;
+      card.style.border = '2px solid ' + (r.value === 'done' ? '#059669' : 'var(--acc)');
+      card.style.background = r.value === 'done' ? 'rgba(5,150,105,.08)' : 'rgba(79,70,229,.08)';
+    } else {
+      card.style.border = '2px solid var(--bd)';
+      card.style.background = 'var(--surface)';
+    }
+  });
+  const thWrap = $('score-import-threshold-wrap');
+  if (thWrap) thWrap.style.display = (mode === 'done') ? 'none' : '';
+}
+
 function _syncScoreImportOverwriteUI() {
   const radios = document.querySelectorAll('input[name="score-import-overwrite"]');
   radios.forEach(r => {
@@ -4648,7 +4668,25 @@ function openScoreImport() {
         </div>` : ''}
 
         <div style="margin-bottom:.9rem">
-          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:.4rem">${isVoca?'③':'②'} 점수 기준</label>
+          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:.4rem">${isVoca?'③':'②'} 어떤 값으로 채울지</label>
+          <div style="display:flex;gap:.6rem">
+            <label style="flex:1;cursor:pointer;border-radius:8px;padding:.55rem .65rem;border:2px solid ${book.score!=='통과'?'var(--acc)':'var(--bd)'};background:${book.score!=='통과'?'rgba(79,70,229,.08)':'var(--surface)'};display:block">
+              <input type="radio" name="score-import-source" value="score" ${book.score!=='통과'?'checked':''}
+                onchange="_syncScoreImportSourceUI()" style="display:none">
+              <div style="font-weight:700;font-size:.78rem;color:${book.score!=='통과'?'var(--acc)':'var(--tx)'}">📊 최고 점수로</div>
+              <div style="font-size:.66rem;color:var(--mu);margin-top:.1rem">"테스트 최고" 컬럼의 숫자를 그대로</div>
+            </label>
+            <label style="flex:1;cursor:pointer;border-radius:8px;padding:.55rem .65rem;border:2px solid ${book.score==='통과'?'#059669':'var(--bd)'};background:${book.score==='통과'?'rgba(5,150,105,.08)':'var(--surface)'};display:block">
+              <input type="radio" name="score-import-source" value="done" ${book.score==='통과'?'checked':''}
+                onchange="_syncScoreImportSourceUI()" style="display:none">
+              <div style="font-weight:700;font-size:.78rem;color:${book.score==='통과'?'#059669':'var(--tx)'}">✅ 완료여부로</div>
+              <div style="font-size:.66rem;color:var(--mu);margin-top:.1rem">완료(또는 오답 없음) → 통과 / 그 외 → 미통과</div>
+            </label>
+          </div>
+        </div>
+
+        <div id="score-import-threshold-wrap" style="margin-bottom:.9rem;${book.score==='통과'?'display:none':''}">
+          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:.4rem">${isVoca?'④':'③'} 점수 기준</label>
           <div style="display:flex;align-items:center;gap:.5rem;font-size:.82rem">
             <input type="number" id="score-import-threshold" value="80" min="0" max="100"
               style="width:70px;padding:.3rem .4rem;text-align:center">
@@ -4657,7 +4695,7 @@ function openScoreImport() {
         </div>
 
         <div style="margin-bottom:.9rem">
-          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:.4rem">${isVoca?'④':'③'} 이미 결과가 입력된 셀</label>
+          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:.4rem">${isVoca?'⑤':'④'} 이미 결과가 입력된 셀</label>
           <div style="display:flex;gap:.6rem">
             <label style="flex:1;cursor:pointer;border-radius:8px;padding:.6rem .7rem;border:2px solid var(--acc);background:rgba(79,70,229,.08);display:block">
               <input type="radio" name="score-import-overwrite" value="skip" checked
@@ -4859,6 +4897,8 @@ function _previewScoreImport() {
   const siVal = $('score-import-threshold')?.value; const threshold = Math.max(0, Math.min(100, (siVal === '' || siVal == null || isNaN(Number(siVal))) ? 80 : Number(siVal)));
   const overwriteMode = document.querySelector('input[name="score-import-overwrite"]:checked')?.value || 'skip';
   const overwrite = (overwriteMode === 'overwrite');
+  // ★ 가져올 방식: "점수"면 테스트 최고를 숫자로, "완료여부"면 완료/오답 없음→통과, 그 외→미통과
+  const sourceMode = document.querySelector('input[name="score-import-source"]:checked')?.value || 'score';
 
   // 현재 반 학생 (책을 배부받은 학생만, 매트릭스와 동일한 기준)
   const groupStudents = S.students
@@ -4894,8 +4934,14 @@ function _previewScoreImport() {
 
     if (!rawName.trim() || !setName) return;
 
-    const score = _parseExcelScore(scoreRaw);
-    if (score === null) { out.invalidScoreCount++; return; }
+    let score;
+    if (sourceMode === 'done') {
+      const doneRaw = String(row['완료여부'] || '').trim();
+      score = (doneRaw === '완료' || doneRaw === '오답 없음') ? '통과' : '미통과';
+    } else {
+      score = _parseExcelScore(scoreRaw);
+      if (score === null) { out.invalidScoreCount++; return; }
+    }
 
     const normName = _normName(rawName);
     let student = studentMap.get(normName);
@@ -4936,7 +4982,7 @@ function _previewScoreImport() {
       );
 
       if (!assigns.length) {
-        if (score < threshold) { out.skipLowScore++; return; }
+        if (sourceMode === 'score' ? (score < threshold) : (score !== '통과')) { out.skipLowScore++; return; }
         out.toAutoAssign.push({ studentId: student.id, name: student.name, round, score });
         return;
       }
@@ -4971,7 +5017,7 @@ function _previewScoreImport() {
 
     if (!assigns.length) {
       // ★ 아직 배정 안 된 항목은 기준점수 이상일 때만 새로 자동배정 (미달이면 새로 만들지 않음)
-      if (score < threshold) { out.skipLowScore++; return; }
+      if (sourceMode === 'score' ? (score < threshold) : (score !== '통과')) { out.skipLowScore++; return; }
       // v47: 책 배부받은 학생 + 기준 점수 이상 + 배정 없음
       //      → 오늘 날짜로 자동 배정 + 점수 입력 대상으로 분류
       //      (적용 단계에서 새 assigns 객체 생성)
@@ -5010,11 +5056,11 @@ function _previewScoreImport() {
   });
 
   _scoreImportPreview = out;
-  _renderScoreImportPreview(out, threshold, overwrite);
+  _renderScoreImportPreview(out, threshold, overwrite, sourceMode);
 }
 
 /* 미리보기 결과 렌더링 */
-function _renderScoreImportPreview(out, threshold, overwrite) {
+function _renderScoreImportPreview(out, threshold, overwrite, sourceMode) {
   const box = $('score-import-preview');
   if (!box) return;
 
@@ -5103,7 +5149,7 @@ function _renderScoreImportPreview(out, threshold, overwrite) {
     <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:.65rem .8rem;color:#065f46">
       <div style="font-size:.85rem;font-weight:700;margin-bottom:.3rem">📊 적용 예정: ${totalApply}건</div>
       ${breakdownHtml}
-      <div style="font-size:.72rem;margin-top:.3rem">기준점수: ${threshold}점 이상 · 덮어쓰기: ${overwrite?'예':'아니오 (빈 셀만)'} · 신규 배정 미달로 건너뜀: ${out.skipLowScore}건 · 다른 반 무시: ${out.otherGroupCount}건${out.invalidScoreCount?` · 점수없음: ${out.invalidScoreCount}건`:''}</div>
+      <div style="font-size:.72rem;margin-top:.3rem">${sourceMode==='done' ? '완료여부 기준 (통과/미통과)' : `기준점수: ${threshold}점 이상`} · 덮어쓰기: ${overwrite?'예':'아니오 (빈 셀만)'} · 신규 배정 미달로 건너뜀: ${out.skipLowScore}건 · 다른 반 무시: ${out.otherGroupCount}건${out.invalidScoreCount?` · 점수없음: ${out.invalidScoreCount}건`:''}</div>
       <div style="font-size:.68rem;color:var(--mu);margin-top:.15rem">※ 이미 배정된 항목은 기준점수와 무관하게 실제 점수 그대로 기록됩니다 (재도전 감지를 위해)</div>
     </div>
   `;
