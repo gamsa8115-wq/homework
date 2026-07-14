@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v129</title>
+<title>숙제 관리 v131</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v129</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v131</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4656,9 +4656,9 @@ function openScoreImport() {
   modal.id = 'score-import-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem';
   modal.innerHTML = `
-    <div style="background:var(--surface);border-radius:12px;max-width:640px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.2)">
-      <div style="padding:.9rem 1.1rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-        <div style="font-weight:700;font-size:1rem">📥 LMS 리포트 점수 가져오기</div>
+    <div id="score-import-box" style="background:var(--surface);border-radius:12px;max-width:640px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.2)">
+      <div id="score-import-drag-handle" style="padding:.9rem 1.1rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;cursor:move;user-select:none" title="여기를 끌어서 창을 옮길 수 있어요">
+        <div style="font-weight:700;font-size:1rem">↕ 📥 LMS 리포트 점수 가져오기</div>
         <button onclick="_closeScoreImport()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--mu)" title="닫기">×</button>
       </div>
       <div id="score-import-body" style="padding:1rem 1.1rem;overflow-y:auto;flex:1">
@@ -4752,6 +4752,7 @@ function openScoreImport() {
     </div>
   `;
   document.body.appendChild(modal);
+  _makeModalDraggable('score-import-box', 'score-import-drag-handle');
 
   // ESC 키로 닫기
   setTimeout(() => {
@@ -4763,6 +4764,62 @@ function openScoreImport() {
     };
     document.addEventListener('keydown', handler);
   }, 0);
+}
+
+/* ★ 모달 창을 헤더(손잡이)로 끌어서 옮길 수 있게 함 — 화면 뒤쪽(매트릭스 등) 데이터를 보려고 창을 치울 때 사용
+   boxId: 실제로 움직일 모달 박스, handleId: 그 안에서 드래그 시작점(보통 헤더 바) */
+function _makeModalDraggable(boxId, handleId) {
+  const box = document.getElementById(boxId);
+  const handle = document.getElementById(handleId);
+  if (!box || !handle) return;
+
+  let dragging = false, startX = 0, startY = 0, startLeft = 0, startTop = 0;
+
+  const onDown = (clientX, clientY) => {
+    const rect = box.getBoundingClientRect();
+    // 처음 끌기 시작할 때만: 가운데 정렬(flex)에서 고정 좌표로 전환
+    if (box.style.position !== 'fixed') {
+      box.style.position = 'fixed';
+      box.style.margin = '0';
+      box.style.left = rect.left + 'px';
+      box.style.top = rect.top + 'px';
+    }
+    dragging = true;
+    startX = clientX; startY = clientY;
+    startLeft = rect.left; startTop = rect.top;
+  };
+  const onMove = (clientX, clientY) => {
+    if (!dragging) return;
+    let newLeft = startLeft + (clientX - startX);
+    let newTop  = startTop  + (clientY - startY);
+    // ★ 화면 밖으로 완전히 나가서 못 찾게 되는 것 방지 (최소한 손잡이 부분은 항상 보이게)
+    const w = box.offsetWidth, h = box.offsetHeight;
+    newLeft = Math.max(-w + 60, Math.min(newLeft, window.innerWidth - 60));
+    newTop  = Math.max(0, Math.min(newTop, window.innerHeight - 40));
+    box.style.left = newLeft + 'px';
+    box.style.top = newTop + 'px';
+  };
+  const onUp = () => { dragging = false; };
+
+  handle.addEventListener('mousedown', (e) => {
+    if (e.target.closest('button')) return; // 닫기 버튼 클릭은 드래그로 취급 안 함
+    e.preventDefault();
+    onDown(e.clientX, e.clientY);
+  });
+  document.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
+  document.addEventListener('mouseup', onUp);
+
+  handle.addEventListener('touchstart', (e) => {
+    if (e.target.closest('button')) return;
+    const t = e.touches[0];
+    onDown(t.clientX, t.clientY);
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    onMove(t.clientX, t.clientY);
+  }, { passive: true });
+  document.addEventListener('touchend', onUp);
 }
 
 /* 보카형 회차 추출 규칙 변경 시 교재에 저장 + 미리보기 갱신 */
@@ -5338,9 +5395,9 @@ function openBulkImport() {
   modal.id = 'bulk-import-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem';
   modal.innerHTML = `
-    <div style="background:var(--surface);border-radius:12px;max-width:820px;width:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.2)">
-      <div style="padding:.9rem 1.1rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-        <div style="font-weight:700;font-size:1rem">📁 전체 리포트 업로드</div>
+    <div id="bulk-import-box" style="background:var(--surface);border-radius:12px;max-width:820px;width:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.2)">
+      <div id="bulk-import-drag-handle" style="padding:.9rem 1.1rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;cursor:move;user-select:none" title="여기를 끌어서 창을 옮길 수 있어요">
+        <div style="font-weight:700;font-size:1rem">↕ 📁 전체 리포트 업로드</div>
         <button onclick="_closeBulkImport()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--mu)" title="닫기">×</button>
       </div>
       <div id="bulk-import-body" style="padding:1rem 1.1rem;overflow-y:auto;flex:1"></div>
@@ -5348,6 +5405,7 @@ function openBulkImport() {
     </div>
   `;
   document.body.appendChild(modal);
+  _makeModalDraggable('bulk-import-box', 'bulk-import-drag-handle');
   _renderBulkStep1();
 
   setTimeout(() => {
