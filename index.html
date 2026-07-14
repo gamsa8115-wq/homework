@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v122</title>
+<title>숙제 관리 v123</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -318,6 +318,18 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 .hc-td-done.threshold-fail .hc-result {
   font-weight: 800 !important;
 }
+/* ★ "미통과" 결과 — 통과/미통과 채점방식에서 실패한 셀을 항상 빨간색으로 표시 */
+.hc-td-done.fail-result {
+  background: rgba(220, 38, 38, 0.13) !important;
+  box-shadow: inset 0 0 0 1.5px rgba(220, 38, 38, 0.55);
+}
+.hc-td-done.fail-result .hc-date,
+.hc-td-done.fail-result .hc-result {
+  color: #991b1b !important;
+}
+.hc-td-done.fail-result .hc-result {
+  font-weight: 800 !important;
+}
 .hc-td-done.inspect-fail .hc-date,
 .hc-td-done.inspect-fail .hc-result {
   color: #7f1d1d !important;
@@ -420,7 +432,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v122</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v123</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4331,7 +4343,8 @@ function renderHistory() {
         return `<td class="hc-td-empty" id="${cellId}" onclick="onHistCellClick(this)" title="${escHtml(s.name)} — 미배정">—</td>`;
       }
       const hasResult = info.result !== '' && info.result !== null && info.result !== undefined;
-      return `<td class="hc-td-done${hasResult?' has-result':''}" id="${cellId}"
+      const isFailResult = info.result === '미통과'; // ★ 통과/미통과 방식에서 실패한 셀은 빨간 박스로 표시
+      return `<td class="hc-td-done${hasResult?' has-result':''}${isFailResult?' fail-result':''}" id="${cellId}"
         onclick="onHistCellClick(this)"
         title="${escHtml(s.name)}: ${fmtCell(info.date)}${hasResult?' · '+String(info.result):''}">
         <span class="hc-date">${fmtCell(info.date)}</span>
