@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v110</title>
+<title>숙제 관리 v113</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -420,7 +420,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v110</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v113</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -1634,6 +1634,11 @@ function deleteClassPause(id, prefix, group, bookId) {
   save();
   renderClassPauseList(prefix, group, bookId);
   toast('일시정지 기간 삭제됨');
+
+  // ★ 삭제도 등록과 마찬가지로, 이미 밀려있는 날짜를 다시 당겨올 수 있도록 재조정 미리보기 자동으로 띄움
+  if (prefix === 'hist') {
+    setTimeout(() => openVocaReschedule(), 150);
+  }
 }
 
 // 전체 버튼: 현재 보이는 반(chipFilter) 기준 전체 선택
@@ -2610,6 +2615,11 @@ function completeGroupAll(bid, group) {
 function _planVocaReschedule(studentId, bookId) {
   const student = S.students.find(s => s.id === studentId);
   const all = S.assigns.filter(a => a.studentId === studentId && a.bookId === bookId && a.type === 'voca');
+  if (!all.length) return null;
+
+  const completed = all
+    .filter(a => a.result !== '' && a.result !== null && a.result !== undefined)
+    .sort((a,b) => a.date.localeCompare(b.date));
   const pending = all
     .filter(a => a.result === '' || a.result === null || a.result === undefined)
     .sort((a,b) => a.date.localeCompare(b.date));
@@ -2620,7 +2630,18 @@ function _planVocaReschedule(studentId, bookId) {
   all.forEach(a => { if (a.date) dowSet.add(parseYMD(a.date).getDay()); });
   if (!dowSet.size) return null;
 
-  const originDate = pending[0].date; // 미완료 중 가장 이른 날짜부터 다시 계산
+  // ★ 재조정 시작점: "미완료 중 가장 이른 날짜"로 고정하면 한 번 밀린 뒤엔 절대 안 당겨짐(일시정지를
+  //   지워도 복구가 안 되는 원인이었음). 대신 "완료된 마지막 날짜 다음"(완료 이력이 없으면 "맨 처음 배정일")을
+  //   기준으로 매번 다시 계산 → 일시정지를 추가했을 때도, 지웠을 때도 항상 정확하게 맞춰짐
+  let originDate;
+  if (completed.length) {
+    const lastCompleted = completed[completed.length - 1].date;
+    const nextDay = new Date(parseYMD(lastCompleted).getTime() + 86400000);
+    originDate = toYMD(nextDay);
+  } else {
+    originDate = all.reduce((min, a) => (a.date < min ? a.date : min), all[0].date);
+  }
+
   const newDates = generateClassDates(originDate, pending.length, dowSet, student?.group || '', bookId);
   if (newDates.length < pending.length) return null; // 배정 가능일이 부족하면(극히 드묾) 건너뜀
 
@@ -3783,9 +3804,9 @@ function renderExistingLabels() {
     return `<div class="lbl-item">
       <span class="lbl-item-num">${idx + 1}</span>
       <span class="lbl-item-text" title="${escHtml(lbl)}">${escHtml(lbl)}</span>
-      ${inUse ? '<span style="font-size:.62rem;color:var(--amb);flex-shrink:0" title="배정된 레이블 — 삭제는 안 되지만 이름은 고칠 수 있어요">배정됨</span>' : ''}
+      ${inUse ? '<span style="font-size:.62rem;color:var(--amb);flex-shrink:0" title="배정된 레이블 — 삭제하면 그 배정 기록도 같이 지워져요">배정됨</span>' : ''}
       <button class="lbl-item-edit" title="이름 수정" onclick="startEditLabel(${idx})" style="flex-shrink:0;background:none;border:none;cursor:pointer;color:var(--acc);font-size:.72rem;padding:.1rem .3rem">✏</button>
-      ${!inUse ? `<button class="lbl-item-del" title="삭제" onclick="deleteExistingLabel(${idx})">✕</button>` : ''}
+      <button class="lbl-item-del" title="${inUse?'삭제 — 배정 기록도 함께 삭제됨':'삭제'}" onclick="deleteExistingLabel(${idx})">✕</button>
     </div>`;
   }).join('') || '<div style="font-size:.72rem;color:var(--mu);text-align:center;padding:.4rem">레이블 없음</div>';
 }
@@ -3836,15 +3857,30 @@ function saveEditedLabel(idx) {
 }
 
 /* 기존 레이블 개별 삭제 */
+/* 기존 레이블 개별 삭제 — 배정된 레이블도 삭제 가능. 단, 그 레이블 하나만으로 된 배정 기록은
+   레이블과 함께 통째로 삭제됨(날짜·점수 포함) — 그렇게 안 하면 배정 기록이 조용히 고아가 돼서 더 위험함 */
 function deleteExistingLabel(idx) {
   const book = getBook(_editBookId);
   if (!book) return;
-  const inUse = S.assigns.some(a =>
-    a.bookId === _editBookId && (a.problems || []).includes(idx));
-  if (inUse) { toast('배정 내역이 있어 삭제할 수 없습니다'); return; }
-  if (!confirm(`'${book.rows[idx]}' 레이블을 삭제하시겠습니까?`)) return;
+  const labelText = book.rows[idx];
+  const affected = S.assigns.filter(a => a.bookId === _editBookId && (a.problems || []).includes(idx));
+  const soleAffected = affected.filter(a => (a.problems||[]).length === 1); // 이 레이블 하나만 걸린 배정 → 통째로 삭제됨
 
-  // problems 인덱스 보정
+  let msg = `'${labelText}' 레이블을 삭제하시겠습니까?`;
+  if (soleAffected.length) {
+    msg += `\n\n⚠️ 이 레이블로 이미 배정된 기록 ${soleAffected.length}건(날짜·점수 포함)이 함께 삭제됩니다. 이 작업은 되돌릴 수 없습니다.`;
+  }
+  if (!confirm(msg)) return;
+
+  // 이 레이블 하나만 걸려있던 배정은 통째로 제거, 여러 레이블이 함께 걸린 배정은 이 레이블만 빠짐
+  S.assigns = S.assigns.filter(a => {
+    if (a.bookId !== _editBookId) return true;
+    const probs = a.problems || [];
+    if (!probs.includes(idx)) return true;
+    return probs.length > 1;
+  });
+
+  // 남은 배정들의 problems 인덱스 보정
   S.assigns.forEach(a => {
     if (a.bookId !== _editBookId) return;
     a.problems  = (a.problems || []).filter(p => p !== idx).map(p => p > idx ? p - 1 : p);
@@ -3856,7 +3892,8 @@ function deleteExistingLabel(idx) {
   renderExistingLabels();
   renderBooks();
   populateBookSelects();
-  toast('레이블이 삭제됐습니다');
+  if ($('p-history')?.classList.contains('active')) renderHistory();
+  toast(`레이블이 삭제됐습니다${soleAffected.length ? ` (배정 기록 ${soleAffected.length}건도 함께 삭제됨)` : ''}`);
 }
 
 /* 교재 목록 렌더링 */
@@ -4900,6 +4937,7 @@ function _previewScoreImport() {
         out.skipFilled.push({ name: student.name, label: `${round}회차`, current: target.result, score });
         return;
       }
+      if (hasResult && String(target.result) === String(score)) return; // ★ 값이 똑같으면 목록에서 아예 뺌
       out.toUpdate.push({
         assignId: target.id, oldResult: hasResult ? target.result : null, newResult: score,
         name: student.name, label: `${round}회차`,
@@ -4950,6 +4988,7 @@ function _previewScoreImport() {
       out.skipFilled.push({ name: student.name, label: matchedLabel, current: target.result, score });
       return;
     }
+    if (hasResult && String(target.result) === String(score)) return; // ★ 값이 똑같으면 목록에서 아예 뺌
 
     out.toUpdate.push({
       assignId: target.id,
@@ -5645,6 +5684,7 @@ function _computeBulkPreview() {
         if (existing) {
           const hasResult = existing.result !== '' && existing.result != null;
           if (hasResult && !overwrite) return;
+          if (hasResult && String(existing.result) === String(score)) return; // ★ 값이 똑같으면 "변경"이 아니므로 목록에서 아예 뺌
           out.updates.push({ assignId: existing.id, oldResult: hasResult?existing.result:null, newResult: score,
             studentName: student.name, bookName: book.name, label: `${round}회차` });
         } else {
@@ -5666,6 +5706,7 @@ function _computeBulkPreview() {
         if (existing) {
           const hasResult = existing.result !== '' && existing.result != null;
           if (hasResult && !overwrite) return;
+          if (hasResult && String(existing.result) === String(score)) return; // ★ 값이 똑같으면 "변경"이 아니므로 목록에서 아예 뺌
           out.updates.push({ assignId: existing.id, oldResult: hasResult?existing.result:null, newResult: score,
             studentName: student.name, bookName: book.name, label: matchedLabel });
         } else {
