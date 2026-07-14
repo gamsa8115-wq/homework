@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v128</title>
+<title>숙제 관리 v129</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v128</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v129</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4966,6 +4966,7 @@ function _previewScoreImport() {
 
     if (!rawName.trim() || !setName) return;
     if (_isExcludedReportName(rawName)) return; // ★ 학원 관리자 계정 등은 학생 아님 → 건너뜀
+    if (setName.includes('누적오답')) return; // ★ 누적오답 단어복습 세트는 경고 없이 조용히 건너뜀 (실제 회차가 아님)
 
     let score;
     if (sourceMode === 'done') {
