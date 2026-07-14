@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v120</title>
+<title>숙제 관리 v121</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -420,7 +420,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v120</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v121</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -5745,9 +5745,18 @@ function _computeBulkPreview() {
         return;
       }
 
-      const scoreRaw = row['테스트 (최고점)'] ?? row['테스트최고'] ?? row['테스트 최고'] ?? null;
-      const score = _parseExcelScore(scoreRaw);
-      if (score === null) { out.skippedInvalidScore++; return; }
+      // ★ 채점방식에 따라 결과값을 다르게 계산
+      //   - "점수" 방식: 테스트 최고점을 숫자로 사용
+      //   - "통과" 방식: "완료여부" 컬럼으로 판단 (완료/오답 없음 → 통과, 그 외 → 미통과)
+      let score;
+      if (book.score === '통과') {
+        const doneRaw = String(row['완료여부'] || '').trim();
+        score = (doneRaw === '완료' || doneRaw === '오답 없음') ? '통과' : '미통과';
+      } else {
+        const scoreRaw = row['테스트 (최고점)'] ?? row['테스트최고'] ?? row['테스트 최고'] ?? null;
+        score = _parseExcelScore(scoreRaw);
+        if (score === null) { out.skippedInvalidScore++; return; }
+      }
 
       if (book.mode === 'voca') {
         const setName = String(row['세트명']||'').trim();
