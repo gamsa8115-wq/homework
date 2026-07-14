@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v105</title>
+<title>숙제 관리 v107</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -420,7 +420,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v105</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v107</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -528,6 +528,19 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
           </label>
           <div class="dow-row" id="v-dow-row">
             <!-- 렌더링 시 생성 -->
+          </div>
+        </div>
+
+        <!-- 🆕 반+교재별 일시정지 기간 (시험기간 등) — 학원 전체 방학과는 별개로, "이 반의 이 교재"만 쉬는 기간 -->
+        <div id="v-pause-section" style="margin-bottom:.55rem;padding:.5rem .6rem;background:var(--s2);border-radius:6px">
+          <div style="font-size:.74rem;font-weight:700;margin-bottom:.3rem">⏸ 이 교재만 일시정지 (시험기간 등)</div>
+          <div id="v-pause-list" style="font-size:.7rem;color:var(--mu);margin-bottom:.35rem">반과 교재를 먼저 선택하세요</div>
+          <div style="display:flex;gap:.3rem;align-items:center;flex-wrap:wrap">
+            <input type="date" id="v-pause-start" style="width:auto;font-size:.72rem;padding:.2rem .3rem">
+            <span style="font-size:.7rem;color:var(--mu)">~</span>
+            <input type="date" id="v-pause-end" style="width:auto;font-size:.72rem;padding:.2rem .3rem">
+            <input type="text" id="v-pause-label" placeholder="예: 기말고사" style="flex:1;min-width:80px;font-size:.72rem;padding:.2rem .4rem">
+            <button class="btn bp bsm" onclick="addClassPause('v', S.chipFilter, Number($('v-book')?.value||0))" style="font-size:.68rem;padding:.2rem .5rem">+ 추가</button>
           </div>
         </div>
 
@@ -804,6 +817,16 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         onchange="onHistThresholdChange()">
       <span style="font-size:.7rem;color:var(--mu)">점 미만 → 숙제 현황에 표시 + 아래 표에 <span style="color:#dc2626;font-weight:700">빨간색</span>으로 강조 (반마다 따로 설정됨)</span>
     </div>
+    <!-- ★ 보카형 교재 + 반 선택 시에만 표시: 이 교재만 일시정지(시험기간 등) 관리 -->
+    <div id="hist-pause-wrap" style="display:none;align-items:center;gap:.35rem;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:.25rem .6rem;flex-wrap:wrap">
+      <span style="font-size:.76rem;font-weight:700;white-space:nowrap">⏸ 이 교재 일시정지</span>
+      <div id="hist-pause-list" style="font-size:.7rem;color:var(--mu)">—</div>
+      <input type="date" id="hist-pause-start" style="width:auto;font-size:.72rem;padding:.15rem .3rem">
+      <span style="font-size:.7rem;color:var(--mu)">~</span>
+      <input type="date" id="hist-pause-end" style="width:auto;font-size:.72rem;padding:.15rem .3rem">
+      <input type="text" id="hist-pause-label" placeholder="예: 기말고사" style="width:80px;font-size:.72rem;padding:.15rem .35rem">
+      <button class="btn bp bsm" onclick="addClassPause('hist', $('hist-group')?.value||'', Number($('hist-book')?.value||0))" style="font-size:.66rem;padding:.15rem .4rem">+ 추가</button>
+    </div>
     <div style="display:flex;gap:.3rem;margin-left:auto;align-items:center">
       <!-- 보기 범위: 진행 중 / 종료 포함 (완료 여부는 진행 중 안에서 표시만, 필터링은 안 함) -->
       <select id="hist-view-mode" onchange="setHistViewMode(this.value)"
@@ -1025,6 +1048,7 @@ const S = {
     {id:16,name:'정영현',group:'초등반',books:['초등 필수']},
   ],
   classcardMappings: [], // ★ 클래스카드 "클래스명" → 우리 교재 매핑 (전체 리포트 일괄 업로드용)
+  classPauses: [], // ★ "이 반만" 특정 기간 동안 보카 자동배정을 멈춤 (시험기간 등) — 학원 전체 방학과는 별개
   books: [
     {id:1,name:'천문장입문',mode:'voca',total:20,score:'점수',label:'',rows:[]},
     {id:2,name:'중등 필수',mode:'voca',total:60,score:'점수',label:'',rows:[]},
@@ -1574,6 +1598,52 @@ function selClass(g) {
   renderStudentChips();
   renderAssignGroupBtns();
   renderLastAssignPanel('voca'); // ★ 마지막 배정 맥락 초기화
+  renderClassPauseList('v', S.chipFilter, Number($('v-book')?.value || 0)); // ★ 이 반+교재의 일시정지(시험기간) 목록 갱신
+}
+
+/* ★ 반별 일시정지(시험기간 등) 목록 표시 — 학원 전체 방학과 별개, "이 반만" 잠깐 쉬는 기간 */
+/* ★ 반별 일시정지(시험기간 등) 목록 표시 — "이 반의 이 교재"만 잠깐 쉬는 기간
+   prefix: 'v'(교재 배정 탭) | 'hist'(숙제 배정 내역 탭) — 같은 데이터를 두 화면에서 같이 관리 */
+function renderClassPauseList(prefix, group, bookId) {
+  const wrap = $(`${prefix}-pause-list`);
+  if (!wrap) return;
+  if (!group || !bookId) { wrap.textContent = '반과 교재를 먼저 선택하세요'; return; }
+  const pauses = (S.classPauses || [])
+    .filter(p => p.group === group && p.bookId === bookId)
+    .sort((a,b) => a.start.localeCompare(b.start));
+  if (!pauses.length) { wrap.textContent = '설정된 일시정지 기간 없음'; return; }
+  wrap.innerHTML = pauses.map(p => `<div style="display:flex;align-items:center;gap:.3rem;padding:.1rem 0">
+    <span>${escHtml(p.label||'일시정지')}: ${shortAiDate(p.start)} ~ ${shortAiDate(p.end)}</span>
+    <button onclick="deleteClassPause(${p.id}, '${prefix}', '${escHtml(group).replace(/'/g,"\\'")}', ${bookId})"
+      style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.68rem" title="삭제">✕</button>
+  </div>`).join('');
+}
+
+function addClassPause(prefix, group, bookId) {
+  if (!group || !bookId) { toast('반과 교재를 먼저 선택하세요'); return; }
+  const start = $(`${prefix}-pause-start`)?.value;
+  const end = $(`${prefix}-pause-end`)?.value;
+  const label = ($(`${prefix}-pause-label`)?.value || '').trim();
+  if (!start || !end) { toast('시작/끝 날짜를 입력하세요'); return; }
+  if (end < start) { toast('끝 날짜가 시작 날짜보다 빠릅니다'); return; }
+  if (!Array.isArray(S.classPauses)) S.classPauses = [];
+  S.classPauses.push({ id: S.nid++, group, bookId, start, end, label: label || '일시정지' });
+  save();
+  $(`${prefix}-pause-start`).value = '';
+  $(`${prefix}-pause-end`).value = '';
+  $(`${prefix}-pause-label`).value = '';
+  renderClassPauseList(prefix, group, bookId);
+  if (prefix === 'v') onVocaFormChange(); // 미리보기에도 바로 반영
+  const book = getBook(bookId);
+  toast(`✅ ${group} · ${book?.name||''} 일시정지 기간(${label||'일시정지'}) 추가됨`);
+}
+
+function deleteClassPause(id, prefix, group, bookId) {
+  S.classPauses = (S.classPauses || []).filter(p => p.id !== id);
+  save();
+  renderClassPauseList(prefix, group, bookId);
+  if (prefix === 'v') onVocaFormChange();
+  toast('일시정지 기간 삭제됨');
 }
 
 // 전체 버튼: 현재 보이는 반(chipFilter) 기준 전체 선택
@@ -1879,22 +1949,32 @@ function getVacationSet() {
   return new Set(S.vacations || []);
 }
 
-/* 수업 가능일인지 판단 (수업 요일 집합 + 공휴일 + 학원 방학 체크) */
-function isClassDay(dateStr, allowedDOWs) {
+/* ★ 특정 반의 특정 교재가 그 날짜에 "일시정지" 상태인지 (시험기간 등)
+   — 학원 전체 방학과는 별개, "이 반의 이 교재"만 콕 집어서 멈추는 개념 */
+function isClassPaused(dateStr, group, bookId) {
+  if (!group || !bookId) return false;
+  return (S.classPauses || []).some(p =>
+    p.group === group && p.bookId === bookId && dateStr >= p.start && dateStr <= p.end);
+}
+
+/* 수업 가능일인지 판단 (수업 요일 집합 + 공휴일 + 학원 방학 + 이 반·이 교재만의 일시정지 체크)
+   group/bookId를 안 넘기면 "이 반·교재만의 일시정지"는 체크 안 함 (기존 호출부 호환용) */
+function isClassDay(dateStr, allowedDOWs, group, bookId) {
   if (HOLIDAYS.has(dateStr)) return false;
-  if ((S.vacations || []).includes(dateStr)) return false; // 학원 방학
+  if ((S.vacations || []).includes(dateStr)) return false; // 학원 전체 방학
+  if (isClassPaused(dateStr, group, bookId)) return false; // ★ 이 반의 이 교재만 시험기간 등으로 일시정지
   const dow = parseYMD(dateStr).getDay();  // 0=일, 6=토
   return allowedDOWs.has(dow);
 }
 
 /* 시작 날짜로부터 N개의 수업일 생성 */
-function generateClassDates(startStr, count, allowedDOWs) {
+function generateClassDates(startStr, count, allowedDOWs, group, bookId) {
   const out = [];
   let cur = parseYMD(startStr);
   // 최대 1000일까지만 탐색 (무한루프 방어)
   for (let i=0; i<1000 && out.length < count; i++) {
     const s = toYMD(cur);
-    if (isClassDay(s, allowedDOWs)) out.push(s);
+    if (isClassDay(s, allowedDOWs, group, bookId)) out.push(s);
     cur.setDate(cur.getDate() + 1);
   }
   return out;
@@ -1943,6 +2023,7 @@ function onDowToggle(chk) {
 function onVocaFormChange() {
   renderLastAssignPanel('voca');
   renderVocaPreview();
+  renderClassPauseList('v', S.chipFilter, Number($('v-book')?.value || 0));
 }
 
 /* 회차 문자열 파싱 (숫자만 지원. "01" → {num:1,pad:2}) */
@@ -1995,7 +2076,7 @@ function renderVocaPreview() {
     return;
   }
 
-  const dates = generateClassDates(startDate, count, dows);
+  const dates = generateClassDates(startDate, count, dows, $('v-group')?.value || '', Number($('v-book')?.value || 0));
   const pad2  = to.pad; // 끝 회차의 패딩 따라감 (예: "05" → 2자리)
 
   const items = dates.map((d,i) => {
@@ -2060,7 +2141,7 @@ function addVoca() {
   if (!dows.size) { toast('수업 요일을 1개 이상 선택하세요'); return; }
 
   const count = to.num; // 1회차부터 to.num회차까지
-  const dates = generateClassDates(startDate, count, dows);
+  const dates = generateClassDates(startDate, count, dows, $('v-group')?.value || '', Number($('v-book')?.value || 0));
   if (!dates.length) { toast('배정 가능한 수업일이 없습니다'); return; }
   if (dates.length < count) {
     if (!confirm(`배정 가능한 수업일이 ${dates.length}개뿐입니다 (요청: ${count}개).\n가능한 ${dates.length}개 회차만 배정하시겠습니까?`)) return;
@@ -2538,6 +2619,7 @@ function completeGroupAll(bid, group) {
 
 /* 학생 1명 × 교재 1개의 재조정 계획 계산 (실제 반영은 안 함, 계획만 리턴) */
 function _planVocaReschedule(studentId, bookId) {
+  const student = S.students.find(s => s.id === studentId);
   const all = S.assigns.filter(a => a.studentId === studentId && a.bookId === bookId && a.type === 'voca');
   const pending = all
     .filter(a => a.result === '' || a.result === null || a.result === undefined)
@@ -2550,7 +2632,7 @@ function _planVocaReschedule(studentId, bookId) {
   if (!dowSet.size) return null;
 
   const originDate = pending[0].date; // 미완료 중 가장 이른 날짜부터 다시 계산
-  const newDates = generateClassDates(originDate, pending.length, dowSet);
+  const newDates = generateClassDates(originDate, pending.length, dowSet, student?.group || '', bookId);
   if (newDates.length < pending.length) return null; // 배정 가능일이 부족하면(극히 드묾) 건너뜀
 
   const changes = [];
@@ -4076,6 +4158,14 @@ function renderHistory() {
   // ★ 보카형 + 반이 선택됐을 때만 "방학 반영 재조정" 버튼 표시
   const rescheduleBtn = $('hist-reschedule-btn');
   if (rescheduleBtn) rescheduleBtn.style.display = (isVocaBook && group) ? '' : 'none';
+
+  // ★ 보카형 + 반이 선택됐을 때만 "이 교재 일시정지" 패널 표시 + 목록 갱신
+  const pauseWrap = $('hist-pause-wrap');
+  if (pauseWrap) {
+    const showPause = isVocaBook && !!group && !!bid;
+    pauseWrap.style.display = showPause ? 'flex' : 'none';
+    if (showPause) renderClassPauseList('hist', group, bid);
+  }
 
   // ★ 점수형 교재 + 반이 선택됐을 때만 "기준점수" 설정 UI 표시 + 그 반의 현재 값 동기화
   const thWrap = $('hist-threshold-wrap');
@@ -6868,7 +6958,7 @@ function doExport() {
 const STORAGE_KEY = 'sotong_hw_v4';
 
 // 저장할 키 목록 (UI 상태는 제외, 데이터만)
-const PERSIST_KEYS = ['assigns', 'nid', 'groups', 'students', 'books', 'classDays', 'vacations', 'classcardMappings'];
+const PERSIST_KEYS = ['assigns', 'nid', 'groups', 'students', 'books', 'classDays', 'vacations', 'classcardMappings', 'classPauses'];
 
 // ════════════════════════════════════════════════════════════
 // 🔥 Firebase 연동 (sotong-academy 프로젝트)
@@ -7115,6 +7205,8 @@ async function pullInitialFromFirebase() {
     else if (val.vacations)          S.vacations = _toArray(val.vacations);
     if (Array.isArray(val.classcardMappings)) S.classcardMappings = val.classcardMappings;
     else if (val.classcardMappings)           S.classcardMappings = _toArray(val.classcardMappings);
+    if (Array.isArray(val.classPauses)) S.classPauses = val.classPauses;
+    else if (val.classPauses)           S.classPauses = _toArray(val.classPauses);
 
     // ★ 방금 원격에서 읽은 id-배열들(assigns/books/students)을 "동기화 기준점"으로 저장
     //   (다음 저장 시 이걸 기준으로 diff — books/students도 assigns와 동일하게 레코드 단위 보호)
@@ -7404,6 +7496,8 @@ function load() {
       S.vacations = saved.vacations.filter(v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v));
     if (Array.isArray(saved.classcardMappings))
       S.classcardMappings = saved.classcardMappings;
+    if (Array.isArray(saved.classPauses))
+      S.classPauses = saved.classPauses;
 
     // P0 BUG FIX #3: nid 재계산
     // assigns의 최대 id와 students의 최대 id 모두 고려
