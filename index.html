@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v113</title>
+<title>숙제 관리 v116</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -420,7 +420,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v113</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v116</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -5387,14 +5387,21 @@ function _renderBulkStep2() {
     </div>
     <input type="text" id="bulk-map-search" placeholder="🔍 클래스명 검색... (예: 5형식, HOME보카)" oninput="_renderBulkClassList()"
       style="width:100%;padding:.5rem .7rem;font-size:.85rem;margin-bottom:.5rem;border:1.5px solid var(--acc);border-radius:6px">
-    <select id="bulk-filter-mode" onchange="_renderBulkClassList()" style="width:100%;font-size:.8rem;padding:.4rem .5rem;margin-bottom:.7rem" title="연결이 잘 됐는지 확인할 때 유용해요">
-      <option value="">전체 보기</option>
-      <option value="mapped">✅ 연결된 것만 (교재형+보카형)</option>
-      <option value="book">📘 교재형만</option>
-      <option value="voca">📗 보카형만</option>
-      <option value="ignore">🚫 무시한 것만</option>
-      <option value="pending">⬜ 미설정만</option>
-    </select>
+    <div style="display:flex;gap:.4rem;margin-bottom:.7rem">
+      <select id="bulk-grade-filter" onchange="_renderBulkClassList()" style="flex:1;font-size:.8rem;padding:.4rem .5rem" title="반(학년)별로 좁혀서 보기 — 다른 반 항목을 잘못 클릭하는 걸 방지">
+        <option value="">전체 반</option>
+        ${[...new Set(_bulkClasses.map(c => (c.name.match(/(초|중|고)\d(?:[,·]\d)*\b/)||[])[0]).filter(Boolean))]
+          .sort().map(g => `<option value="${escHtml(g)}">${escHtml(g)}</option>`).join('')}
+      </select>
+      <select id="bulk-filter-mode" onchange="_renderBulkClassList()" style="flex:1;font-size:.8rem;padding:.4rem .5rem" title="연결이 잘 됐는지 확인할 때 유용해요">
+        <option value="">전체 보기</option>
+        <option value="mapped">✅ 연결된 것만 (교재형+보카형)</option>
+        <option value="book">📘 교재형만</option>
+        <option value="voca">📗 보카형만</option>
+        <option value="ignore">🚫 무시한 것만</option>
+        <option value="pending">⬜ 미설정만</option>
+      </select>
+    </div>
     <div id="bulk-class-list"></div>
   `;
   _renderBulkClassList();
@@ -5417,10 +5424,11 @@ function _renderBulkClassList() {
   const search = $('bulk-map-search')?.value || '';
   const q = search.trim().toLowerCase();
   const filterMode = $('bulk-filter-mode')?.value || '';
-  const bookOptions = (mode) => S.books
+  const gradeFilter = $('bulk-grade-filter')?.value || '';
+  const bookOptions = (mode, selectedId) => S.books
     .filter(b => mode === 'voca' ? b.mode === 'voca' : b.mode === 'book')
     .sort((a,b) => a.name.localeCompare(b.name,'ko'))
-    .map(b => `<option value="${b.id}">${escHtml(b.name)}</option>`).join('');
+    .map(b => `<option value="${b.id}" ${Number(selectedId)===b.id?'selected':''}>${escHtml(b.name)}</option>`).join('');
 
   // 정규식 입력창은 목록 안에 있어서 다시 그리면 조합이 깨질 수 있으므로, 포커스/커서만 최소한으로 복원
   const _active = document.activeElement;
@@ -5433,6 +5441,7 @@ function _renderBulkClassList() {
   let _lastGroup = null;
   const rowsHtml = _bulkClasses
     .filter(c => !q || c.name.toLowerCase().includes(q))
+    .filter(c => !gradeFilter || (c.name.match(/(초|중|고)\d(?:[,·]\d)*\b/)||[])[0] === gradeFilter)
     .filter(c => {
       if (!filterMode) return true;
       const m = _bulkDraftMap[c.name]?.mode || '';
@@ -5509,10 +5518,18 @@ function _renderBulkClassList() {
         }
       }
 
+      // ★ 클래스명 안에 섞여있는 "반" 정보(중1, 초4,5,6 등)를 찾아서 눈에 띄는 배지로 먼저 보여줌
+      //   — 어떤 반의 매핑인지 한눈에 안 들어와서 다른 반 항목을 잘못 클릭하기 쉬웠던 문제 개선
+      const gradeMatch = c.name.match(/(초|중|고)\d(?:[,·]\d)*\b/);
+      const gradeBadge = gradeMatch
+        ? `<span style="font-size:.68rem;font-weight:800;padding:.1rem .45rem;border-radius:5px;background:#4338ca;color:#fff;flex-shrink:0">${escHtml(gradeMatch[0])}</span>`
+        : `<span style="font-size:.62rem;font-weight:700;padding:.1rem .4rem;border-radius:5px;background:var(--s2);color:var(--mu);flex-shrink:0" title="클래스명에서 반 정보를 못 찾았어요">반 미확인</span>`;
+
       return `${sectionHeader}<div style="border:${cardStyle.border};border-radius:8px;padding:.6rem .7rem;margin-bottom:.5rem;background:${cardStyle.bg};transition:all .15s">
         <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
           <div style="flex:1;min-width:200px">
             <div style="font-weight:700;font-size:.82rem;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">
+              ${gradeBadge}
               ${escHtml(c.name)}
               ${(draft.mode==='book'||draft.mode==='voca') && draft.bookId ? `<span style="font-size:.62rem;font-weight:800;padding:.1rem .4rem;border-radius:20px;background:${draft.mode==='voca'?'#059669':'#2563eb'};color:#fff">✅ 활성화됨</span>` : ''}
             </div>
@@ -5529,7 +5546,7 @@ function _renderBulkClassList() {
           ${(draft.mode==='book'||draft.mode==='voca') ? `
             <select onchange="_updateBulkBookId('${escHtml(c.name).replace(/'/g,"\\'")}', this.value)" style="font-size:.76rem;padding:.25rem .4rem;min-width:160px">
               <option value="">교재 선택...</option>
-              ${bookOptions(draft.mode)}
+              ${bookOptions(draft.mode, draft.bookId)}
             </select>
           ` : ''}
         </div>
@@ -5676,7 +5693,7 @@ function _computeBulkPreview() {
         const setName = String(row['세트명']||'').trim();
         const round = _extractRound(setName, { type: map.vocaRuleType, pattern: map.vocaRulePattern });
         if (round == null) {
-          const key = `${book.name} :: ${setName}`;
+          const key = `${c.name} :: ${setName}`;
           out.skippedNoLabel.set(key, (out.skippedNoLabel.get(key)||0) + 1);
           return;
         }
@@ -5698,7 +5715,7 @@ function _computeBulkPreview() {
         const setName = String(row['세트명']||'').trim();
         const matchedLabel = bookLabelSet.has(setName) ? setName : normLabelMap.get(_normLabel(setName));
         if (!matchedLabel) {
-          const key = `${book.name} :: ${setName}`;
+          const key = `${c.name} :: ${setName}`;
           out.skippedNoLabel.set(key, (out.skippedNoLabel.get(key)||0) + 1);
           return;
         }
