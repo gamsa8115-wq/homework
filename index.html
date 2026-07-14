@@ -4949,6 +4949,7 @@ function _previewScoreImport() {
     nameSuggestions: new Map(), // 이름 매칭 안 됨 + 추천 후보
     otherGroupCount: 0, // 다른 반 학생 (정상적으로 무시)
     invalidScoreCount: 0, // 점수 파싱 실패 (빈 값 등)
+    skipBlankDone: 0, // ★ "완료여부" 칸이 빈칸이라 건너뛴 건수 (미통과로 단정 안 함)
   };
 
   _scoreImportData.forEach(row => {
@@ -4961,6 +4962,10 @@ function _previewScoreImport() {
     let score;
     if (sourceMode === 'done') {
       const doneRaw = String(row['완료여부'] || '').trim();
+      // ★ 빈칸(=아직 응시 기록 자체가 없음)은 "미통과"로 단정하지 않고 건너뜀
+      //   (그래야 미래/아직 안 지난 회차가 리포트에 섞여 있어도 잘못 "실패"로 찍히지 않음.
+      //    이미 지난 건데 진짜 안 했으면, 날짜 기반 "미수행" 판정이 알아서 잡아줌)
+      if (!doneRaw) { out.skipBlankDone = (out.skipBlankDone||0) + 1; return; }
       score = (doneRaw === '완료' || doneRaw === '오답 없음') ? '통과' : '미통과';
     } else {
       score = _parseExcelScore(scoreRaw);
@@ -5173,7 +5178,7 @@ function _renderScoreImportPreview(out, threshold, overwrite, sourceMode) {
     <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:.65rem .8rem;color:#065f46">
       <div style="font-size:.85rem;font-weight:700;margin-bottom:.3rem">📊 적용 예정: ${totalApply}건</div>
       ${breakdownHtml}
-      <div style="font-size:.72rem;margin-top:.3rem">${sourceMode==='done' ? '완료여부 기준 (통과/미통과)' : `기준점수: ${threshold}점 이상`} · 덮어쓰기: ${overwrite?'예':'아니오 (빈 셀만)'} · 신규 배정 미달로 건너뜀: ${out.skipLowScore}건 · 다른 반 무시: ${out.otherGroupCount}건${out.invalidScoreCount?` · 점수없음: ${out.invalidScoreCount}건`:''}</div>
+      <div style="font-size:.72rem;margin-top:.3rem">${sourceMode==='done' ? '완료여부 기준 (통과/미통과)' : `기준점수: ${threshold}점 이상`} · 덮어쓰기: ${overwrite?'예':'아니오 (빈 셀만)'} · 신규 배정 미달로 건너뜀: ${out.skipLowScore}건 · 다른 반 무시: ${out.otherGroupCount}건${out.invalidScoreCount?` · 점수없음: ${out.invalidScoreCount}건`:''}${out.skipBlankDone?` · 완료여부 빈칸이라 건너뜀: ${out.skipBlankDone}건`:''}</div>
       <div style="font-size:.68rem;color:var(--mu);margin-top:.15rem">※ 이미 배정된 항목은 기준점수와 무관하게 실제 점수 그대로 기록됩니다 (재도전 감지를 위해)</div>
     </div>
   `;
@@ -5784,6 +5789,7 @@ function _computeBulkPreview() {
     skippedNoStudent: new Map(), // rawName → count
     skippedNoLabel: new Map(),   // "bookName :: setName" → count (레이블/회차 매칭 실패)
     skippedInvalidScore: 0,
+    skipBlankDone: 0, // ★ "완료여부" 칸이 빈칸이라 건너뛴 건수 (미통과로 단정 안 함)
   };
 
   const overwrite = _bulkOverwriteMode === 'overwrite';
@@ -5821,6 +5827,9 @@ function _computeBulkPreview() {
       let score;
       if (book.score === '통과') {
         const doneRaw = String(row['완료여부'] || '').trim();
+        // ★ 빈칸(=아직 응시 기록 자체가 없음)은 "미통과"로 단정하지 않고 건너뜀
+        //   (미래/아직 안 지난 회차·단원이 리포트에 섞여 있어도 잘못 "실패"로 찍히지 않게)
+        if (!doneRaw) { out.skipBlankDone++; return; }
         score = (doneRaw === '완료' || doneRaw === '오답 없음') ? '통과' : '미통과';
       } else {
         const scoreRaw = row['테스트 (최고점)'] ?? row['테스트최고'] ?? row['테스트 최고'] ?? null;
@@ -5948,6 +5957,7 @@ function _renderBulkStep3() {
     <div style="font-size:.72rem;color:var(--mu);line-height:1.7">
       ${out.skippedNoMap ? `· 매핑 안 됨/무시된 클래스의 행: ${out.skippedNoMap}건<br>` : ''}
       ${out.skippedInvalidScore ? `· 점수 없음: ${out.skippedInvalidScore}건<br>` : ''}
+      ${out.skipBlankDone ? `· 완료여부 빈칸이라 건너뜀: ${out.skipBlankDone}건<br>` : ''}
       ${out.skippedNoStudent.size ? `· ⚠ 이름 매칭 안 됨: ${noStudentHtml}<br>` : ''}
       ${out.skippedNoLabel.size ? `· ⚠ 레이블/회차 매칭 안 됨: ${noLabelHtml}` : ''}
     </div>
