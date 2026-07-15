@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v133</title>
+<title>숙제 관리 v135</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v133</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v135</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -2414,10 +2414,13 @@ function renderList() {
   });
 
   let groupList = Object.values(groups).map(g => {
-    g.count = g.items.length;
-    g.doneCount = g.items.filter(a => a.result !== '' && a.result !== null && a.result !== undefined).length;
-    g.latestDate = g.items.length
-      ? g.items.reduce((m, a) => (a.date > m ? a.date : m), g.items[0].date)
+    // ★ 보카형은 "01"/"1"처럼 표기가 섞인 중복 배정이 있을 수 있어, 세기 전에 회차별 최신 것만 남김
+    //   (안 그러면 건수·완료 숫자가 실제보다 부풀려질 수 있음)
+    const items = g.type === 'voca' ? _dedupeVocaAssigns(g.items) : g.items;
+    g.count = items.length;
+    g.doneCount = items.filter(a => a.result !== '' && a.result !== null && a.result !== undefined).length;
+    g.latestDate = items.length
+      ? items.reduce((m, a) => (a.date > m ? a.date : m), items[0].date)
       : null;
     const st = S.students.find(s => s.id === g.studentId);
     g.isActive = !!(st && (st.books||[]).includes(g.bookName)); // ★ 지금 진행 중인지 (완료 처리 안 됨)
@@ -2515,9 +2518,15 @@ function groupRow(g) {
   const isActive = g.isActive;
   const st = S.students.find(s => s.id === g.studentId);
   const assignedDate = st?.bookDates?.[g.bookId];
-  const assignedTxt = assignedDate ? `배정일 ${shortAiDate(assignedDate)}` : `<span style="color:var(--mu)">배정일 기록 없음</span>`;
+  // ★ 보카형은 "배정일" 한 날짜가 아니라, 처음 배정일~마지막(최신) 배정일까지가 실제 교재 진행 기간이라
+  //   "시작일 ~ 종료일"로 보여주는 게 더 정확함 (교재형은 기존처럼 배정일 하나만 표시)
+  const assignedTxt = isVoca
+    ? (assignedDate
+        ? `${shortAiDate(assignedDate)}~${g.latestDate ? shortAiDate(g.latestDate) : '?'}`
+        : `<span style="color:var(--mu)">배정 기록 없음</span>`)
+    : (assignedDate ? `배정일 ${shortAiDate(assignedDate)}` : `<span style="color:var(--mu)">배정일 기록 없음</span>`);
   const countTxt = g.count
-    ? `${assignedTxt} · ${g.count}건${doneTxt} · 최근 ${shortAiDate(g.latestDate)}`
+    ? (isVoca ? `${assignedTxt} · ${g.count}건 · 완료 ${g.doneCount}건` : `${assignedTxt} · ${g.count}건${doneTxt} · 최근 ${shortAiDate(g.latestDate)}`)
     : `${assignedTxt} · <span style="color:var(--amb)">아직 배정 없음 (배부만 됨)</span>`;
   const completeBtn = isActive
     ? `${g.count ? `<button class="btn bg bsm" style="font-size:.68rem" onclick="completeGroupAssign(${g.studentId}, ${g.bookId})">✅ 교재완료 처리</button>` : ''}
