@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v135</title>
+<title>숙제 관리 v136</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v135</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v136</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -797,7 +797,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
   <div class="hist-filter">
     <div style="display:flex;align-items:center;gap:.4rem">
       <label style="margin:0;white-space:nowrap">반</label>
-      <select id="hist-group" onchange="renderHistory()" style="min-width:110px">
+      <select id="hist-group" onchange="refreshHistBookOptions(); renderHistory()" style="min-width:110px">
         <option value="">반 선택...</option>
       </select>
     </div>
@@ -2552,8 +2552,9 @@ function groupRow(g) {
 /* 배정 목록 묶음 → 배정 이력 탭으로 이동하며 필터 자동 지정 */
 function jumpToHistoryFromList(bookId, group, studentName) {
   goPage('p-history');
-  const hb = $('hist-book');  if (hb) hb.value = String(bookId);
   const hg = $('hist-group'); if (hg) hg.value = group;
+  refreshHistBookOptions(); // ★ 반을 먼저 지정한 뒤 그 반 기준으로 교재 목록을 다시 채움
+  const hb = $('hist-book');  if (hb) hb.value = String(bookId);
   const ns = $('hist-name-search'); if (ns) ns.value = studentName;
   const nc = $('hist-name-clear');  if (nc) nc.style.display = studentName ? '' : 'none';
   renderHistory();
@@ -4038,6 +4039,40 @@ function syncHistViewSelect() {
   sel.value = _histShowRetired ? 'retired' : 'active';
 }
 
+/* ★ 숙제 배정 내역의 "교재" 드롭다운을 반 기준으로 좁혀줌
+   - 반을 선택 안 했으면: 전체 교재 목록 (기존과 동일)
+   - 반을 선택했으면: 그 반에 "지금 배부 중"이거나 "과거에 배정된 적 있는" 교재만
+     (교재완료 처리된 교재도 과거 배정 기록으로 계속 보이게 하기 위함) */
+function refreshHistBookOptions() {
+  const hb = $('hist-book');
+  if (!hb) return;
+  const prev = hb.value;
+  const group = $('hist-group')?.value || '';
+
+  let books = S.books.filter(b => (b.mode==='book' && b.rows?.length) || b.mode==='voca');
+
+  if (group) {
+    const namesInUse = new Set();
+    S.students.filter(s => s.group === group).forEach(s => (s.books||[]).forEach(bn => namesInUse.add(bn)));
+    const idsAssigned = new Set();
+    S.assigns.forEach(a => {
+      const st = S.students.find(s => s.id === a.studentId);
+      if (st && st.group === group) idsAssigned.add(a.bookId);
+    });
+    books = books.filter(b => namesInUse.has(b.name) || idsAssigned.has(b.id));
+  }
+
+  books.sort((a,b) => a.name.localeCompare(b.name,'ko'));
+  hb.innerHTML = '<option value="">교재 선택...</option>' +
+    books.map(b => {
+      const tag = b.mode==='voca' ? '보카형' : `${b.rows.length}개`;
+      return `<option value="${b.id}" ${String(b.id)===prev?'selected':''}>${escHtml(b.name)} (${tag})</option>`;
+    }).join('');
+
+  // 이전에 골라둔 교재가 새 목록(반 필터)에 없으면 선택 해제
+  if (prev && !books.some(b => String(b.id) === prev)) hb.value = '';
+}
+
 function setupHistory() {
   // 반 목록 (오름차순)
   const hg = $('hist-group');
@@ -4049,20 +4084,8 @@ function setupHistory() {
         `<option value="${escHtml(g)}" ${g===prev?'selected':''}>${escHtml(g)}</option>`
       ).join('');
   }
-  // 교재형 + 보카형 모두 포함 — 오름차순
-  const hb = $('hist-book');
-  if (hb) {
-    const prev = hb.value;
-    hb.innerHTML = '<option value="">교재 선택...</option>' +
-      S.books
-        .filter(b => (b.mode==='book' && b.rows?.length) || b.mode==='voca')
-        .sort((a,b) => a.name.localeCompare(b.name,'ko'))
-        .map(b => {
-          const tag = b.mode==='voca' ? '보카형' : `${b.rows.length}개`;
-          return `<option value="${b.id}" ${String(b.id)===prev?'selected':''}>${escHtml(b.name)} (${tag})</option>`;
-        })
-        .join('');
-  }
+  // 교재형 + 보카형 모두 포함 — 반이 선택돼 있으면 그 반에 배부됐던 교재만 (refreshHistBookOptions에서 처리)
+  refreshHistBookOptions();
   // 이름 검색 초기화 (탭 재진입 시)
   const ns = $('hist-name-search');
   if (ns) ns.value = '';
