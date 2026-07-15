@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v131</title>
+<title>숙제 관리 v132</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v131</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v132</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -5073,7 +5073,7 @@ function _previewScoreImport() {
         return;
       }
       const assigns = S.assigns.filter(a =>
-        a.bookId === bid && a.studentId === student.id && a.type === 'voca' && String(a.unitFrom) === String(round)
+        a.bookId === bid && a.studentId === student.id && a.type === 'voca' && String(Number(a.unitFrom)) === String(Number(round))
       );
 
       if (!assigns.length) {
@@ -5914,7 +5914,7 @@ function _computeBulkPreview() {
           out.skippedNoLabel.set(key, (out.skippedNoLabel.get(key)||0) + 1);
           return;
         }
-        const existing = S.assigns.find(a => a.bookId===book.id && a.studentId===student.id && a.type==='voca' && String(a.unitFrom)===String(round));
+        const existing = S.assigns.find(a => a.bookId===book.id && a.studentId===student.id && a.type==='voca' && String(Number(a.unitFrom))===String(Number(round)));
         if (existing) {
           const hasResult = existing.result !== '' && existing.result != null;
           if (hasResult && !overwrite) return;
@@ -7100,13 +7100,30 @@ function _incompleteReason(book, result, group, assignDate) {
   return null; // 완료로 인정됨
 }
 
+/* ★ 보카형은 "01"과 "1"처럼 표기가 섞인 같은 회차 배정이 중복으로 존재할 수 있음
+   (예: 점수 가져오기가 기존 배정을 못 찾고 새로 만든 경우) — 매트릭스(pivot)와 동일하게
+   회차별로 "가장 최신 날짜" 한 건만 대표로 남기고 나머지(주로 오래된 미배정 사본)는 제외 */
+function _dedupeVocaAssigns(assigns) {
+  const normUnit = v => String(Number(v));
+  const latestByKey = new Map(); // `${bookId}:${normUnit}` -> assign
+  const others = [];
+  assigns.forEach(a => {
+    const book = getBook(a.bookId);
+    const isVoca = (book?.mode || a.type) === 'voca';
+    if (!isVoca) { others.push(a); return; }
+    const key = `${a.bookId}:${normUnit(a.unitFrom)}`;
+    const ex = latestByKey.get(key);
+    if (!ex || a.date > ex.date) latestByKey.set(key, a);
+  });
+  return [...others, ...latestByKey.values()];
+}
+
 /* 학생 1명의 "기준일까지 배정됐지만 미완료(미수행·미통과·점수미달)인 것" 을 교재별로 묶어서 반환
    typeF: '' | 'book' | 'voca',  bookF: '' | 교재id(문자열) */
 function _buildIncompleteForStudent(student, untilDate, typeF, bookF) {
+  const candidates = S.assigns.filter(a => a && a.studentId === student.id && a.date && a.date <= untilDate && (!bookF || String(a.bookId) === bookF));
   const items = [];
-  S.assigns.forEach(a => {
-    if (!a || a.studentId !== student.id || !a.date || a.date > untilDate) return;
-    if (bookF && String(a.bookId) !== bookF) return;
+  _dedupeVocaAssigns(candidates).forEach(a => {
     const book = getBook(a.bookId);
     if (typeF && (book?.mode || a.type) !== typeF) return;
     const reason = _incompleteReason(book, a.result, student.group, a.date);
@@ -7126,10 +7143,9 @@ function _buildIncompleteForStudent(student, untilDate, typeF, bookF) {
 /* ★ "미완료였다가 완료된 것" 등 최근 완료 내역 — 기준일까지, 결과가 있고(hasResult) 미완료 사유가 없는(=진짜 통과/완료/기준이상) 것만
    최근 날짜순으로 최대 limit개 */
 function _buildCompletedForStudent(student, untilDate, typeF, bookF, limit) {
+  const candidates = S.assigns.filter(a => a && a.studentId === student.id && a.date && a.date <= untilDate && (!bookF || String(a.bookId) === bookF));
   const items = [];
-  S.assigns.forEach(a => {
-    if (!a || a.studentId !== student.id || !a.date || a.date > untilDate) return;
-    if (bookF && String(a.bookId) !== bookF) return;
+  _dedupeVocaAssigns(candidates).forEach(a => {
     const book = getBook(a.bookId);
     if (typeF && (book?.mode || a.type) !== typeF) return;
     const hasResult = a.result !== '' && a.result !== null && a.result !== undefined;
