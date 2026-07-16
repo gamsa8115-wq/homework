@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v137</title>
+<title>숙제 관리 v140</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v137</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v140</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -2177,9 +2177,14 @@ function addVoca() {
     if (!st.bookDates[book.id]) st.bookDates[book.id] = startDate;
     dates.forEach((d, i) => {
       const unit = fmtUnit(i);
+      // ★ 중복 체크: 예전엔 "날짜+표기까지 정확히 같을 때만" 중복으로 봐서,
+      //   같은 회차인데 표기(01 vs 1)나 날짜가 다르면 중복으로 못 걸러 회차가 두 벌 생기는 문제가 있었음.
+      //   → "같은 학생·같은 교재·같은 회차 번호"면 날짜/표기와 무관하게 무조건 중복으로 처리
+      const normUnit = v => String(Number(v));
       const isDup = S.assigns.some(a =>
-        a.date === d && a.studentId === sid &&
-        a.bookId === bid && a.unitFrom === unit && a.unitTo === unit
+        a.studentId === sid && a.bookId === bid && a.type === 'voca' &&
+        a.unitFrom !== undefined && a.unitFrom !== null &&
+        normUnit(a.unitFrom) === normUnit(unit)
       );
       if (isDup) { dupCount++; return; }
       planned.push({ sid, stName: st.name, d, unit });
@@ -2779,6 +2784,7 @@ function deleteHistClassAll() {
     if (!targetIds.has(s.id)) return;
     if (Array.isArray(s.books)) s.books = s.books.filter(n => n !== book.name);
     if (Array.isArray(s.completedBooks)) s.completedBooks = s.completedBooks.filter(c => c.bookName !== book.name);
+    if (s.bookDates) delete s.bookDates[bid]; // ★ 시작일 기록도 함께 제거 — 받은 적 없던 것처럼
   });
 
   save();
@@ -2797,10 +2803,11 @@ function deleteGroupAssigns(studentId, bookId) {
   if (!confirm(`${st?.name || ''} · ${book?.name || ''}의 배정 ${count}건을 모두 삭제하시겠습니까?\n배부받았던 기록 자체가 없던 것처럼 완전히 사라집니다.\n이 작업은 되돌릴 수 없습니다.`)) return;
 
   S.assigns = S.assigns.filter(a => !(a.studentId === studentId && a.bookId === bookId));
-  // ★ 배정 기록뿐 아니라 "배부받은 상태"·완료 이력도 함께 제거 — 아예 받은 적 없던 것처럼
+  // ★ 배정 기록뿐 아니라 "배부받은 상태"·완료 이력·시작일 기록도 함께 제거 — 아예 받은 적 없던 것처럼
   if (st) {
     if (Array.isArray(st.books) && book) st.books = st.books.filter(n => n !== book.name);
     if (Array.isArray(st.completedBooks) && book) st.completedBooks = st.completedBooks.filter(c => c.bookName !== book.name);
+    if (st.bookDates && book) delete st.bookDates[book.id];
   }
   save();
   renderCal(); renderTodayPreview(); updateSidebar();
@@ -5913,6 +5920,7 @@ function _computeBulkPreview() {
     updates: [],         // {assignId, oldResult, newResult, studentName, bookName, label}
     skippedNoMap: 0,      // 매핑 안 된(무시 포함) 클래스의 행 수
     skippedNoStudent: new Map(), // rawName → count
+    skippedNoDistribution: new Map(), // ★ rawName → count (정식 교재 배정이 없어서 건너뜀)
     skippedNoLabel: new Map(),   // "bookName :: setName" → count (레이블/회차 매칭 실패)
     skippedInvalidScore: 0,
     skipBlankDone: 0, // ★ "완료여부" 칸이 빈칸이라 건너뛴 건수 (미통과로 단정 안 함)
@@ -5945,6 +5953,14 @@ function _computeBulkPreview() {
       }
       if (!student) {
         out.skippedNoStudent.set(rawName, (out.skippedNoStudent.get(rawName)||0) + 1);
+        return;
+      }
+
+      // ★ 엄격 원칙: "교재 배정"에서 정식으로 배정(배부)받은 학생만 처리.
+      //   전체 리포트 업로드가 정식 배정 없이 배부 목록에 몰래 끼워 넣는 걸 막기 위함
+      //   (교재 배정 → 배정 목록 → 배정 내역 순서를 거꾸로 만들지 않기 위해)
+      if (!Array.isArray(student.books) || !student.books.includes(book.name)) {
+        out.skippedNoDistribution.set(rawName, (out.skippedNoDistribution.get(rawName)||0) + 1);
         return;
       }
 
@@ -6032,6 +6048,8 @@ function _renderBulkStep3() {
 
   const noStudentHtml = [...out.skippedNoStudent.entries()].slice(0,30)
     .map(([n,c]) => `${escHtml(n)}(${c}건)`).join(', ');
+  const noDistribHtml = [...out.skippedNoDistribution.entries()].slice(0,30)
+    .map(([n,c]) => `${escHtml(n)}(${c}건)`).join(', ');
   const noLabelHtml = [...out.skippedNoLabel.entries()].slice(0,30)
     .map(([k,c]) => `${escHtml(k)}(${c}건)`).join(', ');
 
@@ -6086,6 +6104,7 @@ function _renderBulkStep3() {
       ${out.skippedInvalidScore ? `· 점수 없음: ${out.skippedInvalidScore}건<br>` : ''}
       ${out.skipBlankDone ? `· 완료여부 빈칸이라 건너뜀: ${out.skipBlankDone}건<br>` : ''}
       ${out.skippedNoStudent.size ? `· ⚠ 이름 매칭 안 됨: ${noStudentHtml}<br>` : ''}
+      ${out.skippedNoDistribution.size ? `· 🚫 정식 교재 배정 없어서 건너뜀 (먼저 📅 교재 배정에서 배부하세요): ${noDistribHtml}<br>` : ''}
       ${out.skippedNoLabel.size ? `· ⚠ 레이블/회차 매칭 안 됨: ${noLabelHtml}` : ''}
     </div>
   `;
@@ -6133,12 +6152,9 @@ function _applyBulkImport() {
         problems: rowIdx >= 0 ? [rowIdx] : [], probLabels: [item.label], result: item.score
       });
     }
-    // ★ 배부 목록에 없던 학생이면 자동으로 추가 (전체 리포트는 반 개념 없이 한 번에 처리하므로)
-    const st = S.students.find(s => s.id === item.studentId);
-    if (st) {
-      if (!Array.isArray(st.books)) st.books = [];
-      if (!st.books.includes(book.name)) st.books.push(book.name);
-    }
+    // ★ 이제 여기 도달하는 학생은 이미 "교재 배정"에서 정식으로 배부받은 사람만 있음
+    //   (미리보기 단계에서 student.books.includes(book.name) 체크를 통과한 경우만 여기 옴)
+    //   → 배부 목록을 몰래 추가하는 부수효과는 더 이상 필요 없어서 제거함
   });
 
   save();
@@ -7623,8 +7639,11 @@ function backfillBookDates() {
       const book = S.books.find(b => b.name === bookName);
       if (!book) return; // 교재 자체가 삭제된 경우 등 — 건너뜀
       if (st.bookDates[book.id]) return; // 이미 기록 있음
+      // ★ 교재 이름(문자열, a.bookName)이 아니라 교재 ID(a.bookId)로 찾음
+      //   — 이름이 수정된 적 있거나 표기가 미묘하게 다른 옛 기록이 있으면
+      //   이름 비교로는 그 기록이 빠져서 "시작일"이 실제보다 늦게 잘못 계산될 수 있음
       const dates = S.assigns
-        .filter(a => a && a.studentId === st.id && a.bookName === bookName && a.date)
+        .filter(a => a && a.studentId === st.id && a.bookId === book.id && a.date)
         .map(a => a.date);
       if (dates.length) {
         st.bookDates[book.id] = dates.reduce((min,d) => d < min ? d : min, dates[0]);
