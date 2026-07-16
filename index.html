@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v136</title>
+<title>숙제 관리 v137</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v136</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v137</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4339,7 +4339,10 @@ function renderHistory() {
   }
 
   // 피벗: student × 키(레이블 또는 보카 회차) → 최신 assign
-  const bookAssigns = S.assigns.filter(a => a.bookId === bid);
+  // ★ 회차 목록은 "지금 보고 있는 반"의 학생 배정 기록만으로 만듦
+  //   (같은 교재를 다른 반도 같이 쓰는 경우, 그 반의 회차 수가 더 길면 여기에도 섞여 보이던 문제 방지)
+  const studentIdSet = new Set(students.map(s => s.id));
+  const bookAssigns = S.assigns.filter(a => a.bookId === bid && studentIdSet.has(a.studentId));
   const pivot = {};
   students.forEach(s => { pivot[s.id] = {}; });
   // ★ 보카 회차는 "01"과 "1"처럼 표기가 섞여있을 수 있어 숫자로 정규화한 값을 키로 사용 (중복 행 방지)
