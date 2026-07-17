@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v146</title>
+<title>숙제 관리 v147</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v146</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v147</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -817,6 +817,13 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
       <label style="margin:0;white-space:nowrap">교재</label>
       <select id="hist-book" onchange="renderHistory()" style="min-width:180px">
         <option value="">교재 선택...</option>
+      </select>
+    </div>
+    <!-- ★ 같은 교재를 여러 차수(반복 수강)로 쓰는 경우에만 표시 — 차수별로 회차가 안 섞이게 필터링 -->
+    <div id="hist-cohort-wrap" style="display:none;align-items:center;gap:.4rem">
+      <label style="margin:0;white-space:nowrap">차수</label>
+      <select id="hist-cohort" onchange="renderHistory()" style="min-width:110px">
+        <option value="">전체</option>
       </select>
     </div>
     <!-- ★ 점수형 교재 선택 시에만 표시: 선택된 "반"마다 별도로 설정됨 (교재 전체 공통 아님) -->
@@ -4573,7 +4580,29 @@ function renderHistory() {
   // ★ 회차 목록은 "지금 보고 있는 반"의 학생 배정 기록만으로 만듦
   //   (같은 교재를 다른 반도 같이 쓰는 경우, 그 반의 회차 수가 더 길면 여기에도 섞여 보이던 문제 방지)
   const studentIdSet = new Set(students.map(s => s.id));
-  const bookAssigns = S.assigns.filter(a => a.bookId === bid && studentIdSet.has(a.studentId));
+  let bookAssigns = S.assigns.filter(a => a.bookId === bid && studentIdSet.has(a.studentId));
+
+  // ★ 같은 교재를 여러 차수(반복 수강)로 쓰는 경우, 차수가 다르면 회차 번호가 겹쳐도 서로 다른 진도이므로
+  //   "차수" 드롭다운으로 하나만 골라서 보게 함 (2개 이상 차수가 섞여 있을 때만 드롭다운 표시)
+  const cohortWrap = $('hist-cohort-wrap');
+  const cohortSel = $('hist-cohort');
+  if (isVoca && cohortWrap && cohortSel) {
+    const cohorts = [...new Set(bookAssigns.map(a => a.cohort || '').filter(Boolean))].sort();
+    if (cohorts.length >= 2) {
+      const prevCohort = cohortSel.value;
+      cohortWrap.style.display = 'flex';
+      cohortSel.innerHTML = '<option value="">전체 (섞여 보일 수 있음)</option>' +
+        cohorts.map(c => `<option value="${escHtml(c)}" ${c===prevCohort?'selected':''}>${escHtml(c)}</option>`).join('');
+      const selectedCohort = cohortSel.value;
+      if (selectedCohort) bookAssigns = bookAssigns.filter(a => (a.cohort||'') === selectedCohort);
+    } else {
+      cohortWrap.style.display = 'none';
+      cohortSel.innerHTML = '<option value="">전체</option>';
+    }
+  } else if (cohortWrap) {
+    cohortWrap.style.display = 'none';
+  }
+
   const pivot = {};
   students.forEach(s => { pivot[s.id] = {}; });
   // ★ 보카 회차는 "01"과 "1"처럼 표기가 섞여있을 수 있어 숫자로 정규화한 값을 키로 사용 (중복 행 방지)
@@ -5784,6 +5813,15 @@ async function _onBulkFileSelect(event) {
   }
 }
 
+/* ★ 클래스명 끝에 붙는 "N차"를 차수로 추출 (예: "A. 수업보카 기본 중3 5차 (430944243)" → "5차")
+   같은 교재를 여러 번 반복 수강하는 반이 회차 번호를 공유해도 섞이지 않게 하려는 용도.
+   "N차"가 없으면 빈 문자열(차수 구분 없음, 기존과 동일하게 동작) */
+function _extractCohort(className) {
+  const cleaned = String(className || '').replace(/\(\d+\)\s*$/, '').trim(); // 끝의 "(숫자 ID)" 제거
+  const m = cleaned.match(/(\d+)\s*차\s*$/);
+  return m ? `${m[1]}차` : '';
+}
+
 /* 세트명에서 회차 숫자 추출 */
 function _extractRound(setName, rule) {
   const s = String(setName || '');
@@ -6212,18 +6250,21 @@ function _computeBulkPreview() {
           out.skippedNoLabel.set(key, (out.skippedNoLabel.get(key)||0) + 1);
           return;
         }
-        const existing = S.assigns.find(a => a.bookId===book.id && a.studentId===student.id && a.type==='voca' && String(Number(a.unitFrom))===String(Number(round)));
+        // ★ 클래스명 끝의 "N차"를 차수로 추출 — 같은 교재를 여러 번 반복하는 반이
+        //   회차 번호를 공유해도 서로 다른 차수 기록으로 분리되게 함
+        const cohort = _extractCohort(c.name);
+        const existing = S.assigns.find(a => a.bookId===book.id && a.studentId===student.id && a.type==='voca' && String(Number(a.unitFrom))===String(Number(round)) && (a.cohort||'')===cohort);
         if (existing) {
           const hasResult = existing.result !== '' && existing.result != null;
           if (hasResult && !overwrite) return;
           if (hasResult && String(existing.result) === String(score)) return; // ★ 값이 똑같으면 "변경"이 아니므로 목록에서 아예 뺌
           out.updates.push({ assignId: existing.id, oldResult: hasResult?existing.result:null, newResult: score,
-            studentName: student.name, bookName: book.name, label: `${round}회차` });
+            studentName: student.name, bookName: book.name, label: `${round}회차${cohort?` (${cohort})`:''}` });
         } else {
           // 새 배정: 학습일을 그대로 사용 (실제로 그 날 학습한 기록이므로)
           const dateStr = _parseExcelDate(row['학습일']) || getTodayStr();
           out.newAssigns.push({ studentId: student.id, studentName: student.name, bookId: book.id, bookName: book.name,
-            type: 'voca', date: dateStr, unitFrom: round, unitTo: round, score });
+            type: 'voca', date: dateStr, unitFrom: round, unitTo: round, score, cohort });
         }
       } else {
         // 교재형: 레이블 정규화 매칭
@@ -6364,6 +6405,7 @@ function _applyBulkImport() {
         studentId: item.studentId, studentName: item.studentName,
         bookId: item.bookId, bookName: item.bookName,
         unitFrom: item.unitFrom, unitTo: item.unitTo,
+        cohort: item.cohort || '',
         problems: [], probLabels: [], result: item.score
       });
     } else {
