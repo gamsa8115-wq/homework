@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v153</title>
+<title>숙제 관리 v154</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v153</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v154</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -8309,11 +8309,13 @@ function sanitizeStudentsBeforeSave() {
     if (Array.isArray(s.completedBooks)) {
       s.completedBooks = s.completedBooks.filter(c => c && c.bookName);
     }
-    // ★ bookDates는 반드시 "교재 id"만 키로 써야 함 (교재명은 "/" 등 Firebase 금지문자가 섞일 수 있어 위험)
+    // ★ bookDates는 "교재 id" 또는 "교재 id::차수" 형식만 키로 써야 함
+    //   (교재명은 "/" 등 Firebase 금지문자가 섞일 수 있어 위험. 차수 조합 키도 앞부분(교재 id)만 검증)
     if (s.bookDates && typeof s.bookDates === 'object') {
       const cleaned = {};
       Object.keys(s.bookDates).forEach(k => {
-        if (validBookIds.has(String(k)) && s.bookDates[k]) cleaned[k] = s.bookDates[k];
+        const bidPart = String(k).split('::')[0];
+        if (validBookIds.has(bidPart) && s.bookDates[k]) cleaned[k] = s.bookDates[k];
       });
       s.bookDates = cleaned;
     }
