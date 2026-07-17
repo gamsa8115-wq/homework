@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v145</title>
+<title>숙제 관리 v146</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v145</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v146</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -463,6 +463,8 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 </nav>
 
 <main class="main">
+
+<div id="deadline-banner-wrap"></div>
 
 <!-- ════ 교재 배정 ════ -->
 <div class="page active" id="p-assign">
@@ -1189,6 +1191,7 @@ function updateSidebar() {
   $('sb-sc').textContent = S.students.length;
   $('sb-bc').textContent = S.books.length;
   $('sb-ac').textContent = S.assigns.length;
+  if (typeof renderVocaDeadlineBanner === 'function') renderVocaDeadlineBanner();
 }
 
 // ══════════ NAVIGATION ══════════
@@ -2513,6 +2516,85 @@ function groupCard(g) {
 }
 
 /* ★ 학생 카드 안에서 쓰는 축약형 줄 — 반/학생명 반복 없이 교재 정보만 */
+/* ★ 보카형 교재 중 "진행 중 + 종료일이 임박한" 학생을 찾아서, 반+교재 단위로 묶어서 반환
+   daysThreshold 이내(오늘 포함, 0~N일)로 끝나는 것만 */
+function computeVocaDeadlineAlerts(daysThreshold) {
+  const today = getTodayStr();
+  const groups = {};
+  S.assigns.forEach(r => {
+    if (r.type !== 'voca') return;
+    const key = `${r.studentId}_${r.bookId}`;
+    if (!groups[key]) {
+      const st = S.students.find(s => s.id === r.studentId);
+      groups[key] = { studentId: r.studentId, studentName: r.studentName, group: st?.group || '', bookId: r.bookId, bookName: r.bookName, items: [] };
+    }
+    groups[key].items.push(r);
+  });
+
+  const alerts = [];
+  Object.values(groups).forEach(g => {
+    const st = S.students.find(s => s.id === g.studentId);
+    const isActive = !!(st && (st.books||[]).includes(g.bookName));
+    if (!isActive) return; // 완료 처리됐거나 배부 취소된 건 대상 아님
+    const items = _dedupeVocaAssigns(g.items);
+    if (!items.length) return;
+    const latestDate = items.reduce((m,a) => a.date > m ? a.date : m, items[0].date);
+    const daysLeft = Math.round((new Date(latestDate) - new Date(today)) / 86400000);
+    if (daysLeft >= 0 && daysLeft <= daysThreshold) {
+      alerts.push({ group: g.group, bookId: g.bookId, bookName: g.bookName, studentName: g.studentName, daysLeft });
+    }
+  });
+  return alerts;
+}
+
+let _deadlineBannerDismissed = false; // 세션 내에서만 유지 (새로고침하면 다시 뜸)
+function dismissDeadlineBanner() {
+  _deadlineBannerDismissed = true;
+  const wrap = $('deadline-banner-wrap');
+  if (wrap) wrap.innerHTML = '';
+}
+
+/* ★ 접속 시(또는 데이터 갱신 시) 종료일 3일 이내로 임박한 반+교재를 배너로 알림
+   같은 반+같은 교재는 하나로 묶어서 "N명 · 가장 빠른 D-day" 형태로 보여줌 */
+function renderVocaDeadlineBanner() {
+  const wrap = $('deadline-banner-wrap');
+  if (!wrap) return;
+  if (_deadlineBannerDismissed) { wrap.innerHTML = ''; return; }
+
+  const alerts = computeVocaDeadlineAlerts(3);
+  if (!alerts.length) { wrap.innerHTML = ''; return; }
+
+  // 반+교재 단위로 묶기
+  const byKey = new Map();
+  alerts.forEach(a => {
+    const key = `${a.group}::${a.bookName}`;
+    const rec = byKey.get(key) || { group: a.group, bookName: a.bookName, bookId: a.bookId, count: 0, minDays: 999 };
+    rec.count++;
+    rec.minDays = Math.min(rec.minDays, a.daysLeft);
+    byKey.set(key, rec);
+  });
+  const rows = [...byKey.values()].sort((a,b) => a.minDays - b.minDays);
+
+  const rowsHtml = rows.map(r => {
+    const dday = r.minDays === 0 ? '오늘 종료' : `D-${r.minDays}`;
+    return `<span style="display:inline-flex;align-items:center;gap:.3rem;background:rgba(255,255,255,.6);border-radius:20px;padding:.2rem .6rem;margin:.15rem .25rem 0 0;font-size:.76rem;cursor:pointer"
+      onclick="jumpToHistoryFromList(${r.bookId}, '${escHtml(r.group).replace(/'/g,"\\'")}', '')">
+      <b>${escHtml(r.group)}</b> · ${escHtml(r.bookName)} · ${r.count}명 · <b style="color:#991b1b">${dday}</b>
+    </span>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:.6rem .8rem;margin-bottom:.9rem;display:flex;align-items:flex-start;gap:.5rem">
+      <div style="font-size:1rem;flex-shrink:0">⏰</div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:.82rem;color:#991b1b;margin-bottom:.3rem">보카 교재 종료일이 3일 이내로 임박한 반이 있어요</div>
+        <div>${rowsHtml}</div>
+      </div>
+      <button onclick="dismissDeadlineBanner()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:#991b1b;flex-shrink:0" title="닫기">×</button>
+    </div>
+  `;
+}
+
 function groupRow(g) {
   const isVoca = g.type === 'voca';
   const badgeCls = isVoca ? 'bg2' : 'bb';
@@ -2533,6 +2615,15 @@ function groupRow(g) {
   const countTxt = g.count
     ? (isVoca ? `${assignedTxt} · ${g.count}건 · 완료 ${g.doneCount}건` : `${assignedTxt} · ${g.count}건${doneTxt} · 최근 ${shortAiDate(g.latestDate)}`)
     : `${assignedTxt} · <span style="color:var(--amb)">아직 배정 없음 (배부만 됨)</span>`;
+  // ★ 보카형 + 진행 중 + 종료일이 임박(7일 이내)했으면 배지 표시
+  let deadlineBadge = '';
+  if (isVoca && isActive && g.latestDate) {
+    const daysLeft = Math.round((new Date(g.latestDate) - new Date(getTodayStr())) / 86400000);
+    if (daysLeft >= 0 && daysLeft <= 7) {
+      const urgent = daysLeft <= 3;
+      deadlineBadge = `<span style="font-size:.68rem;font-weight:700;padding:.15rem .45rem;border-radius:20px;margin-left:.4rem;white-space:nowrap;background:${urgent?'#fee2e2':'#fef3c7'};color:${urgent?'#991b1b':'#92400e'}">⏰ ${daysLeft === 0 ? '오늘 종료' : daysLeft+'일 남음'}</span>`;
+    }
+  }
   const completeBtn = isActive
     ? `${g.count ? `<button class="btn bg bsm" style="font-size:.68rem" onclick="completeGroupAssign(${g.studentId}, ${g.bookId})">✅ 교재완료 처리</button>` : ''}
        <button class="btn bd2 bsm" style="font-size:.68rem" onclick="cancelDistribution(${g.studentId}, ${g.bookId})">↩ 배부 취소</button>`
@@ -2545,7 +2636,7 @@ function groupRow(g) {
   return `<div class="ai-sub-row" id="aig-${g.studentId}-${g.bookId}">
     <span class="badge ${badgeCls}">${badgeTxt}</span>
     <span class="ai-book" title="${escHtml(g.bookName)}">${escHtml(g.bookName)}</span>
-    <span class="ai-group-count">${countTxt}</span>
+    <span class="ai-group-count">${countTxt}</span>${deadlineBadge}
     <div class="ai-actions" style="display:flex;gap:.35rem">
       ${completeBtn}
       <button class="btn bs bsm" style="font-size:.68rem" onclick="jumpToHistoryFromList(${g.bookId}, '${groupEsc}', '${nameEsc}')">📊 숙제 배정 내역에서 조정</button>
