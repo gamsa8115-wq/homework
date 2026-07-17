@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v152</title>
+<title>숙제 관리 v153</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v152</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v153</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -2194,7 +2194,7 @@ function addVoca() {
     if (!st.books.includes(book.name)) st.books.push(book.name);
     // ★ 언제 이 교재를 배정했는지 기록 (교재 배정 개념의 날짜) — 이미 있으면 유지, 없으면 시작일로 채움
     if (!st.bookDates) st.bookDates = {};
-    if (!st.bookDates[book.id]) st.bookDates[book.id] = startDate;
+    if (!st.bookDates[_bdKey(book.id, cohort)]) st.bookDates[_bdKey(book.id, cohort)] = startDate;
     dates.forEach((d, i) => {
       const unit = fmtUnit(i);
       // ★ 중복 체크: 예전엔 "날짜+표기까지 정확히 같을 때만" 중복으로 봐서,
@@ -2434,7 +2434,10 @@ function renderList() {
       if (bkF && String(book.id) !== bkF) return;
       if (tyF && book.mode !== tyF) return;
       const key = `${s.id}_${book.id}_`;
-      if (groups[key]) return; // 이미 배정 기록이 있으면 건너뜀
+      // ★ 이미 이 학생+교재로 만들어진 그룹이 있으면(어느 차수든) 건너뜀
+      //   (빈 차수 키만 확인하면, 5차·6차 기록이 있어도 "0건" 유령 카드가 하나 더 생기던 문제가 있었음)
+      const alreadyHasAny = Object.keys(groups).some(k => k.startsWith(`${s.id}_${book.id}_`));
+      if (alreadyHasAny) return;
       groups[key] = {
         studentId: s.id, studentName: s.name,
         group: s.group, bookId: book.id, bookName: book.name,
@@ -2630,7 +2633,7 @@ function groupRow(g) {
   const nameEsc  = escHtml(g.studentName).replace(/'/g,"\\'");
   const isActive = g.isActive;
   const st = S.students.find(s => s.id === g.studentId);
-  const assignedDate = st?.bookDates?.[g.bookId];
+  const assignedDate = st?.bookDates?.[_bdKey(g.bookId, g.cohort)];
   // ★ 보카형은 "배정일" 한 날짜가 아니라, 처음 배정일~마지막(최신) 배정일까지가 실제 교재 진행 기간이라
   //   "시작일 ~ 종료일"로 보여주는 게 더 정확함 (교재형은 기존처럼 배정일 하나만 표시)
   const assignedTxt = isVoca
@@ -2739,7 +2742,7 @@ function cancelDistribution(studentId, bookId, cohort) {
   if (!otherCohortRemains) {
     st.books = (st.books||[]).filter(n => n !== book.name);
     if (Array.isArray(st.completedBooks)) st.completedBooks = st.completedBooks.filter(c => c.bookName !== book.name);
-    if (st.bookDates) delete st.bookDates[bookId];
+    if (st.bookDates) delete st.bookDates[_bdKey(bookId, cohort)];
   } else if (Array.isArray(st.completedBooks)) {
     // 이 차수만의 완료 기록이 있었다면 제거 (다른 차수 완료 기록은 유지)
     st.completedBooks = st.completedBooks.filter(c => !(c.bookName === book.name && (c.cohort||'') === cohort));
@@ -2951,12 +2954,13 @@ function deleteHistClassAll() {
 
   S.students.forEach(s => {
     if (!targetIds.has(s.id)) return;
-    // ★ 다른 차수(예: 6차) 기록이 아직 남아있으면, 배부 목록·시작일은 그대로 둠 (그 교재 자체는 여전히 진행 중이므로)
+    // ★ 지운 차수의 시작일 기록은 항상 제거
+    if (s.bookDates) delete s.bookDates[_bdKey(bid, cohort)];
+    // ★ 다른 차수(예: 6차) 기록이 아직 남아있으면, 배부 목록은 그대로 둠 (그 교재 자체는 여전히 진행 중이므로)
     const stillHasOther = S.assigns.some(a => a.studentId === s.id && a.bookId === bid);
     if (stillHasOther) return;
     if (Array.isArray(s.books)) s.books = s.books.filter(n => n !== book.name);
     if (Array.isArray(s.completedBooks)) s.completedBooks = s.completedBooks.filter(c => c.bookName !== book.name);
-    if (s.bookDates) delete s.bookDates[bid]; // ★ 시작일 기록도 함께 제거 — 받은 적 없던 것처럼
   });
   // ★ 이 반+교재로 설정해둔 일시정지 기간도, 다른 차수 기록이 하나도 안 남았을 때만 함께 제거
   const anyRemaining = S.assigns.some(a => a.bookId === bid && targetIds.has(a.studentId));
@@ -2990,7 +2994,7 @@ function deleteGroupAssigns(studentId, bookId, cohort) {
   if (st && book && !otherCohortRemains) {
     if (Array.isArray(st.books)) st.books = st.books.filter(n => n !== book.name);
     if (Array.isArray(st.completedBooks)) st.completedBooks = st.completedBooks.filter(c => c.bookName !== book.name);
-    if (st.bookDates) delete st.bookDates[book.id];
+    if (st.bookDates) delete st.bookDates[_bdKey(book.id, cohort)];
   } else if (st && book && Array.isArray(st.completedBooks)) {
     st.completedBooks = st.completedBooks.filter(c => !(c.bookName === book.name && (c.cohort||'') === cohort));
   }
@@ -7996,6 +8000,12 @@ function migrateBookThresholdsToPerClass() {
   return migrated;
 }
 
+/* ★ 보카형 시작일은 "책ID" 하나가 아니라 "책ID+차수" 조합으로 저장/조회함
+   (차수가 없으면 그냥 책ID 그대로 — 기존 데이터와 호환) */
+function _bdKey(bookId, cohort) {
+  return cohort ? `${bookId}::${cohort}` : String(bookId);
+}
+
 function backfillBookDates() {
   let filled = 0;
   S.students.forEach(st => {
@@ -8004,21 +8014,34 @@ function backfillBookDates() {
     st.books.forEach(bookName => {
       const book = S.books.find(b => b.name === bookName);
       if (!book) return; // 교재 자체가 삭제된 경우 등 — 건너뜀
-      // ★ 보카형은 "시작일 = 1회차 날짜"가 항상 성립하는 확정된 규칙이라
-      //   (자동배정이 곧 시작일을 정하는 유일한 방법이므로) 이미 값이 있어도
-      //   실제 배정 기록 기준으로 매번 다시 계산해서 조용히 바로잡음 (자동 치유).
-      //   교재형은 배부일 개념이 달라서 기존처럼 "비어있을 때만" 채움.
-      if (book.mode !== 'voca' && st.bookDates[book.id]) return;
-      // ★ 교재 이름(문자열, a.bookName)이 아니라 교재 ID(a.bookId)로 찾음
-      //   — 이름이 수정된 적 있거나 표기가 미묘하게 다른 옛 기록이 있으면
-      //   이름 비교로는 그 기록이 빠져서 "시작일"이 실제보다 늦게 잘못 계산될 수 있음
-      const dates = S.assigns
-        .filter(a => a && a.studentId === st.id && a.bookId === book.id && a.date)
-        .map(a => a.date);
-      if (dates.length) {
-        const correct = dates.reduce((min,d) => d < min ? d : min, dates[0]);
-        if (st.bookDates[book.id] !== correct) { st.bookDates[book.id] = correct; filled++; }
+
+      if (book.mode !== 'voca') {
+        // 교재형은 배부일 개념이 달라서 기존처럼 "비어있을 때만" 채움 (차수 없음)
+        if (st.bookDates[book.id]) return;
+        const dates = S.assigns
+          .filter(a => a && a.studentId === st.id && a.bookId === book.id && a.date)
+          .map(a => a.date);
+        if (dates.length) {
+          st.bookDates[book.id] = dates.reduce((min,d) => d < min ? d : min, dates[0]);
+          filled++;
+        }
+        return;
       }
+
+      // ★ 보카형: 이 학생이 이 책으로 실제 가진 "차수" 전부(빈 차수 포함) 찾아서 각각 따로 계산
+      //   (자동배정이 곧 시작일을 정하는 유일한 방법이라, 이미 값이 있어도 실제 기록 기준으로 매번 재계산 — 자동 치유)
+      const cohortsInUse = new Set(
+        S.assigns.filter(a => a && a.studentId === st.id && a.bookId === book.id).map(a => a.cohort || '')
+      );
+      cohortsInUse.forEach(cohort => {
+        const dates = S.assigns
+          .filter(a => a && a.studentId === st.id && a.bookId === book.id && (a.cohort||'') === cohort && a.date)
+          .map(a => a.date);
+        if (!dates.length) return;
+        const correct = dates.reduce((min,d) => d < min ? d : min, dates[0]);
+        const key = _bdKey(book.id, cohort);
+        if (st.bookDates[key] !== correct) { st.bookDates[key] = correct; filled++; }
+      });
     });
   });
   return filled;
