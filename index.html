@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v140</title>
+<title>숙제 관리 v142</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v140</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v142</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -862,7 +862,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         onclick="openBulkImport()"
         style="font-size:.72rem;background:#0e7490;color:#fff;border-color:#0e7490"
         title="여러 교재가 섞인 '전체 학생 리포트' 파일 하나로 한 번에 처리">📁 전체 리포트 업로드</button>
-      <span id="hist-mapping-badge" style="font-size:.68rem;font-weight:700;padding:.2rem .5rem;border-radius:20px;white-space:nowrap"></span>
+      <span id="hist-mapping-badge" onclick="showMappingBadgeInfo()" style="font-size:.68rem;font-weight:700;padding:.2rem .5rem;border-radius:20px;white-space:nowrap;cursor:pointer"></span>
       <button class="btn bs bsm" id="hist-inspect-btn"
         onclick="toggleInspect()"
         style="font-size:.72rem;background:#dc2626;color:#fff;border-color:#dc2626"
@@ -4220,6 +4220,43 @@ async function onHistThresholdChange() {
     : '⚠ 저장 실패 — 인터넷 연결을 확인하고 다시 시도해주세요');
 }
 
+let _histMappingBadgeInfo = null; // 맵핑 배지 클릭 시 보여줄 정보 {bookName, linked:[className,...]}
+
+/* ★ "🔗 맵핑됨/⚠ 맵핑 안 됨" 배지 클릭 시 — 연결된 클래스명을 팝업으로 보여줌
+   (모바일은 마우스 오버 툴팁이 안 먹히니, 클릭해서 확인 가능하게) */
+function showMappingBadgeInfo() {
+  const info = _histMappingBadgeInfo;
+  if (!info) return;
+  const old = document.getElementById('mapping-info-modal');
+  if (old) old.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'mapping-info-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem';
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+  const bodyHtml = info.linked.length
+    ? `<div style="font-size:.82rem;line-height:1.8">${info.linked.map(n => `<div style="padding:.4rem .6rem;background:var(--s2);border-radius:6px;margin-bottom:.4rem">${escHtml(n)}</div>`).join('')}</div>`
+    : `<div style="font-size:.82rem;color:var(--mu)">연결된 클래스가 없어요. 📁 전체 리포트 업로드 창을 열어서, 이 교재("${escHtml(info.bookName)}")를 원하는 클래스에 연결해두면 다음부터 자동으로 인식돼요.</div>`;
+
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:12px;max-width:420px;width:100%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.2)" onclick="event.stopPropagation()">
+      <div style="padding:.9rem 1.1rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+        <div style="font-weight:700;font-size:.95rem">🔗 "${escHtml(info.bookName)}" 맵핑 현황</div>
+        <button onclick="document.getElementById('mapping-info-modal').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--mu)">×</button>
+      </div>
+      <div style="padding:1rem 1.1rem;overflow-y:auto;flex:1">
+        <div style="font-size:.74rem;color:var(--mu);margin-bottom:.7rem">전체 리포트 업로드에서 이 교재로 연결된 클래스카드 클래스명${info.linked.length ? ` (${info.linked.length}개)` : ''}</div>
+        ${bodyHtml}
+      </div>
+      <div style="padding:.7rem 1.1rem;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;flex-shrink:0">
+        <button class="btn bg bsm" onclick="document.getElementById('mapping-info-modal').remove()">닫기</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
 function renderHistory() {
   const container = $('hist-container');
   if (!container) return;
@@ -4259,18 +4296,20 @@ function renderHistory() {
   if (mapBadge) {
     if (!bid) {
       mapBadge.style.display = 'none';
+      _histMappingBadgeInfo = null;
     } else {
       const linked = S.classcardMappings.filter(m => m.bookId === bid && (m.mode === 'book' || m.mode === 'voca'));
       mapBadge.style.display = '';
+      _histMappingBadgeInfo = { bookName: book.name, linked: linked.map(m => m.className) };
       if (linked.length) {
         mapBadge.style.background = '#dcfce7';
         mapBadge.style.color = '#166534';
-        mapBadge.title = '전체 리포트 업로드에서 연결된 클래스: ' + linked.map(m => m.className).join(', ');
+        mapBadge.title = '클릭해서 연결된 클래스명 보기';
         mapBadge.textContent = linked.length > 1 ? `🔗 맵핑됨 (${linked.length}개 클래스)` : '🔗 맵핑됨';
       } else {
         mapBadge.style.background = '#fef3c7';
         mapBadge.style.color = '#92400e';
-        mapBadge.title = '이 교재로 연결된 "전체 리포트 업로드" 클래스 매핑이 없어요. 전체 리포트 업로드 창에서 이 교재를 클래스에 연결해두면 다음부터 자동으로 인식돼요.';
+        mapBadge.title = '이 교재로 연결된 "전체 리포트 업로드" 클래스 매핑이 없어요. 클릭해서 자세히 보기';
         mapBadge.textContent = '⚠ 맵핑 안 됨';
       }
     }
@@ -7638,7 +7677,11 @@ function backfillBookDates() {
     st.books.forEach(bookName => {
       const book = S.books.find(b => b.name === bookName);
       if (!book) return; // 교재 자체가 삭제된 경우 등 — 건너뜀
-      if (st.bookDates[book.id]) return; // 이미 기록 있음
+      // ★ 보카형은 "시작일 = 1회차 날짜"가 항상 성립하는 확정된 규칙이라
+      //   (자동배정이 곧 시작일을 정하는 유일한 방법이므로) 이미 값이 있어도
+      //   실제 배정 기록 기준으로 매번 다시 계산해서 조용히 바로잡음 (자동 치유).
+      //   교재형은 배부일 개념이 달라서 기존처럼 "비어있을 때만" 채움.
+      if (book.mode !== 'voca' && st.bookDates[book.id]) return;
       // ★ 교재 이름(문자열, a.bookName)이 아니라 교재 ID(a.bookId)로 찾음
       //   — 이름이 수정된 적 있거나 표기가 미묘하게 다른 옛 기록이 있으면
       //   이름 비교로는 그 기록이 빠져서 "시작일"이 실제보다 늦게 잘못 계산될 수 있음
@@ -7646,8 +7689,8 @@ function backfillBookDates() {
         .filter(a => a && a.studentId === st.id && a.bookId === book.id && a.date)
         .map(a => a.date);
       if (dates.length) {
-        st.bookDates[book.id] = dates.reduce((min,d) => d < min ? d : min, dates[0]);
-        filled++;
+        const correct = dates.reduce((min,d) => d < min ? d : min, dates[0]);
+        if (st.bookDates[book.id] !== correct) { st.bookDates[book.id] = correct; filled++; }
       }
     });
   });
