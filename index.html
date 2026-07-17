@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v148</title>
+<title>숙제 관리 v151</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v148</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v151</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -867,6 +867,10 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         onclick="deleteHistClassAll()"
         title="지금 선택된 반 전체가 이 교재를 받은 적 없는 것으로 — 배정 기록·배부 상태 완전 삭제"
         style="font-size:.72rem">🗑 반 전체 배정 삭제</button>
+      <button class="btn bd2 bsm" id="hist-delete-student-btn"
+        onclick="deleteHistStudentAssigns()"
+        title="위 '이름' 검색창에 학생 한 명만 남게 입력한 뒤 눌러주세요 — 그 학생만 배정 기록 완전 삭제"
+        style="font-size:.72rem">🗑 이 학생만 삭제</button>
       <span style="width:1px;height:18px;background:var(--bd);margin:0 .15rem"></span>
       <button class="btn bs bsm" id="hist-import-btn"
         onclick="openScoreImport()"
@@ -2403,16 +2407,18 @@ function renderList() {
 
   _listVisibleIds = rows.map(r => r.id);
 
-  // 반 → 학생 → 유형 → 교재명 순으로 그룹핑 (날짜와 무관하게 한 덩어리로 모아 보여줌)
+  // 반 → 학생 → 유형 → 교재명(+차수) 순으로 그룹핑 (날짜와 무관하게 한 덩어리로 모아 보여줌)
+  // ★ 보카형은 같은 교재를 여러 차수로 반복 수강할 수 있어, 차수가 다르면 별도 카드로 분리
   const groups = {};
   rows.forEach(r => {
-    const key = `${r.studentId}_${r.bookId}`;
+    const cohort = r.type === 'voca' ? (r.cohort || '') : '';
+    const key = `${r.studentId}_${r.bookId}_${cohort}`;
     if (!groups[key]) {
       const st = S.students.find(s => s.id === r.studentId);
       groups[key] = {
         studentId: r.studentId, studentName: r.studentName,
         group: st?.group || '', bookId: r.bookId, bookName: r.bookName,
-        type: r.type, items: []
+        type: r.type, cohort, items: []
       };
     }
     groups[key].items.push(r);
@@ -2428,12 +2434,12 @@ function renderList() {
       if (!book) return;
       if (bkF && String(book.id) !== bkF) return;
       if (tyF && book.mode !== tyF) return;
-      const key = `${s.id}_${book.id}`;
+      const key = `${s.id}_${book.id}_`;
       if (groups[key]) return; // 이미 배정 기록이 있으면 건너뜀
       groups[key] = {
         studentId: s.id, studentName: s.name,
         group: s.group, bookId: book.id, bookName: book.name,
-        type: book.mode, items: []
+        type: book.mode, cohort: '', items: []
       };
     });
   });
@@ -2448,7 +2454,11 @@ function renderList() {
       ? items.reduce((m, a) => (a.date > m ? a.date : m), items[0].date)
       : null;
     const st = S.students.find(s => s.id === g.studentId);
-    g.isActive = !!(st && (st.books||[]).includes(g.bookName)); // ★ 지금 진행 중인지 (완료 처리 안 됨)
+    // ★ 다른 차수가 아직 진행 중이라 s.books엔 이름이 남아있어도,
+    //   "이 차수"가 completedBooks에 기록돼 있으면 이 카드는 완료(비활성)로 취급
+    const cohortCompleted = Array.isArray(st?.completedBooks) &&
+      st.completedBooks.some(c => c.bookName === g.bookName && (c.cohort||'') === (g.cohort||''));
+    g.isActive = !!(st && (st.books||[]).includes(g.bookName)) && !cohortCompleted;
     return g;
   });
 
@@ -2642,17 +2652,17 @@ function groupRow(g) {
     }
   }
   const completeBtn = isActive
-    ? `${g.count ? `<button class="btn bg bsm" style="font-size:.68rem" onclick="completeGroupAssign(${g.studentId}, ${g.bookId})">✅ 교재완료 처리</button>` : ''}
-       <button class="btn bd2 bsm" style="font-size:.68rem" onclick="cancelDistribution(${g.studentId}, ${g.bookId})">↩ 배부 취소</button>`
+    ? `${g.count ? `<button class="btn bg bsm" style="font-size:.68rem" onclick="completeGroupAssign(${g.studentId}, ${g.bookId}, '${(g.cohort||'').replace(/'/g,"\\'")}')">✅ 교재완료 처리</button>` : ''}
+       <button class="btn bd2 bsm" style="font-size:.68rem" onclick="cancelDistribution(${g.studentId}, ${g.bookId}, '${(g.cohort||'').replace(/'/g,"\\'")}')">↩ 배부 취소</button>`
     : `<span class="ai-retired-badge">교재완료</span>`;
   // ★ "전체 삭제"는 배부 취소가 같은 역할을 대신하므로, 진행 중인 항목에는 숨기고
   //   이미 종료된(완료 처리된) 학생의 남은 기록을 정리할 때만 사용
   const delBtn = (g.count && !isActive)
-    ? `<button class="btn bd2 bsm" style="font-size:.68rem" onclick="deleteGroupAssigns(${g.studentId}, ${g.bookId})">🗑 전체 삭제</button>`
+    ? `<button class="btn bd2 bsm" style="font-size:.68rem" onclick="deleteGroupAssigns(${g.studentId}, ${g.bookId}, '${(g.cohort||'').replace(/'/g,"\\'")}')">🗑 전체 삭제</button>`
     : '';
   return `<div class="ai-sub-row" id="aig-${g.studentId}-${g.bookId}">
     <span class="badge ${badgeCls}">${badgeTxt}</span>
-    <span class="ai-book" title="${escHtml(g.bookName)}">${escHtml(g.bookName)}</span>
+    <span class="ai-book" title="${escHtml(g.bookName)}${g.cohort?' ('+escHtml(g.cohort)+')':''}">${escHtml(g.bookName)}${g.cohort?` <span style="font-weight:400;color:var(--mu);font-size:.8em">(${escHtml(g.cohort)})</span>`:''}</span>
     <span class="ai-group-count">${countTxt}</span>${deadlineBadge}
     <div class="ai-actions" style="display:flex;gap:.35rem">
       ${completeBtn}
@@ -2674,50 +2684,74 @@ function jumpToHistoryFromList(bookId, group, studentName) {
 }
 
 /* ★ 학생 1명 × 교재 1개 완료 처리 — 배부 목록에서 제거, 배정 기록은 보존, 완료 이력 기록 */
-function completeGroupAssign(studentId, bookId) {
+function completeGroupAssign(studentId, bookId, cohort) {
+  cohort = cohort || '';
   const st = S.students.find(s => s.id === studentId);
   const book = getBook(bookId);
   if (!st || !book) return;
   if (!(st.books||[]).includes(book.name)) { toast('이미 교재완료 처리된 교재입니다'); return; }
-  if (!confirm(`${st.name} · ${book.name}을(를) 교재완료 처리하시겠습니까?\n배정 기록은 그대로 남고, 배부 목록에서만 제거됩니다.`)) return;
 
-  st.books = (st.books||[]).filter(n => n !== book.name);
+  // ★ 다른 차수(예: 6차) 기록이 아직 남아있으면, 배부 목록에서 완전히 빼면 안 됨 — 그 차수는 계속 진행 중이므로
+  const otherCohortRemains = book.mode === 'voca' && S.assigns.some(a =>
+    a.studentId === studentId && a.bookId === bookId && a.type === 'voca' && (a.cohort||'') !== cohort
+  );
+
+  const cohortTxt = cohort ? ` (${cohort})` : '';
+  if (!confirm(`${st.name} · ${book.name}${cohortTxt}을(를) 교재완료 처리하시겠습니까?\n배정 기록은 그대로 남고${otherCohortRemains ? '' : ', 배부 목록에서만 제거됩니다'}.${otherCohortRemains ? '\n(다른 차수 기록이 남아있어 배부 목록은 그대로 유지돼요)' : ''}`)) return;
+
+  // ★ 이 차수에 속한 배정에는 완료 표시를 위해 cohort 값을 남겨서 completedBooks에 기록
   if (!Array.isArray(st.completedBooks)) st.completedBooks = [];
-  st.completedBooks.push({ bookId, bookName: book.name, date: getTodayStr() });
+  st.completedBooks.push({ bookId, bookName: book.name, cohort, date: getTodayStr() });
+
+  if (!otherCohortRemains) {
+    st.books = (st.books||[]).filter(n => n !== book.name);
+  }
 
   save();
   updateSidebar();
   renderList();
   if ($('p-history')?.classList.contains('active')) renderHistory();
-  toast(`✅ ${st.name} · ${book.name} 교재완료 처리`);
+  toast(`✅ ${st.name} · ${book.name}${cohortTxt} 교재완료 처리`);
 }
 
 /* ★ 배정 기록이 아직 0건인(배부만 되고 아무것도 안 한) 경우 전용 — "완료"가 아니라 "배부한 적 자체가 없던 것"으로
    되돌리는 거라, completedBooks에 기록을 남기지 않음 (종료 배지도 안 남고 목록에서 그냥 사라짐) */
 /* ★ "배부 취소" — 배정 기록이 있든 없든, 전부 삭제하고 배부한 적 자체가 없던 것으로 완전히 되돌림
    (완료 처리와 달리 completedBooks에 기록을 남기지 않음) */
-function cancelDistribution(studentId, bookId) {
+function cancelDistribution(studentId, bookId, cohort) {
+  cohort = cohort || '';
   const st = S.students.find(s => s.id === studentId);
   const book = getBook(bookId);
   if (!st || !book) return;
   if (!(st.books||[]).includes(book.name)) { toast('이미 배부 취소된 교재입니다'); return; }
 
-  const count = S.assigns.filter(a => a.studentId === studentId && a.bookId === bookId).length;
+  const isVoca = book.mode === 'voca';
+  const matchesCohort = a => !isVoca || (a.cohort||'') === cohort;
+  const count = S.assigns.filter(a => a.studentId === studentId && a.bookId === bookId && matchesCohort(a)).length;
+  const otherCohortRemains = isVoca && S.assigns.some(a => a.studentId===studentId && a.bookId===bookId && a.type==='voca' && (a.cohort||'')!==cohort);
+  const cohortTxt = cohort ? ` (${cohort})` : '';
+
   const msg = count
-    ? `${st.name} 학생의 '${book.name}' 배정 기록 ${count}건을 전부 삭제하고, 배부한 적 자체가 없는 것으로 되돌리시겠습니까?\n\n⚠️ 배정 기록(날짜·점수)이 모두 함께 삭제됩니다. 이 작업은 되돌릴 수 없습니다.`
-    : `${st.name} 학생에게 '${book.name}'을(를) 배부한 적 자체가 없는 것으로 되돌리시겠습니까?`;
+    ? `${st.name} 학생의 '${book.name}${cohortTxt}' 배정 기록 ${count}건을 전부 삭제하고, 배부한 적 자체가 없는 것으로 되돌리시겠습니까?\n\n⚠️ 배정 기록(날짜·점수)이 모두 함께 삭제됩니다. 이 작업은 되돌릴 수 없습니다.${otherCohortRemains ? '\n(다른 차수 기록은 남아있어 배부 목록은 유지돼요)' : ''}`
+    : `${st.name} 학생에게 '${book.name}${cohortTxt}'을(를) 배부한 적 자체가 없는 것으로 되돌리시겠습니까?`;
   if (!confirm(msg)) return;
 
-  S.assigns = S.assigns.filter(a => !(a.studentId === studentId && a.bookId === bookId));
-  st.books = (st.books||[]).filter(n => n !== book.name);
-  if (Array.isArray(st.completedBooks)) st.completedBooks = st.completedBooks.filter(c => c.bookName !== book.name);
+  S.assigns = S.assigns.filter(a => !(a.studentId === studentId && a.bookId === bookId && matchesCohort(a)));
+  if (!otherCohortRemains) {
+    st.books = (st.books||[]).filter(n => n !== book.name);
+    if (Array.isArray(st.completedBooks)) st.completedBooks = st.completedBooks.filter(c => c.bookName !== book.name);
+    if (st.bookDates) delete st.bookDates[bookId];
+  } else if (Array.isArray(st.completedBooks)) {
+    // 이 차수만의 완료 기록이 있었다면 제거 (다른 차수 완료 기록은 유지)
+    st.completedBooks = st.completedBooks.filter(c => !(c.bookName === book.name && (c.cohort||'') === cohort));
+  }
   // ★ completedBooks에는 새로 남기지 않음 — "완료"가 아니라 "배부한 적 없음"이므로
 
   save();
   renderCal(); renderTodayPreview(); updateSidebar();
   renderList();
   if ($('p-history')?.classList.contains('active')) renderHistory();
-  toast(count ? `✅ ${st.name} · ${book.name} 배부 취소 완료 (기록 ${count}건 함께 삭제)` : `✅ ${st.name} · ${book.name} 배부 취소 완료`);
+  toast(count ? `✅ ${st.name} · ${book.name}${cohortTxt} 배부 취소 완료 (기록 ${count}건 함께 삭제)` : `✅ ${st.name} · ${book.name}${cohortTxt} 배부 취소 완료`);
 }
 
 /* ★ 반 전체 일괄 완료 처리 — 배정 이력 탭의 "전원 완료" 안내에서 호출 */
@@ -2875,27 +2909,61 @@ function _applyVocaReschedule() {
   toast(`✅ ${applied}건의 날짜를 방학 반영해서 재조정했습니다`);
 }
 
+/* ★ 숙제 배정 내역 화면에서 "이름" 검색창으로 학생 한 명을 좁힌 뒤, 그 학생만 배정 기록 삭제
+   (반 전체 대신 개별 학생만 — deleteGroupAssigns를 그대로 재사용해서 차수까지 동일하게 처리) */
+function deleteHistStudentAssigns() {
+  const bid = Number($('hist-book')?.value || 0);
+  const group = $('hist-group')?.value || '';
+  const book = getBook(bid);
+  if (!bid || !group || !book) { toast('반과 교재를 먼저 선택하세요'); return; }
+
+  const nameQ = ($('hist-name-search')?.value || '').trim();
+  if (!nameQ) { toast('삭제할 학생 이름을 위 "이름" 검색창에 입력해서 한 명으로 좁혀주세요'); return; }
+
+  const matched = S.students.filter(s => s.group === group && s.name.toLowerCase().includes(nameQ.toLowerCase()));
+  if (!matched.length) { toast('일치하는 학생이 없습니다'); return; }
+  if (matched.length > 1) { toast(`이름이 ${matched.length}명과 일치해요. 더 정확히 입력해서 한 명으로 좁혀주세요: ${matched.map(s=>s.name).join(', ')}`); return; }
+
+  const cohortSel = $('hist-cohort');
+  const cohort = (cohortSel && cohortSel.offsetParent !== null) ? (cohortSel.value || '') : '';
+  deleteGroupAssigns(matched[0].id, bid, cohort);
+}
+
 function deleteHistClassAll() {
   const bid   = Number($('hist-book')?.value || 0);
   const group = $('hist-group')?.value || '';
   const book  = getBook(bid);
   if (!bid || !group || !book) { toast('반과 교재를 먼저 선택하세요'); return; }
 
+  // ★ "차수" 드롭다운이 보이고(같은 교재를 여러 차수가 쓰는 중) 특정 차수가 선택돼 있으면,
+  //   그 차수만 지움 — 다른 차수(예: 6차)까지 같이 지워지지 않게
+  const cohortSel = $('hist-cohort');
+  const cohort = (cohortSel && cohortSel.offsetParent !== null) ? (cohortSel.value || '') : '';
+  const matchesCohort = a => !cohort || (a.cohort||'') === cohort;
+
   const targetIds = new Set(S.students.filter(s => s.group === group).map(s => s.id));
-  const count = S.assigns.filter(a => a.bookId === bid && targetIds.has(a.studentId)).length;
+  const count = S.assigns.filter(a => a.bookId === bid && targetIds.has(a.studentId) && matchesCohort(a)).length;
   if (!count) { toast('이 반에 삭제할 배정 기록이 없습니다'); return; }
 
-  if (!confirm(`⚠️ '${group}' 반의 '${book.name}' 관련 배정 ${count}건을 전부 삭제하시겠습니까?\n\n이 반 학생들이 이 교재를 받은 적 자체가 없던 것처럼, 배정 기록·배부 상태·완료 이력이 모두 완전히 사라집니다.\n다른 반 학생들의 기록은 영향받지 않습니다.\n\n이 작업은 되돌릴 수 없습니다.`)) return;
+  const cohortTxt = cohort ? ` (${cohort})` : '';
+  if (!confirm(`⚠️ '${group}' 반의 '${book.name}${cohortTxt}' 관련 배정 ${count}건을 전부 삭제하시겠습니까?\n\n이 반 학생들이 이 교재${cohortTxt}를 받은 적 자체가 없던 것처럼, 배정 기록이 완전히 사라집니다.\n${cohort ? '다른 차수(예: 다른 회차 구간)의 기록은 영향받지 않습니다.\n' : ''}다른 반 학생들의 기록은 영향받지 않습니다.\n\n이 작업은 되돌릴 수 없습니다.`)) return;
 
-  S.assigns = S.assigns.filter(a => !(a.bookId === bid && targetIds.has(a.studentId)));
+  S.assigns = S.assigns.filter(a => !(a.bookId === bid && targetIds.has(a.studentId) && matchesCohort(a)));
+
   S.students.forEach(s => {
     if (!targetIds.has(s.id)) return;
+    // ★ 다른 차수(예: 6차) 기록이 아직 남아있으면, 배부 목록·시작일은 그대로 둠 (그 교재 자체는 여전히 진행 중이므로)
+    const stillHasOther = S.assigns.some(a => a.studentId === s.id && a.bookId === bid);
+    if (stillHasOther) return;
     if (Array.isArray(s.books)) s.books = s.books.filter(n => n !== book.name);
     if (Array.isArray(s.completedBooks)) s.completedBooks = s.completedBooks.filter(c => c.bookName !== book.name);
     if (s.bookDates) delete s.bookDates[bid]; // ★ 시작일 기록도 함께 제거 — 받은 적 없던 것처럼
   });
-  // ★ 이 반+교재로 설정해둔 일시정지 기간도 함께 제거 (안 그러면 다음에 다시 배부할 때 예전 일시정지가 되살아남)
-  S.classPauses = (S.classPauses || []).filter(p => !(p.group === group && p.bookId === bid));
+  // ★ 이 반+교재로 설정해둔 일시정지 기간도, 다른 차수 기록이 하나도 안 남았을 때만 함께 제거
+  const anyRemaining = S.assigns.some(a => a.bookId === bid && targetIds.has(a.studentId));
+  if (!anyRemaining) {
+    S.classPauses = (S.classPauses || []).filter(p => !(p.group === group && p.bookId === bid));
+  }
 
   save();
   updateSidebar();
@@ -2905,19 +2973,27 @@ function deleteHistClassAll() {
 }
 
 /* 묶음 전체 삭제 (해당 학생×교재의 모든 배정 삭제) */
-function deleteGroupAssigns(studentId, bookId) {
+function deleteGroupAssigns(studentId, bookId, cohort) {
+  cohort = cohort || '';
   const st = S.students.find(s => s.id === studentId);
   const book = getBook(bookId);
-  const count = S.assigns.filter(a => a.studentId === studentId && a.bookId === bookId).length;
+  const isVoca = book?.mode === 'voca';
+  const matchesCohort = a => !isVoca || (a.cohort||'') === cohort;
+  const count = S.assigns.filter(a => a.studentId === studentId && a.bookId === bookId && matchesCohort(a)).length;
   if (!count) return;
-  if (!confirm(`${st?.name || ''} · ${book?.name || ''}의 배정 ${count}건을 모두 삭제하시겠습니까?\n배부받았던 기록 자체가 없던 것처럼 완전히 사라집니다.\n이 작업은 되돌릴 수 없습니다.`)) return;
+  const cohortTxt = cohort ? ` (${cohort})` : '';
+  if (!confirm(`${st?.name || ''} · ${book?.name || ''}${cohortTxt}의 배정 ${count}건을 모두 삭제하시겠습니까?\n배부받았던 기록 자체가 없던 것처럼 완전히 사라집니다.\n이 작업은 되돌릴 수 없습니다.`)) return;
 
-  S.assigns = S.assigns.filter(a => !(a.studentId === studentId && a.bookId === bookId));
+  S.assigns = S.assigns.filter(a => !(a.studentId === studentId && a.bookId === bookId && matchesCohort(a)));
+  const otherCohortRemains = isVoca && S.assigns.some(a => a.studentId===studentId && a.bookId===bookId && a.type==='voca' && (a.cohort||'')!==cohort);
   // ★ 배정 기록뿐 아니라 "배부받은 상태"·완료 이력·시작일 기록도 함께 제거 — 아예 받은 적 없던 것처럼
-  if (st) {
-    if (Array.isArray(st.books) && book) st.books = st.books.filter(n => n !== book.name);
-    if (Array.isArray(st.completedBooks) && book) st.completedBooks = st.completedBooks.filter(c => c.bookName !== book.name);
-    if (st.bookDates && book) delete st.bookDates[book.id];
+  //   (단, 다른 차수 기록이 남아있으면 그대로 둠)
+  if (st && book && !otherCohortRemains) {
+    if (Array.isArray(st.books)) st.books = st.books.filter(n => n !== book.name);
+    if (Array.isArray(st.completedBooks)) st.completedBooks = st.completedBooks.filter(c => c.bookName !== book.name);
+    if (st.bookDates) delete st.bookDates[book.id];
+  } else if (st && book && Array.isArray(st.completedBooks)) {
+    st.completedBooks = st.completedBooks.filter(c => !(c.bookName === book.name && (c.cohort||'') === cohort));
   }
   save();
   renderCal(); renderTodayPreview(); updateSidebar();
