@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v144</title>
+<title>숙제 관리 v145</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v144</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v145</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -2786,6 +2786,8 @@ function deleteHistClassAll() {
     if (Array.isArray(s.completedBooks)) s.completedBooks = s.completedBooks.filter(c => c.bookName !== book.name);
     if (s.bookDates) delete s.bookDates[bid]; // ★ 시작일 기록도 함께 제거 — 받은 적 없던 것처럼
   });
+  // ★ 이 반+교재로 설정해둔 일시정지 기간도 함께 제거 (안 그러면 다음에 다시 배부할 때 예전 일시정지가 되살아남)
+  S.classPauses = (S.classPauses || []).filter(p => !(p.group === group && p.bookId === bid));
 
   save();
   updateSidebar();
