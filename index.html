@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v147</title>
+<title>숙제 관리 v148</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v147</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v148</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -540,6 +540,11 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         <div class="g2" style="margin-bottom:.55rem">
           <div><label>시작 날짜</label><input type="date" id="v-start-date" oninput="onVocaStartDateChange()"></div>
           <div><label>끝 회차</label><input type="text" id="v-to" placeholder="05" oninput="onVocaFormChange()"></div>
+        </div>
+
+        <div style="margin-bottom:.55rem">
+          <label>차수 <span style="font-weight:400;color:var(--mu);font-size:.68rem">(같은 교재를 여러 번 반복 수강할 때만 입력 — 예: 5차. 비워두면 지금처럼 차수 구분 없이 배정)</span></label>
+          <input type="text" id="v-cohort" placeholder="예: 5차 (선택)">
         </div>
 
         <div style="margin-bottom:.45rem">
@@ -2164,6 +2169,8 @@ function addVoca() {
   const dows = getClassDOWsFromUI();
   if (!dows.size) { toast('수업 요일을 1개 이상 선택하세요'); return; }
 
+  const cohort = ($('v-cohort')?.value || '').trim(); // ★ 차수 (비워두면 '' — 예전과 동일하게 동작)
+
   const count = to.num; // 1회차부터 to.num회차까지
   const dates = generateClassDates(startDate, count, dows, $('v-group')?.value || '', Number($('v-book')?.value || 0));
   if (!dates.length) { toast('배정 가능한 수업일이 없습니다'); return; }
@@ -2189,12 +2196,14 @@ function addVoca() {
       const unit = fmtUnit(i);
       // ★ 중복 체크: 예전엔 "날짜+표기까지 정확히 같을 때만" 중복으로 봐서,
       //   같은 회차인데 표기(01 vs 1)나 날짜가 다르면 중복으로 못 걸러 회차가 두 벌 생기는 문제가 있었음.
-      //   → "같은 학생·같은 교재·같은 회차 번호"면 날짜/표기와 무관하게 무조건 중복으로 처리
+      //   → "같은 학생·같은 교재·같은 회차 번호·같은 차수"면 날짜/표기와 무관하게 무조건 중복으로 처리
+      //   (차수가 다르면 같은 회차 번호라도 서로 다른 진도이므로 중복 아님)
       const normUnit = v => String(Number(v));
       const isDup = S.assigns.some(a =>
         a.studentId === sid && a.bookId === bid && a.type === 'voca' &&
         a.unitFrom !== undefined && a.unitFrom !== null &&
-        normUnit(a.unitFrom) === normUnit(unit)
+        normUnit(a.unitFrom) === normUnit(unit) &&
+        (a.cohort||'') === cohort
       );
       if (isDup) { dupCount++; return; }
       planned.push({ sid, stName: st.name, d, unit });
@@ -2215,6 +2224,7 @@ function addVoca() {
       studentId:p.sid, studentName:p.stName,
       bookId:book.id, bookName:book.name,
       unitFrom:p.unit, unitTo:p.unit,
+      cohort,
       problems:[], probLabels:[], result:''
     });
   });
@@ -6225,6 +6235,17 @@ function _computeBulkPreview() {
         out.skippedNoDistribution.set(rawName, (out.skippedNoDistribution.get(rawName)||0) + 1);
         return;
       }
+      // ★ 차수(예: "5차")가 있는 클래스는, 책 이름만으로는 부족함 —
+      //   "이 학생이 정확히 이 차수로 정식 배정받은 적 있는지"까지 확인해야
+      //   (안 그러면 6차만 정식 배정받은 학생인데도 5차 리포트 데이터가 그냥 들어와버림)
+      const cohort = _extractCohort(c.name);
+      if (book.mode === 'voca' && cohort) {
+        const hasCohortAssign = S.assigns.some(a => a.studentId===student.id && a.bookId===book.id && a.type==='voca' && (a.cohort||'')===cohort);
+        if (!hasCohortAssign) {
+          out.skippedNoDistribution.set(`${rawName} (${cohort} 정식 배정 없음)`, (out.skippedNoDistribution.get(`${rawName} (${cohort} 정식 배정 없음)`)||0) + 1);
+          return;
+        }
+      }
 
       // ★ 채점방식에 따라 결과값을 다르게 계산
       //   - "점수" 방식: 테스트 최고점을 숫자로 사용
@@ -6250,9 +6271,7 @@ function _computeBulkPreview() {
           out.skippedNoLabel.set(key, (out.skippedNoLabel.get(key)||0) + 1);
           return;
         }
-        // ★ 클래스명 끝의 "N차"를 차수로 추출 — 같은 교재를 여러 번 반복하는 반이
-        //   회차 번호를 공유해도 서로 다른 차수 기록으로 분리되게 함
-        const cohort = _extractCohort(c.name);
+        // ★ 클래스명 끝의 "N차"는 위에서 이미 cohort로 뽑아둠 — 재사용
         const existing = S.assigns.find(a => a.bookId===book.id && a.studentId===student.id && a.type==='voca' && String(Number(a.unitFrom))===String(Number(round)) && (a.cohort||'')===cohort);
         if (existing) {
           const hasResult = existing.result !== '' && existing.result != null;
