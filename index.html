@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v143</title>
+<title>숙제 관리 v144</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v143</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v144</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -2933,7 +2933,9 @@ function renderAllGroupUIs() {
       return `<div style="display:inline-flex;align-items:center;gap:.3rem;background:var(--s2);border:1px solid var(--bd);border-radius:7px;padding:.3rem .55rem .3rem .7rem;font-size:.8rem;">
         <span style="font-weight:700">${escHtml(g)}</span>
         <span style="font-size:.7rem;color:var(--mu)">(${cnt}명)</span>
-        <button class="btn bd2 bsm" style="padding:.18rem .45rem;font-size:.7rem;margin-left:.1rem"
+        <button class="btn bg bsm" style="padding:.18rem .45rem;font-size:.7rem"
+          onclick="renameGroup('${escHtml(g)}')">이름변경</button>
+        <button class="btn bd2 bsm" style="padding:.18rem .45rem;font-size:.7rem"
           onclick="delGroup('${escHtml(g)}')"
           ${canDel ? '' : 'title="소속 학생을 먼저 삭제 또는 이동하세요"'}
         >✕</button>
@@ -2993,6 +2995,68 @@ function addGroup() {
   renderAllGroupUIs();
   renderStudents();
   toast(`'${name}' 반이 추가됐습니다`);
+}
+
+/* ★ 간단한 텍스트 입력 모달 (반이름/학생이름 변경 등에 재사용) */
+function _showRenameModal(title, currentValue, onConfirmFnName) {
+  const old = document.getElementById('rename-modal');
+  if (old) old.remove();
+  const modal = document.createElement('div');
+  modal.id = 'rename-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem';
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:12px;max-width:360px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.2)" onclick="event.stopPropagation()">
+      <div style="padding:.9rem 1.1rem;border-bottom:1px solid var(--bd);font-weight:700;font-size:.95rem">${escHtml(title)}</div>
+      <div style="padding:1rem 1.1rem">
+        <input id="rename-modal-input" type="text" value="${escHtml(currentValue)}" style="width:100%" />
+      </div>
+      <div style="padding:.7rem 1.1rem;border-top:1px solid var(--bd);display:flex;gap:.5rem;justify-content:flex-end">
+        <button class="btn bg bsm" onclick="document.getElementById('rename-modal').remove()">취소</button>
+        <button class="btn bs bsm" onclick="${onConfirmFnName}()">변경</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  const inp = document.getElementById('rename-modal-input');
+  inp.focus(); inp.select();
+  inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') document.querySelector('#rename-modal .bs').click(); });
+}
+
+let _renameGroupOldName = '';
+function renameGroup(oldName) {
+  _renameGroupOldName = oldName;
+  _showRenameModal(`'${oldName}' 반 이름 변경`, oldName, '_confirmRenameGroup');
+}
+function _confirmRenameGroup() {
+  const oldName = _renameGroupOldName;
+  const newName = document.getElementById('rename-modal-input')?.value.trim();
+  if (!newName) { toast('반 이름을 입력하세요'); return; }
+  if (newName === oldName) { document.getElementById('rename-modal')?.remove(); return; }
+  if (S.groups.includes(newName)) { toast(`'${newName}' 반이 이미 있습니다`); return; }
+
+  // 반 이름 목록
+  S.groups = S.groups.map(g => g === oldName ? newName : g);
+  // 학생 소속 반
+  S.students.forEach(s => { if (s.group === oldName) s.group = newName; });
+  // 반별 기준점수 설정 (교재마다 반 이름을 키로 저장돼 있음)
+  S.books.forEach(b => {
+    if (b.classThresholds && b.classThresholds[oldName]) {
+      b.classThresholds[newName] = b.classThresholds[oldName];
+      delete b.classThresholds[oldName];
+    }
+  });
+  // 반별 일시정지 기록
+  (S.classPauses || []).forEach(p => { if (p.group === oldName) p.group = newName; });
+  // 지금 화면에 적용된 필터가 옛 이름을 가리키고 있으면 갱신
+  if (S.stFilter === oldName) S.stFilter = newName;
+  if (S.chipFilter === oldName) S.chipFilter = newName;
+
+  document.getElementById('rename-modal')?.remove();
+  save();
+  renderAllGroupUIs();
+  renderStudents();
+  toast(`✅ '${oldName}' → '${newName}'(으)로 이름이 바뀌었습니다`);
 }
 
 /* ── 반 삭제 ── */
@@ -3058,6 +3122,7 @@ function renderStudents() {
       <td style="text-align:right">
         <div class="td-actions">
           <button class="btn bs bsm" onclick="openStudentUrlPanel(${s.id})" title="학생용 숙제 조회 URL">🔗 URL</button>
+          <button class="btn bg bsm" onclick="renameStudent(${s.id})">이름변경</button>
           ${moveBtn}
           <button class="btn bd2 bsm" onclick="delStudent(${s.id})">삭제</button>
         </div>
@@ -3228,6 +3293,33 @@ function doMoveStudent(id, newGroup) {
   renderStudentChips();  // 배정 화면 학생 칩도 동기화
 
   toast(`'${st.name}' → '${newGroup}'으로 이동했습니다`);
+}
+
+let _renameStudentId = null;
+function renameStudent(id) {
+  const st = S.students.find(s => s.id === id);
+  if (!st) return;
+  _renameStudentId = id;
+  _showRenameModal(`'${st.name}' 학생 이름 변경`, st.name, '_confirmRenameStudent');
+}
+function _confirmRenameStudent() {
+  const id = _renameStudentId;
+  const st = S.students.find(s => s.id === id);
+  const newName = document.getElementById('rename-modal-input')?.value.trim();
+  if (!st) { document.getElementById('rename-modal')?.remove(); return; }
+  if (!newName) { toast('이름을 입력하세요'); return; }
+  if (newName === st.name) { document.getElementById('rename-modal')?.remove(); return; }
+
+  const oldName = st.name;
+  st.name = newName;
+  // ★ 배정 기록에 저장된 이름 스냅샷(a.studentName)도 함께 갱신
+  //   (교재 이름 수정 때 a.bookName을 같이 바꾸는 것과 동일한 원칙)
+  S.assigns.forEach(a => { if (a.studentId === id) a.studentName = newName; });
+
+  document.getElementById('rename-modal')?.remove();
+  save();
+  renderStudents();
+  toast(`✅ '${oldName}' → '${newName}'(으)로 이름이 바뀌었습니다`);
 }
 
 function delStudent(id) {
