@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v157</title>
+<title>숙제 관리 v158</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v157</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v158</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4520,6 +4520,16 @@ let _histMappingBadgeInfo = null; // 맵핑 배지 클릭 시 보여줄 정보 {
 
 /* ★ "🔗 맵핑됨/⚠ 맵핑 안 됨" 배지 클릭 시 — 연결된 클래스명을 팝업으로 보여줌
    (모바일은 마우스 오버 툴팁이 안 먹히니, 클릭해서 확인 가능하게) */
+/* ★ 맵핑 현황 팝업에서 특정 클래스명의 매핑만 바로 삭제 */
+function removeMappingByClassName(className) {
+  if (!confirm(`'${className}' 클래스의 매핑을 삭제하시겠습니까?\n(엑셀 파일이나 이미 반영된 배정 기록에는 영향 없어요 — 이 클래스명↔교재 연결 정보만 지워져요)`)) return;
+  S.classcardMappings = (S.classcardMappings || []).filter(m => m.className !== className);
+  save();
+  toast(`✅ '${className}' 매핑을 삭제했습니다`);
+  document.getElementById('mapping-info-modal')?.remove();
+  if (typeof renderHistory === 'function') renderHistory(); // 배지 다시 계산
+}
+
 function showMappingBadgeInfo() {
   const info = _histMappingBadgeInfo;
   if (!info) return;
@@ -4532,7 +4542,11 @@ function showMappingBadgeInfo() {
   modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 
   const bodyHtml = info.linked.length
-    ? `<div style="font-size:.82rem;line-height:1.8">${info.linked.map(n => `<div style="padding:.4rem .6rem;background:var(--s2);border-radius:6px;margin-bottom:.4rem">${escHtml(n)}</div>`).join('')}</div>`
+    ? `<div style="font-size:.82rem;line-height:1.8">${info.linked.map(n => `
+        <div style="display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;background:var(--s2);border-radius:6px;margin-bottom:.4rem">
+          <span style="flex:1">${escHtml(n)}</span>
+          <button class="btn bd2 bsm" style="font-size:.68rem;padding:.2rem .5rem;flex-shrink:0" onclick="removeMappingByClassName('${n.replace(/'/g,"\\'")}')">🗑 삭제</button>
+        </div>`).join('')}</div>`
     : `<div style="font-size:.82rem;color:var(--mu)">연결된 클래스가 없어요. 📁 전체 리포트 업로드 창을 열어서, 이 교재("${escHtml(info.bookName)}")를 원하는 클래스에 연결해두면 다음부터 자동으로 인식돼요.</div>`;
 
   modal.innerHTML = `
