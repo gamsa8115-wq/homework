@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v156</title>
+<title>숙제 관리 v157</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v156</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v157</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -2176,15 +2176,16 @@ function addVoca() {
 
   // ★ 같은 반의 이 교재(+같은 차수)로 이미 배정된 기록이 있으면, 진행 전에 미리 경고
   //   ("깜빡하고 또 눌렀나?" 방지 — 실제 중복 회차는 아래에서 어차피 자동으로 걸러지지만, 그 전에 한 번 확인시킴)
+  //   ★ 반드시 "지금 체크해서 배정하려는 학생들"만 기준으로 확인 — 반 전체 기준으로 하면
+  //     새 학생 한 명만 추가할 때도 "이미 90건 있어요"처럼 관계없는 경고가 떠서 오해를 줌
   {
-    const groupNameNow = $('v-group')?.value || '';
-    const groupStudentIds = new Set(S.students.filter(s => s.group === groupNameNow).map(s => s.id));
+    const selStudentIds = new Set(S.selStudents);
     const existingCount = S.assigns.filter(a =>
-      a.bookId === bid && a.type === 'voca' && groupStudentIds.has(a.studentId) && (a.cohort||'') === cohort
+      a.bookId === bid && a.type === 'voca' && selStudentIds.has(a.studentId) && (a.cohort||'') === cohort
     ).length;
     if (existingCount > 0) {
       const cohortTxt = cohort ? `'${cohort}'` : '차수 구분 없이';
-      if (!confirm(`⚠️ '${groupNameNow}' 반의 '${book.name}'(${cohortTxt})로 이미 배정된 기록이 ${existingCount}건 있어요.\n\n그래도 계속 진행하시겠습니까? (겹치는 회차는 자동으로 건너뛰고, 없는 회차만 새로 추가됩니다)`)) return;
+      if (!confirm(`⚠️ 지금 선택한 학생 중, '${book.name}'(${cohortTxt})로 이미 배정된 기록이 ${existingCount}건 있어요.\n\n그래도 계속 진행하시겠습니까? (겹치는 회차는 자동으로 건너뛰고, 없는 회차만 새로 추가됩니다)`)) return;
     }
   }
 
