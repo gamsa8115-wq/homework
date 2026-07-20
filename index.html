@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v159</title>
+<title>숙제 관리 v160</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v159</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v160</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -542,8 +542,8 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         </div>
 
         <div style="margin-bottom:.55rem">
-          <label>차수 <span style="font-weight:400;color:var(--mu);font-size:.68rem">(같은 교재를 여러 번 반복 수강할 때만 입력 — 예: 5차. 비워두면 지금처럼 차수 구분 없이 배정)</span></label>
-          <input type="text" id="v-cohort" placeholder="예: 5차 (선택)">
+          <label>태그 <span style="font-weight:400;color:var(--mu);font-size:.68rem">(같은 교재를 여러 번 반복 수강하거나, 보충·재수강 등으로 구분하고 싶을 때만 입력 — 예: 5차, 보충. 비워두면 지금처럼 구분 없이 배정)</span></label>
+          <input type="text" id="v-cohort" placeholder="예: 5차, 보충 (선택)">
         </div>
 
         <div style="margin-bottom:.45rem">
@@ -825,7 +825,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
     </div>
     <!-- ★ 같은 교재를 여러 차수(반복 수강)로 쓰는 경우에만 표시 — 차수별로 회차가 안 섞이게 필터링 -->
     <div id="hist-cohort-wrap" style="display:none;align-items:center;gap:.4rem">
-      <label style="margin:0;white-space:nowrap">차수</label>
+      <label style="margin:0;white-space:nowrap">태그</label>
       <select id="hist-cohort" onchange="renderHistory()" style="min-width:110px">
         <option value="">전체</option>
       </select>
@@ -2184,7 +2184,7 @@ function addVoca() {
       a.bookId === bid && a.type === 'voca' && selStudentIds.has(a.studentId) && (a.cohort||'') === cohort
     ).length;
     if (existingCount > 0) {
-      const cohortTxt = cohort ? `'${cohort}'` : '차수 구분 없이';
+      const cohortTxt = cohort ? `'${cohort}'` : '태그 구분 없이';
       if (!confirm(`⚠️ 지금 선택한 학생 중, '${book.name}'(${cohortTxt})로 이미 배정된 기록이 ${existingCount}건 있어요.\n\n그래도 계속 진행하시겠습니까? (겹치는 회차는 자동으로 건너뛰고, 없는 회차만 새로 추가됩니다)`)) return;
     }
   }
@@ -2718,7 +2718,7 @@ function completeGroupAssign(studentId, bookId, cohort) {
   );
 
   const cohortTxt = cohort ? ` (${cohort})` : '';
-  if (!confirm(`${st.name} · ${book.name}${cohortTxt}을(를) 교재완료 처리하시겠습니까?\n배정 기록은 그대로 남고${otherCohortRemains ? '' : ', 배부 목록에서만 제거됩니다'}.${otherCohortRemains ? '\n(다른 차수 기록이 남아있어 배부 목록은 그대로 유지돼요)' : ''}`)) return;
+  if (!confirm(`${st.name} · ${book.name}${cohortTxt}을(를) 교재완료 처리하시겠습니까?\n배정 기록은 그대로 남고${otherCohortRemains ? '' : ', 배부 목록에서만 제거됩니다'}.${otherCohortRemains ? '\n(다른 태그 기록이 남아있어 배부 목록은 그대로 유지돼요)' : ''}`)) return;
 
   // ★ 이 차수에 속한 배정에는 완료 표시를 위해 cohort 값을 남겨서 completedBooks에 기록
   if (!Array.isArray(st.completedBooks)) st.completedBooks = [];
@@ -2753,7 +2753,7 @@ function cancelDistribution(studentId, bookId, cohort) {
   const cohortTxt = cohort ? ` (${cohort})` : '';
 
   const msg = count
-    ? `${st.name} 학생의 '${book.name}${cohortTxt}' 배정 기록 ${count}건을 전부 삭제하고, 배부한 적 자체가 없는 것으로 되돌리시겠습니까?\n\n⚠️ 배정 기록(날짜·점수)이 모두 함께 삭제됩니다. 이 작업은 되돌릴 수 없습니다.${otherCohortRemains ? '\n(다른 차수 기록은 남아있어 배부 목록은 유지돼요)' : ''}`
+    ? `${st.name} 학생의 '${book.name}${cohortTxt}' 배정 기록 ${count}건을 전부 삭제하고, 배부한 적 자체가 없는 것으로 되돌리시겠습니까?\n\n⚠️ 배정 기록(날짜·점수)이 모두 함께 삭제됩니다. 이 작업은 되돌릴 수 없습니다.${otherCohortRemains ? '\n(다른 태그 기록은 남아있어 배부 목록은 유지돼요)' : ''}`
     : `${st.name} 학생에게 '${book.name}${cohortTxt}'을(를) 배부한 적 자체가 없는 것으로 되돌리시겠습니까?`;
   if (!confirm(msg)) return;
 
@@ -2967,7 +2967,7 @@ function deleteHistClassAll() {
   if (!count) { toast('이 반에 삭제할 배정 기록이 없습니다'); return; }
 
   const cohortTxt = cohort ? ` (${cohort})` : '';
-  if (!confirm(`⚠️ '${group}' 반의 '${book.name}${cohortTxt}' 관련 배정 ${count}건을 전부 삭제하시겠습니까?\n\n이 반 학생들이 이 교재${cohortTxt}를 받은 적 자체가 없던 것처럼, 배정 기록이 완전히 사라집니다.\n${cohort ? '다른 차수(예: 다른 회차 구간)의 기록은 영향받지 않습니다.\n' : ''}다른 반 학생들의 기록은 영향받지 않습니다.\n\n이 작업은 되돌릴 수 없습니다.`)) return;
+  if (!confirm(`⚠️ '${group}' 반의 '${book.name}${cohortTxt}' 관련 배정 ${count}건을 전부 삭제하시겠습니까?\n\n이 반 학생들이 이 교재${cohortTxt}를 받은 적 자체가 없던 것처럼, 배정 기록이 완전히 사라집니다.\n${cohort ? '다른 태그(예: 다른 회차 구간)의 기록은 영향받지 않습니다.\n' : ''}다른 반 학생들의 기록은 영향받지 않습니다.\n\n이 작업은 되돌릴 수 없습니다.`)) return;
 
   S.assigns = S.assigns.filter(a => !(a.bookId === bid && targetIds.has(a.studentId) && matchesCohort(a)));
 
@@ -5112,9 +5112,9 @@ function openScoreImport() {
       </div>
       <div id="score-import-body" style="padding:1rem 1.1rem;overflow-y:auto;flex:1">
         <div style="background:var(--s2);border-radius:8px;padding:.6rem .8rem;margin-bottom:.9rem;font-size:.78rem;color:var(--mu)">
-          <b style="color:var(--tx)">현재 대상</b>: ${escHtml(group)} 반 · ${escHtml(book.name)} 교재 ${isVoca ? '<span style="color:var(--grn);font-weight:700">(보카형)</span>' : ''}${(isVoca && importCohortNow) ? ` · <span style="color:#991b1b;font-weight:700">차수: ${escHtml(importCohortNow)}</span>` : ''}<br>
+          <b style="color:var(--tx)">현재 대상</b>: ${escHtml(group)} 반 · ${escHtml(book.name)} 교재 ${isVoca ? '<span style="color:var(--grn);font-weight:700">(보카형)</span>' : ''}${(isVoca && importCohortNow) ? ` · <span style="color:#991b1b;font-weight:700">태그: ${escHtml(importCohortNow)}</span>` : ''}<br>
           <span style="color:var(--mu)">엑셀에 있는 ${escHtml(group)} 반 학생들의 점수만 가져옵니다 (다른 반 학생은 무시됨)</span>
-          ${(isVoca && importCohortNow) ? `<br><span style="color:#991b1b">이 파일은 <b>"${escHtml(importCohortNow)}"</b> 데이터로 처리돼요. 다른 차수라면 위 매트릭스에서 "차수"를 바꾼 뒤 다시 눌러주세요.</span>` : ''}
+          ${(isVoca && importCohortNow) ? `<br><span style="color:#991b1b">이 파일은 <b>"${escHtml(importCohortNow)}"</b> 데이터로 처리돼요. 다른 태그라면 위 매트릭스에서 "태그"를 바꾼 뒤 다시 눌러주세요.</span>` : ''}
         </div>
 
         <div style="margin-bottom:.9rem">
