@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v158</title>
+<title>숙제 관리 v159</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v158</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v159</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -2567,10 +2567,12 @@ function computeVocaDeadlineAlerts(daysThreshold) {
   const groups = {};
   S.assigns.forEach(r => {
     if (r.type !== 'voca') return;
-    const key = `${r.studentId}_${r.bookId}`;
+    // ★ 차수까지 포함해서 묶음 — 안 그러면 5차·6차 종료일이 하나로 섞여서 잘못 계산됨
+    const cohort = r.cohort || '';
+    const key = `${r.studentId}_${r.bookId}_${cohort}`;
     if (!groups[key]) {
       const st = S.students.find(s => s.id === r.studentId);
-      groups[key] = { studentId: r.studentId, studentName: r.studentName, group: st?.group || '', bookId: r.bookId, bookName: r.bookName, items: [] };
+      groups[key] = { studentId: r.studentId, studentName: r.studentName, group: st?.group || '', bookId: r.bookId, bookName: r.bookName, cohort, items: [] };
     }
     groups[key].items.push(r);
   });
@@ -2578,14 +2580,16 @@ function computeVocaDeadlineAlerts(daysThreshold) {
   const alerts = [];
   Object.values(groups).forEach(g => {
     const st = S.students.find(s => s.id === g.studentId);
-    const isActive = !!(st && (st.books||[]).includes(g.bookName));
+    const cohortCompleted = Array.isArray(st?.completedBooks) &&
+      st.completedBooks.some(c => c.bookName === g.bookName && (c.cohort||'') === (g.cohort||''));
+    const isActive = !!(st && (st.books||[]).includes(g.bookName)) && !cohortCompleted;
     if (!isActive) return; // 완료 처리됐거나 배부 취소된 건 대상 아님
     const items = _dedupeVocaAssigns(g.items);
     if (!items.length) return;
     const latestDate = items.reduce((m,a) => a.date > m ? a.date : m, items[0].date);
     const daysLeft = Math.round((new Date(latestDate) - new Date(today)) / 86400000);
     if (daysLeft >= 0 && daysLeft <= daysThreshold) {
-      alerts.push({ group: g.group, bookId: g.bookId, bookName: g.bookName, studentName: g.studentName, daysLeft });
+      alerts.push({ group: g.group, bookId: g.bookId, bookName: g.bookName, studentName: g.studentName, cohort: g.cohort, daysLeft });
     }
   });
   return alerts;
@@ -7587,13 +7591,15 @@ function _incompleteReason(book, result, group, assignDate) {
    회차별로 "가장 최신 날짜" 한 건만 대표로 남기고 나머지(주로 오래된 미배정 사본)는 제외 */
 function _dedupeVocaAssigns(assigns) {
   const normUnit = v => String(Number(v));
-  const latestByKey = new Map(); // `${bookId}:${normUnit}` -> assign
+  const latestByKey = new Map(); // `${bookId}:${normUnit}:${cohort}` -> assign
   const others = [];
   assigns.forEach(a => {
     const book = getBook(a.bookId);
     const isVoca = (book?.mode || a.type) === 'voca';
     if (!isVoca) { others.push(a); return; }
-    const key = `${a.bookId}:${normUnit(a.unitFrom)}`;
+    // ★ 차수(cohort)까지 키에 포함 — 안 그러면 5차·6차가 같은 회차 번호를 쓸 때
+    //   서로 다른 차수인데 "같은 회차"로 착각해서 한쪽 기록이 가려짐
+    const key = `${a.bookId}:${normUnit(a.unitFrom)}:${a.cohort||''}`;
     const ex = latestByKey.get(key);
     if (!ex || a.date > ex.date) latestByKey.set(key, a);
   });
