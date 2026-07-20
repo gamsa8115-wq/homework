@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v162</title>
+<title>숙제 관리 v163</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v162</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v163</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -983,6 +983,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
         </select>
       </div>
       <div style="display:flex;gap:.3rem;margin-left:auto;align-items:center">
+        <button class="btn bg bsm hist-mode-btn" id="ic-toggle-exactday" onclick="toggleIcExactDay()" style="font-size:.72rem" title="켜면 '기준 날짜까지 누적된 미완료'가 아니라, 그 날짜 하루에 배정됐던 것만(완료·미완료 다) 보여줘요">📅 이 날짜만 보기</button>
         <button class="btn bg bsm hist-mode-btn" id="ic-toggle-completed" onclick="toggleIcShowCompleted()" style="font-size:.72rem">✅ 최근 완료 숨김</button>
         <button class="btn bg bsm hist-mode-btn" id="ic-view-single" onclick="setIcView('single')" style="font-size:.72rem">👤 학생별</button>
         <button class="btn bg bsm hist-mode-btn" id="ic-view-group"  onclick="setIcView('group')"  style="font-size:.72rem">📋 반 전체</button>
@@ -7801,6 +7802,56 @@ function _icCompletedHtml(items, uid) {
 
 /* ★ "최근 완료" 전체를 한 번에 보이기/숨기기 — 학생 카드마다 따로 누를 필요 없이 스위치 하나로 */
 let _icShowCompleted = false;
+let _icExactDay = false; // ★ true면 "기준 날짜까지 누적"이 아니라 "그 날짜에 배정된 것만"
+
+function toggleIcExactDay() {
+  _icExactDay = !_icExactDay;
+  const btn = $('ic-toggle-exactday');
+  if (btn) {
+    btn.textContent = _icExactDay ? '📅 이 날짜만 보는 중' : '📅 이 날짜만 보기';
+    btn.classList.toggle('active', _icExactDay);
+  }
+  renderIncomplete();
+}
+
+/* ★ "이 날짜만 보기" 전용 — 그 날짜에 배정됐던 항목을 완료·미완료 구분 없이 전부 모아서 교재별로 묶어 반환
+   (날짜가 오늘/미래여도 상관없이 다 보여줌 — 미완료 누적 로직과 달리 "그 날 뭐였는지"만 봄) */
+function _buildDayScheduleForStudent(student, exactDate, typeF, bookF) {
+  const candidates = S.assigns.filter(a => a && a.studentId === student.id && a.date === exactDate && (!bookF || String(a.bookId) === bookF));
+  const items = [];
+  _dedupeVocaAssigns(candidates).forEach(a => {
+    const book = getBook(a.bookId);
+    if (typeF && (book?.mode || a.type) !== typeF) return;
+    const hasResult = a.result !== '' && a.result !== null && a.result !== undefined;
+    const reason = hasResult ? _incompleteReason(book, a.result, student.group, a.date) : '미수행';
+    items.push({ ...a, _hasResult: hasResult, _reason: reason });
+  });
+  const byBook = {};
+  items.forEach(a => {
+    const key = a.bookId;
+    if (!byBook[key]) byBook[key] = { bookId: a.bookId, bookName: a.bookName || '(교재 정보 없음)', type: a.type, items: [] };
+    byBook[key].items.push(a);
+  });
+  return Object.values(byBook).sort((a,b) => a.bookName.localeCompare(b.bookName,'ko'));
+}
+
+/* ★ "이 날짜만 보기" 카드 HTML — 완료(초록)/미통과·미수행(빨강) 구분해서 표시 */
+function _icDayCardHtml(g) {
+  const rows = g.items.map(a => {
+    const label = a.type === 'voca' ? `${a.unitFrom}회차${a.cohort?` (${escHtml(a.cohort)})`:''}` : (a.probLabels||[]).join(', ');
+    const ok = a._hasResult && !a._reason;
+    const resultTxt = a._hasResult ? String(a.result) : '결과 없음';
+    return `<div style="display:flex;justify-content:space-between;padding:.25rem .4rem;font-size:.78rem;border-bottom:1px solid var(--bd)">
+      <span>${escHtml(label)}</span>
+      <span style="font-weight:700;color:${ok?'#166534':'#b91c1c'}">${ok ? resultTxt : (a._hasResult ? resultTxt : '미수행')}</span>
+    </div>`;
+  }).join('');
+  return `<div class="ta-card" style="margin-bottom:.5rem">
+    <div style="font-weight:700;font-size:.82rem;padding:.3rem .4rem;background:var(--s2)">${escHtml(g.bookName)}</div>
+    ${rows}
+  </div>`;
+}
+
 function toggleIcShowCompleted() {
   _icShowCompleted = !_icShowCompleted;
   const btn = $('ic-toggle-completed');
@@ -7817,6 +7868,38 @@ function renderIncomplete() {
   const untilDate = $('ic-date')?.value || getTodayStr();
   const typeF = $('ic-type')?.value || '';
   const bookF = $('ic-book')?.value || '';
+
+  // ★ "이 날짜만 보기" 모드 — 누적 미완료가 아니라 그 날짜에 배정된 것만(완료·미완료 다) 보여줌
+  if (_icExactDay) {
+    const group = $('ic-group')?.value || '';
+    if (_icView === 'single') {
+      const sid = Number($('ic-student')?.value || 0);
+      const student = sid ? S.students.find(s => s.id === sid) : null;
+      if (!student) { body.innerHTML = `<div class="distrib-empty">학생을 선택하세요</div>`; return; }
+      const groups = _buildDayScheduleForStudent(student, untilDate, typeF, bookF);
+      body.innerHTML = `<div class="ta-student-hd">${escHtml(student.name)} <span style="color:var(--mu);font-weight:400;font-size:.78rem">· ${escHtml(untilDate)}에 배정된 숙제</span></div>
+        ${groups.length ? groups.map(g => _icDayCardHtml(g)).join('') : `<div class="distrib-empty" style="padding:1rem .5rem">${escHtml(untilDate)}에 배정된 숙제가 없습니다</div>`}`;
+      return;
+    }
+    const list = S.students.filter(s => !group || s.group === group).sort((a,b) => a.name.localeCompare(b.name,'ko'));
+    if (!list.length) { body.innerHTML = `<div class="distrib-empty">학생이 없습니다</div>`; return; }
+    const blocks = list.map(st => {
+      const groups = _buildDayScheduleForStudent(st, untilDate, typeF, bookF);
+      if (!groups.length) return null;
+      const total = groups.reduce((sum,g) => sum + g.items.length, 0);
+      const doneCount = groups.reduce((sum,g) => sum + g.items.filter(a => a._hasResult && !a._reason).length, 0);
+      return `<div class="st-block">
+        <div class="st-block-hd">
+          <span class="ai-group-class">${escHtml(st.group)}</span>
+          <span class="st-block-name">${escHtml(st.name)}</span>
+          <span class="st-block-sum" style="color:${doneCount<total?'#b91c1c':'#166534'};font-weight:700">${doneCount}/${total}건 완료</span>
+        </div>
+        <div class="st-block-body">${groups.map(g => _icDayCardHtml(g)).join('')}</div>
+      </div>`;
+    }).filter(Boolean);
+    body.innerHTML = blocks.length ? blocks.join('') : `<div class="distrib-empty">${escHtml(untilDate)}에 배정된 숙제가 있는 학생이 없습니다</div>`;
+    return;
+  }
 
   if (_icView === 'single') {
     const sid = Number($('ic-student')?.value || 0);
