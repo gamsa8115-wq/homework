@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v160</title>
+<title>숙제 관리 v162</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v160</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v162</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4534,6 +4534,39 @@ function removeMappingByClassName(className) {
   if (typeof renderHistory === 'function') renderHistory(); // 배지 다시 계산
 }
 
+/* ★ 맵핑 팝업에서 클래스명을 고르거나 입력해서, 지금 보고 있는 교재에 바로 연결 */
+function addMappingFromPicker() {
+  const info = _histMappingBadgeInfo;
+  if (!info) return;
+  const input = document.getElementById('mapping-add-input');
+  const className = (input?.value || '').trim();
+  if (!className) { toast('클래스명을 선택하거나 입력하세요'); return; }
+
+  const existing = (S.classcardMappings || []).find(m => m.className === className);
+  if (existing && existing.bookId === info.bookId) {
+    toast('이미 이 교재에 연결되어 있어요');
+    return;
+  }
+  if (existing) {
+    const otherBook = getBook(existing.bookId);
+    if (!confirm(`'${className}'은(는) 이미 '${otherBook?.name || '다른 교재'}'에 연결되어 있어요.\n\n이 교재("${info.bookName}")로 다시 연결하시겠습니까? (기존 연결은 없어져요)`)) return;
+    S.classcardMappings = S.classcardMappings.filter(m => m.className !== className);
+  }
+
+  S.classcardMappings.push({
+    className,
+    mode: info.bookMode === 'voca' ? 'voca' : 'book',
+    bookId: info.bookId,
+    vocaRuleType: 'paren',
+    vocaRulePattern: ''
+  });
+  save();
+  toast(`✅ '${className}' → '${info.bookName}'로 연결했습니다`);
+  document.getElementById('mapping-info-modal')?.remove();
+  if (typeof renderHistory === 'function') renderHistory();
+  showMappingBadgeInfo(); // 팝업 다시 열어서 바로 확인
+}
+
 function showMappingBadgeInfo() {
   const info = _histMappingBadgeInfo;
   if (!info) return;
@@ -4545,13 +4578,27 @@ function showMappingBadgeInfo() {
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem';
   modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 
+  // ★ 지금까지 앱이 본 적 있는 클래스명 전체(다른 교재에 연결됐던 것 포함) — 자동완성용
+  const allKnownClassNames = [...new Set((S.classcardMappings||[]).map(m => m.className))].sort((a,b)=>a.localeCompare(b,'ko'));
+
   const bodyHtml = info.linked.length
     ? `<div style="font-size:.82rem;line-height:1.8">${info.linked.map(n => `
         <div style="display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;background:var(--s2);border-radius:6px;margin-bottom:.4rem">
           <span style="flex:1">${escHtml(n)}</span>
           <button class="btn bd2 bsm" style="font-size:.68rem;padding:.2rem .5rem;flex-shrink:0" onclick="removeMappingByClassName('${n.replace(/'/g,"\\'")}')">🗑 삭제</button>
         </div>`).join('')}</div>`
-    : `<div style="font-size:.82rem;color:var(--mu)">연결된 클래스가 없어요. 📁 전체 리포트 업로드 창을 열어서, 이 교재("${escHtml(info.bookName)}")를 원하는 클래스에 연결해두면 다음부터 자동으로 인식돼요.</div>`;
+    : `<div style="font-size:.82rem;color:var(--mu)">연결된 클래스가 없어요.</div>`;
+
+  const addSectionHtml = `
+    <div style="margin-top:1rem;padding-top:.9rem;border-top:1px solid var(--bd)">
+      <div style="font-size:.78rem;font-weight:600;margin-bottom:.4rem">+ 새 클래스 연결</div>
+      <input id="mapping-add-input" list="mapping-known-classes" type="text" placeholder="클래스명 검색 또는 직접 입력..." style="width:100%;margin-bottom:.5rem">
+      <datalist id="mapping-known-classes">
+        ${allKnownClassNames.map(n => `<option value="${escHtml(n)}">`).join('')}
+      </datalist>
+      <button class="btn bs bsm" style="width:100%" onclick="addMappingFromPicker()">🔗 이 교재에 연결</button>
+      <div style="font-size:.68rem;color:var(--mu);margin-top:.4rem">목록에 없으면 새 클래스명을 그대로 입력해도 돼요 (처음 등장하는 클래스라면 전체 리포트 업로드를 한 번 열어야 목록에 잡혀요)</div>
+    </div>`;
 
   modal.innerHTML = `
     <div style="background:var(--surface);border-radius:12px;max-width:420px;width:100%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.2)" onclick="event.stopPropagation()">
@@ -4562,6 +4609,7 @@ function showMappingBadgeInfo() {
       <div style="padding:1rem 1.1rem;overflow-y:auto;flex:1">
         <div style="font-size:.74rem;color:var(--mu);margin-bottom:.7rem">전체 리포트 업로드에서 이 교재로 연결된 클래스카드 클래스명${info.linked.length ? ` (${info.linked.length}개)` : ''}</div>
         ${bodyHtml}
+        ${addSectionHtml}
       </div>
       <div style="padding:.7rem 1.1rem;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;flex-shrink:0">
         <button class="btn bg bsm" onclick="document.getElementById('mapping-info-modal').remove()">닫기</button>
@@ -4614,7 +4662,7 @@ function renderHistory() {
     } else {
       const linked = S.classcardMappings.filter(m => m.bookId === bid && (m.mode === 'book' || m.mode === 'voca'));
       mapBadge.style.display = '';
-      _histMappingBadgeInfo = { bookName: bidBook.name, linked: linked.map(m => m.className) };
+      _histMappingBadgeInfo = { bookId: bid, bookName: bidBook.name, bookMode: bidBook.mode, linked: linked.map(m => m.className) };
       if (linked.length) {
         mapBadge.style.background = '#dcfce7';
         mapBadge.style.color = '#166534';
@@ -5310,12 +5358,45 @@ function _updateScoreImportVocaPreview() {
   const book = getBook(bid);
   if (!book || !_scoreImportData || !_scoreImportData.length) return;
   const rule = book.vocaExtractRule || { type: 'paren', pattern: '' };
-  const samples = [...new Set(_scoreImportData.map(r => String(r['세트명']||'').trim()).filter(Boolean))].slice(0, 3);
-  if (!samples.length) { wrap.textContent = '세트명 컬럼을 찾을 수 없습니다'; return; }
-  wrap.innerHTML = samples.map(s => {
+
+  // ★ 샘플 몇 개만 보지 않고, 실제 파일에 있는 "세트명" 전체를 확인해서
+  //   ① 추출 자체가 실패하는 것 ② 서로 다른 세트명인데 같은 회차로 뭉쳐지는 충돌을 찾음
+  const allNames = [...new Set(_scoreImportData.map(r => String(r['세트명']||'').trim()).filter(Boolean))];
+  if (!allNames.length) { wrap.textContent = '세트명 컬럼을 찾을 수 없습니다'; return; }
+
+  const roundToNames = new Map(); // round(문자열) -> Set(세트명)
+  const failedNames = [];
+  allNames.forEach(name => {
+    const round = _extractRound(name, rule);
+    if (round == null) { failedNames.push(name); return; }
+    const key = String(round);
+    if (!roundToNames.has(key)) roundToNames.set(key, new Set());
+    roundToNames.get(key).add(name);
+  });
+  const collisions = [...roundToNames.entries()].filter(([, names]) => names.size > 1);
+
+  const samples = allNames.slice(0, 3);
+  let html = samples.map(s => {
     const round = _extractRound(s, rule);
     return `<div style="padding:.1rem 0">${escHtml(s)} → ${round!=null ? `<b>${round}회차</b>` : '<span style="color:var(--red)">추출 실패</span>'}</div>`;
   }).join('');
+
+  // ★ 경고 배너 — 전체 리포트 업로드의 "확인 필요" 스타일과 통일 (빨간 굵은 글씨)
+  const warnings = [];
+  if (failedNames.length) {
+    warnings.push(`<div style="margin-top:.3rem"><b style="color:var(--red)">⚠ 회차 추출 실패 (${failedNames.length}개)</b>: ${failedNames.slice(0,5).map(n=>escHtml(n)).join(', ')}${failedNames.length>5?' 외 '+(failedNames.length-5)+'개':''}</div>`);
+  }
+  if (collisions.length) {
+    const collisionHtml = collisions.slice(0,5).map(([round, names]) =>
+      `<div style="padding-left:.5rem">→ <b>${round}회차</b>로 뭉쳐짐: ${[...names].map(n=>escHtml(n)).join(' / ')}</div>`
+    ).join('');
+    warnings.push(`<div style="margin-top:.3rem"><b style="color:var(--red)">⚠ 서로 다른 세트명이 같은 회차로 뭉쳐짐 (${collisions.length}건)</b> — 회차 추출 방식이 이 교재 세트명 형식과 안 맞을 수 있어요. 방식을 바꿔서 다시 확인해보세요.${collisionHtml}</div>`);
+  }
+  if (warnings.length) {
+    html += `<div style="margin-top:.5rem;padding:.5rem .6rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;font-size:.76rem;line-height:1.6">${warnings.join('')}</div>`;
+  }
+
+  wrap.innerHTML = html;
 }
 
 function _closeScoreImport() {
@@ -6085,14 +6166,40 @@ function _renderBulkClassList() {
 
       let voccaExtra = '';
       if (draft.mode === 'voca') {
+        const rule = { type: draft.vocaRuleType, pattern: draft.vocaRulePattern };
         const previewRows = c.samples.slice(0, 3).map(s => {
-          const round = _extractRound(s.setName, { type: draft.vocaRuleType, pattern: draft.vocaRulePattern });
+          const round = _extractRound(s.setName, rule);
           return `<div style="display:flex;gap:.4rem;font-size:.72rem;padding:.15rem 0">
             <span style="color:var(--mu)">${escHtml(s.setName)}</span>
             <span style="color:var(--acc)">→</span>
             <span style="font-weight:700">${round != null ? round + '회차' : '<span style=\"color:var(--red)\">추출 실패</span>'}</span>
           </div>`;
         }).join('');
+
+        // ★ 이 클래스의 실제 세트명 전체(샘플 몇 개가 아니라)를 확인해서
+        //   ① 추출 실패 ② 서로 다른 세트명이 같은 회차로 뭉쳐지는 충돌을 찾아 빨간 글씨로 경고
+        const allNamesInClass = [...new Set((c.rows||[]).map(r => String(r['세트명']||'').trim()).filter(Boolean))];
+        const roundToNames = new Map();
+        const failedNames = [];
+        allNamesInClass.forEach(name => {
+          const round = _extractRound(name, rule);
+          if (round == null) { failedNames.push(name); return; }
+          const key = String(round);
+          if (!roundToNames.has(key)) roundToNames.set(key, new Set());
+          roundToNames.get(key).add(name);
+        });
+        const collisions = [...roundToNames.entries()].filter(([, names]) => names.size > 1);
+        let vocaWarnHtml = '';
+        if (failedNames.length || collisions.length) {
+          const parts = [];
+          if (failedNames.length) parts.push(`<div><b style="color:var(--red)">⚠ 회차 추출 실패 (${failedNames.length}개)</b>: ${failedNames.slice(0,4).map(n=>escHtml(n)).join(', ')}${failedNames.length>4?' 외 '+(failedNames.length-4)+'개':''}</div>`);
+          if (collisions.length) {
+            const cHtml = collisions.slice(0,4).map(([round,names]) => `<div style="padding-left:.5rem">→ <b>${round}회차</b>로 뭉쳐짐: ${[...names].map(n=>escHtml(n)).join(' / ')}</div>`).join('');
+            parts.push(`<div style="margin-top:.2rem"><b style="color:var(--red)">⚠ 서로 다른 세트명이 같은 회차로 뭉쳐짐 (${collisions.length}건)</b> — 회차 추출 방식을 다시 확인해보세요.${cHtml}</div>`);
+          }
+          vocaWarnHtml = `<div style="margin-top:.4rem;padding:.4rem .5rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;font-size:.7rem;line-height:1.5">${parts.join('')}</div>`;
+        }
+
         voccaExtra = `
           <div style="margin-top:.4rem;padding:.5rem;background:var(--s2);border-radius:6px">
             <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.3rem">
@@ -6112,6 +6219,7 @@ function _renderBulkClassList() {
             ` : ''}
             <div style="font-size:.68rem;color:var(--mu);margin-bottom:.15rem">이 클래스의 실제 세트명으로 미리 확인:</div>
             ${previewRows}
+            ${vocaWarnHtml}
           </div>`;
       }
 
