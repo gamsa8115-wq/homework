@@ -328,7 +328,8 @@ function dedupeVocaAssigns(assigns, books) {
     const book = getBookById(books, a.bookId);
     const isVoca = (book && book.mode) === 'voca' || a.type === 'voca';
     if (!isVoca) { others.push(a); return; }
-    const key = `${a.bookId}:${normUnit(a.unitFrom)}`;
+    // ★ 차수(cohort)까지 키에 포함 — 선생님용 앱과 동일한 원칙
+    const key = `${a.bookId}:${normUnit(a.unitFrom)}:${a.cohort||''}`;
     const ex = latestByKey.get(key);
     if (!ex || a.date > ex.date) latestByKey.set(key, a);
   });
