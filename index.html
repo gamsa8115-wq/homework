@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v164</title>
+<title>숙제 관리 v165</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v164</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v165</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -7841,12 +7841,12 @@ function _icDayCardHtml(g) {
     const label = a.type === 'voca' ? `${a.unitFrom}회차${a.cohort?` (${escHtml(a.cohort)})`:''}` : (a.probLabels||[]).join(', ');
     const ok = a._hasResult && !a._reason;
     const resultTxt = a._hasResult ? String(a.result) : '결과 없음';
-    return `<div style="display:flex;align-items:center;gap:.6rem;padding:.25rem .4rem;font-size:.78rem;border-bottom:1px solid var(--bd)">
+    return `<div style="display:flex;align-items:center;gap:1.8rem;padding:.25rem .4rem;font-size:.78rem;border-bottom:1px solid var(--bd)">
       <span>${escHtml(label)}</span>
       <span style="font-weight:700;color:${ok?'#166534':'#b91c1c'}">${ok ? resultTxt : (a._hasResult ? resultTxt : '미수행')}</span>
     </div>`;
   }).join('');
-  return `<div class="ta-card" style="margin-bottom:.5rem;max-width:340px">
+  return `<div class="ta-card" style="margin-bottom:.5rem">
     <div style="font-weight:700;font-size:.82rem;padding:.3rem .4rem;background:var(--s2)">${escHtml(g.bookName)}</div>
     ${rows}
   </div>`;
