@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v176</title>
+<title>숙제 관리 v177</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v176</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v177</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -6837,12 +6837,28 @@ function _computeBulkPreview() {
       // ★ 차수(예: "5차")가 있는 클래스는, 책 이름만으로는 부족함 —
       //   "이 학생이 정확히 이 차수로 정식 배정받은 적 있는지"까지 확인해야
       //   (안 그러면 6차만 정식 배정받은 학생인데도 5차 리포트 데이터가 그냥 들어와버림)
+      // ★ v177: 단, 이 학생이 이 교재를 "태그(차수) 없이" 한 가지 방식으로만 배정받은 경우까지
+      //   막아버리면 안 됨 — 클래스카드 클래스명엔 항상 "N차"가 자동으로 붙지만, 정작 앱에서
+      //   배정할 때 태그를 안 쓴 경우(대부분)엔 cohort가 ''로 저장되어 있어 매번 걸러지는 문제가 있었음.
+      //   → 이 학생+교재 조합에 실제로 "서로 다른 차수"가 2개 이상 섞여 있을 때만 엄격하게 검증하고,
+      //     한 가지 방식으로만 배정된 경우엔 리포트의 차수 표기와 무관하게 정상 반영
       const cohort = _extractCohort(c.name);
+      let matchCohort = cohort; // ★ 실제 배정 기록과 대조/기록할 때 쓸 차수 값 (기본은 리포트에서 뽑은 값)
       if (book.mode === 'voca' && cohort) {
-        const hasCohortAssign = S.assigns.some(a => a.studentId===student.id && a.bookId===book.id && a.type==='voca' && (a.cohort||'')===cohort);
-        if (!hasCohortAssign) {
-          out.skippedNoDistribution.set(`${rawName} (${cohort} 정식 배정 없음)`, (out.skippedNoDistribution.get(`${rawName} (${cohort} 정식 배정 없음)`)||0) + 1);
-          return;
+        const studentBookCohorts = new Set(
+          S.assigns.filter(a => a.studentId===student.id && a.bookId===book.id && a.type==='voca')
+                   .map(a => a.cohort || '')
+        );
+        const hasAmbiguousCohorts = studentBookCohorts.size > 1;
+        if (hasAmbiguousCohorts) {
+          if (!studentBookCohorts.has(cohort)) {
+            out.skippedNoDistribution.set(`${rawName} (${cohort} 정식 배정 없음)`, (out.skippedNoDistribution.get(`${rawName} (${cohort} 정식 배정 없음)`)||0) + 1);
+            return;
+          }
+        } else if (studentBookCohorts.size === 1) {
+          // ★ 이 학생은 이 교재를 한 가지 방식(대개 태그 없이 cohort='')으로만 배정받음
+          //   → 리포트의 "N차" 표기와 무관하게, 실제 배정 기록이 쓰고 있는 cohort 값 그대로 매칭
+          matchCohort = [...studentBookCohorts][0];
         }
       }
 
@@ -6873,8 +6889,9 @@ function _computeBulkPreview() {
           out.skippedNoLabel.set(key, (out.skippedNoLabel.get(key)||0) + 1);
           return;
         }
-        // ★ 클래스명 끝의 "N차"는 위에서 이미 cohort로 뽑아둠 — 재사용
-        const existing = S.assigns.find(a => a.bookId===book.id && a.studentId===student.id && a.type==='voca' && String(Number(a.unitFrom))===String(Number(round)) && (a.cohort||'')===cohort);
+        // ★ 클래스명 끝의 "N차"는 위에서 이미 cohort로 뽑아둠 — 실제 매칭엔 matchCohort 사용
+        //   (한 가지 방식으로만 배정된 학생은 기존 기록의 cohort 값 그대로 대조해야 새 중복 레코드가 안 생김)
+        const existing = S.assigns.find(a => a.bookId===book.id && a.studentId===student.id && a.type==='voca' && String(Number(a.unitFrom))===String(Number(round)) && (a.cohort||'')===matchCohort);
         if (existing) {
           const hasResult = existing.result !== '' && existing.result != null;
           if (hasResult && !overwrite) return;
@@ -6885,7 +6902,7 @@ function _computeBulkPreview() {
           // 새 배정: 학습일을 그대로 사용 (실제로 그 날 학습한 기록이므로)
           const dateStr = _parseExcelDate(row['학습일']) || getTodayStr();
           out.newAssigns.push({ studentId: student.id, studentName: student.name, bookId: book.id, bookName: book.name,
-            type: 'voca', date: dateStr, unitFrom: round, unitTo: round, score, cohort });
+            type: 'voca', date: dateStr, unitFrom: round, unitTo: round, score, cohort: matchCohort });
         }
       } else {
         // 교재형: 레이블 정규화 매칭
