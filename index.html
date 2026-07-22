@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v172</title>
+<title>숙제 관리 v173</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v172</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v173</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -1035,6 +1035,18 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="page" id="p-mappings">
   <div class="ph"><h1>맵핑 관리</h1><p>클래스카드 클래스명 ↔ 교재 연결 전체를 한눈에 점검 · 확정(잠금)/수정/삭제</p></div>
   <div id="mappings-summary" style="background:var(--s2);border-radius:8px;padding:.6rem .8rem;margin-bottom:.8rem;font-size:.8rem"></div>
+
+  <div class="card" style="margin-bottom:.9rem">
+    <div class="ct">리포트 파일로 확인/적용</div>
+    <div style="font-size:.76rem;color:var(--mu);margin-bottom:.5rem">파일을 열면, 그 파일 기준으로 아래 각 매핑에 "실제 반 · 이번 파일 건수"가 함께 표시돼요.</div>
+    <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+      <input type="file" id="mappings-file-input" accept=".xlsx,.xls" onchange="_onMappingsFileSelect(event)"
+        style="flex:1;min-width:220px;font-size:.8rem;padding:.4rem;border:1px dashed var(--bd);border-radius:6px;background:var(--s2)">
+      <button class="btn bs" onclick="openBulkImport()">📁 전체 리포트 업로드 (매핑·적용)</button>
+    </div>
+    <div id="mappings-file-info" style="font-size:.72rem;color:var(--mu);margin-top:.4rem"></div>
+  </div>
+
   <div style="display:flex;gap:.5rem;margin-bottom:.9rem;flex-wrap:wrap">
     <input type="text" id="mappings-search" placeholder="🔍 클래스명 또는 교재명 검색..." oninput="renderMappingsPage()"
       style="flex:1;min-width:200px;padding:.5rem .7rem">
@@ -4644,6 +4656,43 @@ function mappingsChangeBook(className, bookIdStr) {
   renderMappingsPage();
 }
 
+async function _onMappingsFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const info = $('mappings-file-info');
+  info.textContent = '읽는 중...';
+  try {
+    const result = await _parseBulkReportFile(file);
+    info.innerHTML = `✅ ${escHtml(result.fileName)} · ${result.rowCount}개 행 읽음 — 아래 매핑에 "실제 반 · 이번 파일 건수"를 반영했어요`;
+    if (result.excludedByPrefix) {
+      info.innerHTML += `<br><span style="color:var(--mu)">A./W./C./O.로 시작 안 하는 클래스의 행 ${result.excludedByPrefix}건은 자동으로 제외했어요</span>`;
+    }
+    renderMappingsPage();
+  } catch (e) {
+    if (e.code === 'NO_CLASS_COL') {
+      info.innerHTML = '<span style="color:var(--red)">⚠ "클래스명" 컬럼이 없는 파일이에요. 여러 클래스가 섞인 전체 리포트만 지원해요.</span>';
+    } else {
+      console.error(e);
+      info.innerHTML = `<span style="color:var(--red)">파일을 읽는 중 오류가 발생했습니다: ${escHtml(e.message||'')}</span>`;
+    }
+  }
+}
+
+/* ★ 클래스의 실제 학생 명단을 앱 학생 목록과 대조해서, 실제로 어느 "숙제관리 반"들에 속하는지 집계
+   (이름/아이디로 매칭 — 전체 리포트 업로드와 동일한 방식) */
+function _computeClassGroupBreakdown(bulkClass) {
+  if (!bulkClass) return null;
+  const names = [...new Set((bulkClass.rows||[]).map(r => String(r['학생이름']||'').trim()).filter(Boolean))];
+  const counts = {};
+  names.forEach(n => {
+    if (_isExcludedReportName(n)) return;
+    const st = S.students.find(s => _normName(s.name) === _normName(n));
+    const g = st?.group || '(반 미확인)';
+    counts[g] = (counts[g]||0) + 1;
+  });
+  return counts;
+}
+
 function renderMappingsPage() {
   const listEl = $('mappings-list');
   const summaryEl = $('mappings-summary');
@@ -4688,6 +4737,18 @@ function renderMappingsPage() {
         ? `<span style="font-size:.66rem;font-weight:700;color:#166534">🔒 확정됨</span>`
         : `<span style="font-size:.66rem;font-weight:700;color:#b91c1c">🔓 미확정 — 점검 필요</span>`;
 
+    // ★ 지금 열려 있는(또는 최근 파싱된) 리포트 파일에 이 클래스가 있으면, 실제 반 분포·건수를 계산해서 보여줌
+    const matchedClass = Array.isArray(_bulkClasses)
+      ? _bulkClasses.find(c => c.name === m.className || _classNameKey(c.name) === _classNameKey(m.className))
+      : null;
+    let liveInfoHtml = '';
+    if (matchedClass) {
+      const breakdown = _computeClassGroupBreakdown(matchedClass);
+      const groupTxt = Object.entries(breakdown).sort((a,b)=>b[1]-a[1])
+        .map(([g,c]) => `${escHtml(g)}(${c})`).join(' · ');
+      liveInfoHtml = `<div style="margin-top:.2rem;font-size:.7rem;color:#0e7490">📄 이번 파일: <b>${matchedClass.count}건</b> · 실제 반: ${groupTxt || '(확인 안 됨)'}</div>`;
+    }
+
     const cnEsc = escHtml(m.className).replace(/'/g,"\\'");
     const bookControl = isIgnore ? ''
       : m.locked
@@ -4701,6 +4762,7 @@ function renderMappingsPage() {
       <div style="flex:1;min-width:220px">
         <div style="font-weight:700;font-size:.8rem">${escHtml(m.className)}</div>
         <div style="margin-top:.15rem">${statusBadge}</div>
+        ${liveInfoHtml}
       </div>
       <div data-book-slot="${cnEsc}">${bookControl}</div>
       <div style="display:flex;gap:.3rem;flex-shrink:0">
@@ -6186,63 +6248,66 @@ function _renderBulkStep1() {
   $('bulk-import-footer').innerHTML = `<button onclick="_closeBulkImport()" class="btn bg bsm" style="font-size:.78rem">취소</button>`;
 }
 
+/* ★ 리포트 엑셀 파일을 읽어서 _bulkRows/_bulkClasses/_bulkDraftMap을 채움 (여러 곳에서 재사용) */
+async function _parseBulkReportFile(file) {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(new Uint8Array(buf), { type: 'array', cellDates: true });
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
+
+  if (!rows.length) { const e = new Error('빈 파일입니다'); e.code = 'EMPTY'; throw e; }
+  if (!('클래스명' in rows[0])) { const e = new Error('클래스명 컬럼 없음'); e.code = 'NO_CLASS_COL'; throw e; }
+
+  _bulkRows = rows;
+
+  const byClass = new Map();
+  let excludedByPrefix = 0;
+  rows.forEach(r => {
+    const cls = String(r['클래스명'] || '').trim();
+    if (!cls) return;
+    if (!/^[AWCO]\./.test(cls)) { excludedByPrefix++; return; }
+    const setName = String(r['세트명'] || '').trim();
+    if (setName.includes('누적오답')) return; // ★ 누적오답 단어복습 세트는 자동 제외
+    if (!byClass.has(cls)) byClass.set(cls, { name: cls, count: 0, samples: [], rows: [] });
+    const c = byClass.get(cls);
+    c.count++;
+    c.rows.push(r);
+    if (c.samples.length < 4 && setName && !c.samples.some(s => s.setName === setName)) {
+      c.samples.push({ setName, studyDate: r['학습일'] || '' });
+    }
+  });
+  _bulkClasses = [...byClass.values()].sort((a,b) => b.count - a.count);
+
+  _bulkDraftMap = {};
+  _bulkClasses.forEach(c => {
+    const saved = _findMappingByClassName(c.name);
+    _bulkDraftMap[c.name] = saved
+      ? { ...saved }
+      : { mode: '', bookId: null, vocaRuleType: 'paren', vocaRulePattern: '' };
+  });
+
+  return { rowCount: rows.length, excludedByPrefix, fileName: file.name };
+}
+
 async function _onBulkFileSelect(event) {
   const file = event.target.files[0];
   if (!file) return;
   const info = $('bulk-import-file-info');
   info.textContent = '읽는 중...';
   try {
-    const buf = await file.arrayBuffer();
-    const wb = XLSX.read(new Uint8Array(buf), { type: 'array', cellDates: true });
-    const sheet = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
-
-    if (!rows.length) { info.innerHTML = '<span style="color:var(--red)">빈 파일입니다</span>'; return; }
-    const sample = rows[0];
-    if (!('클래스명' in sample)) {
-      info.innerHTML = '<span style="color:var(--red)">⚠ "클래스명" 컬럼이 없는 파일이에요. 이 기능은 여러 클래스가 섞인 전체 리포트 전용이에요. 교재 하나짜리 리포트는 "📥 점수 가져오기"를 이용해주세요.</span>';
-      return;
+    const result = await _parseBulkReportFile(file);
+    info.innerHTML = `✅ ${escHtml(result.fileName)} · ${result.rowCount}개 행 읽음`;
+    if (result.excludedByPrefix) {
+      info.innerHTML += `<br><span style="color:var(--mu)">A./W./C./O.로 시작 안 하는 클래스의 행 ${result.excludedByPrefix}건은 자동으로 제외했어요</span>`;
     }
-
-    _bulkRows = rows;
-    info.innerHTML = `✅ ${file.name} · ${rows.length}개 행 읽음`;
-
-    // 클래스명별로 묶기
-    // ★ A. / W. / C. / O. 로 시작하는 클래스만 사용 (그 외 클래스카드 자체 관리반 등은 무관하므로 아예 목록에서 제외)
-    const byClass = new Map();
-    let excludedByPrefix = 0;
-    rows.forEach(r => {
-      const cls = String(r['클래스명'] || '').trim();
-      if (!cls) return;
-      if (!/^[AWCO]\./.test(cls)) { excludedByPrefix++; return; }
-      const setName = String(r['세트명'] || '').trim();
-      if (setName.includes('누적오답')) return; // ★ 누적오답 단어복습 세트는 자동 제외
-      if (!byClass.has(cls)) byClass.set(cls, { name: cls, count: 0, samples: [], rows: [] });
-      const c = byClass.get(cls);
-      c.count++;
-      c.rows.push(r);
-      if (c.samples.length < 4 && setName && !c.samples.some(s => s.setName === setName)) {
-        c.samples.push({ setName, studyDate: r['학습일'] || '' });
-      }
-    });
-    _bulkClasses = [...byClass.values()].sort((a,b) => b.count - a.count);
-    if (excludedByPrefix) {
-      info.innerHTML += `<br><span style="color:var(--mu)">A./W./C./O.로 시작 안 하는 클래스의 행 ${excludedByPrefix}건은 자동으로 제외했어요</span>`;
-    }
-
-    // 기존 저장된 매핑을 초안으로 불러오기
-    _bulkDraftMap = {};
-    _bulkClasses.forEach(c => {
-      const saved = _findMappingByClassName(c.name);
-      _bulkDraftMap[c.name] = saved
-        ? { ...saved }
-        : { mode: '', bookId: null, vocaRuleType: 'paren', vocaRulePattern: '' };
-    });
-
     _renderBulkStep2();
   } catch (e) {
-    console.error(e);
-    info.innerHTML = `<span style="color:var(--red)">파일을 읽는 중 오류가 발생했습니다: ${escHtml(e.message||'')}</span>`;
+    if (e.code === 'NO_CLASS_COL') {
+      info.innerHTML = '<span style="color:var(--red)">⚠ "클래스명" 컬럼이 없는 파일이에요. 이 기능은 여러 클래스가 섞인 전체 리포트 전용이에요. 교재 하나짜리 리포트는 "📥 점수 가져오기"를 이용해주세요.</span>';
+    } else {
+      console.error(e);
+      info.innerHTML = `<span style="color:var(--red)">파일을 읽는 중 오류가 발생했습니다: ${escHtml(e.message||'')}</span>`;
+    }
   }
 }
 
