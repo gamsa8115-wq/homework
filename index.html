@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v168</title>
+<title>숙제 관리 v169</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v168</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v169</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -6216,7 +6216,7 @@ async function _onBulkFileSelect(event) {
     // 기존 저장된 매핑을 초안으로 불러오기
     _bulkDraftMap = {};
     _bulkClasses.forEach(c => {
-      const saved = S.classcardMappings.find(m => m.className === c.name);
+      const saved = _findMappingByClassName(c.name);
       _bulkDraftMap[c.name] = saved
         ? { ...saved }
         : { mode: '', bookId: null, vocaRuleType: 'paren', vocaRulePattern: '' };
@@ -6229,9 +6229,18 @@ async function _onBulkFileSelect(event) {
   }
 }
 
-/* ★ 클래스명 끝에 붙는 "N차"를 차수로 추출 (예: "A. 수업보카 기본 중3 5차 (430944243)" → "5차")
-   같은 교재를 여러 번 반복 수강하는 반이 회차 번호를 공유해도 섞이지 않게 하려는 용도.
-   "N차"가 없으면 빈 문자열(차수 구분 없음, 기존과 동일하게 동작) */
+/* ★ 클래스명 끝의 "(숫자 ID)"가 있든 없든 관대하게 매칭 (수동 입력 시 ID를 빠뜨려도 인식되게) */
+function _classNameKey(name) {
+  return String(name||'').replace(/\(\d+\)\s*$/, '').trim();
+}
+function _findMappingByClassName(className) {
+  const list = S.classcardMappings || [];
+  let m = list.find(r => r.className === className);
+  if (m) return m;
+  const key = _classNameKey(className);
+  return list.find(r => _classNameKey(r.className) === key) || null;
+}
+
 /* ★ 클래스명 끝에 붙는 "N차"를 차수로 추출 (예: "A. 수업보카 기본 중3 5차 (430944243)" → "5차")
    같은 교재를 여러 번 반복 수강하는 반이 회차 번호를 공유해도 섞이지 않게 하려는 용도.
    "N차"가 없으면 빈 문자열(차수 구분 없음, 기존과 동일하게 동작) */
@@ -6362,7 +6371,7 @@ function _renderBulkClassList() {
         sectionHeader = `<div style="font-size:.72rem;font-weight:800;color:var(--mu);margin:${_lastGroup===null?'0':'.9rem'} 0 .35rem;padding-top:${_lastGroup===null?'0':'.5rem'};border-top:${_lastGroup===null?'none':'1px dashed var(--bd)'}">${_sectionLabel[_group]}</div>`;
         _lastGroup = _group;
       }
-      const isNew = !S.classcardMappings.find(m => m.className === c.name);
+      const isNew = !_findMappingByClassName(c.name);
       const sampleTxt = c.samples.map(s => escHtml(s.setName)).join(' · ');
 
       let voccaExtra = '';
@@ -6439,7 +6448,7 @@ function _renderBulkClassList() {
       // ★ "이전 매핑" 안내를 구체적으로: 뭐였는지(무시였는지 교재 연결이었는지) 바로 알 수 있게
       let prevBadge = '';
       if (!isNew) {
-        const savedRec = S.classcardMappings.find(m => m.className === c.name);
+        const savedRec = _findMappingByClassName(c.name);
         if (savedRec.mode === 'ignore') {
           prevBadge = '<span style="font-size:.62rem;color:var(--mu);font-weight:700">🕐 이전에 "무시"로 정해둔 클래스</span>';
         } else {
