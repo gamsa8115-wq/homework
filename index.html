@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v173</title>
+<title>숙제 관리 v175</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v173</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v175</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4667,6 +4667,7 @@ async function _onMappingsFileSelect(event) {
     if (result.excludedByPrefix) {
       info.innerHTML += `<br><span style="color:var(--mu)">A./W./C./O.로 시작 안 하는 클래스의 행 ${result.excludedByPrefix}건은 자동으로 제외했어요</span>`;
     }
+    _cacheMappingGroupInfo();
     renderMappingsPage();
   } catch (e) {
     if (e.code === 'NO_CLASS_COL') {
@@ -4676,6 +4677,20 @@ async function _onMappingsFileSelect(event) {
       info.innerHTML = `<span style="color:var(--red)">파일을 읽는 중 오류가 발생했습니다: ${escHtml(e.message||'')}</span>`;
     }
   }
+}
+
+/* ★ 지금 파싱된 파일 기준으로, 매핑마다 "반 분포·건수"를 계산해서 저장해둠
+   (파일이 없을 때도 "마지막으로 확인한 반" 정보를 계속 보여주기 위한 캐시) */
+function _cacheMappingGroupInfo() {
+  if (!Array.isArray(_bulkClasses) || !_bulkClasses.length) return;
+  (S.classcardMappings || []).forEach(m => {
+    const matched = _bulkClasses.find(c => c.name === m.className || _classNameKey(c.name) === _classNameKey(m.className));
+    if (!matched) return;
+    m.lastGroupBreakdown = _computeClassGroupBreakdown(matched);
+    m.lastFileCount = matched.count;
+    m.lastFileCheckedAt = getTodayStr();
+  });
+  save();
 }
 
 /* ★ 클래스의 실제 학생 명단을 앱 학생 목록과 대조해서, 실제로 어느 "숙제관리 반"들에 속하는지 집계
@@ -4741,12 +4756,26 @@ function renderMappingsPage() {
     const matchedClass = Array.isArray(_bulkClasses)
       ? _bulkClasses.find(c => c.name === m.className || _classNameKey(c.name) === _classNameKey(m.className))
       : null;
-    let liveInfoHtml = '';
-    if (matchedClass) {
+    const typeLabel = isIgnore ? '' : (book?.mode === 'voca' ? '보카형' : '교재형');
+    let middleHtml;
+    if (isIgnore) {
+      middleHtml = `<div style="font-size:.76rem;color:var(--mu)">— 이 클래스는 무시로 정해둠 —</div>`;
+    } else if (matchedClass) {
       const breakdown = _computeClassGroupBreakdown(matchedClass);
-      const groupTxt = Object.entries(breakdown).sort((a,b)=>b[1]-a[1])
-        .map(([g,c]) => `${escHtml(g)}(${c})`).join(' · ');
-      liveInfoHtml = `<div style="margin-top:.2rem;font-size:.7rem;color:#0e7490">📄 이번 파일: <b>${matchedClass.count}건</b> · 실제 반: ${groupTxt || '(확인 안 됨)'}</div>`;
+      const sortedGroups = Object.entries(breakdown).sort((a,b) => b[1]-a[1]);
+      const groupTxt = sortedGroups.map(([g,c]) => `${escHtml(g)}(${c})`).join(' · ') || '(반 확인 안 됨)';
+      middleHtml = `
+        <div style="font-weight:700;font-size:.82rem">${groupTxt} + ${escHtml(book?.name || '(삭제된 교재)')} ${typeLabel ? `(${typeLabel})` : ''}</div>
+        <div style="margin-top:.15rem;font-size:.7rem;color:#0e7490">📄 이번 파일: <b>${matchedClass.count}건</b></div>`;
+    } else if (m.lastGroupBreakdown && Object.keys(m.lastGroupBreakdown).length) {
+      // ★ 지금 파일은 없지만, 예전에 확인해둔 반 정보가 캐시돼 있으면 그걸 계속 보여줌
+      const sortedGroups = Object.entries(m.lastGroupBreakdown).sort((a,b) => b[1]-a[1]);
+      const groupTxt = sortedGroups.map(([g,c]) => `${escHtml(g)}(${c})`).join(' · ');
+      middleHtml = `
+        <div style="font-weight:700;font-size:.82rem">${groupTxt} + ${escHtml(book?.name || '(삭제된 교재)')} ${typeLabel ? `(${typeLabel})` : ''}</div>
+        <div style="margin-top:.15rem;font-size:.7rem;color:var(--mu)">🕐 마지막 확인: ${escHtml(m.lastFileCheckedAt||'')} 기준 ${m.lastFileCount||0}건 (지금 파일 기준 아님)</div>`;
+    } else {
+      middleHtml = `<div style="font-size:.76rem;color:var(--mu)">반 · 건수를 보려면 위에서 리포트 파일을 열어주세요</div>`;
     }
 
     const cnEsc = escHtml(m.className).replace(/'/g,"\\'");
@@ -4762,8 +4791,8 @@ function renderMappingsPage() {
       <div style="flex:1;min-width:220px">
         <div style="font-weight:700;font-size:.8rem">${escHtml(m.className)}</div>
         <div style="margin-top:.15rem">${statusBadge}</div>
-        ${liveInfoHtml}
       </div>
+      <div style="flex:1.4;min-width:220px;padding:0 .5rem;border-left:1px dashed var(--bd);border-right:1px dashed var(--bd)">${middleHtml}</div>
       <div data-book-slot="${cnEsc}">${bookControl}</div>
       <div style="display:flex;gap:.3rem;flex-shrink:0">
         ${needsReview ? `<button class="btn bs bsm" style="font-size:.68rem" onclick="mappingsLockRow('${cnEsc}')">✅ 확정(잠금)</button>` : ''}
