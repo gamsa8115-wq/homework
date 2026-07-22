@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v175</title>
+<title>숙제 관리 v176</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v175</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v176</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4839,6 +4839,7 @@ function addMappingFromPicker() {
   }
 
   S.classcardMappings.push({
+    id: ++S.nid, // ★ v176: 레코드 단위 동기화를 위한 고유 id
     className,
     mode: info.bookMode === 'voca' ? 'voca' : 'book',
     bookId: info.bookId,
@@ -6771,7 +6772,10 @@ function _saveBulkMappingsAndPreview() {
     const idx = S.classcardMappings.findIndex(m => m.className === c.name || _classNameKey(m.className) === key);
     const rec = { className: c.name, mode: d.mode, bookId: d.bookId || null,
                   vocaRuleType: d.vocaRuleType, vocaRulePattern: d.vocaRulePattern, locked: !!d.locked };
-    if (idx >= 0) S.classcardMappings[idx] = rec; else S.classcardMappings.push(rec);
+    // ★ v176: id를 계속 유지 — 기존 레코드를 고치는 거면 원래 id 그대로, 새 레코드면 새 id 부여
+    //   (id가 바뀌면 다른 기기/탭에서 예전 id로 저장한 게 별개 레코드로 남아 중복되는 문제 발생)
+    if (idx >= 0) { rec.id = S.classcardMappings[idx].id; S.classcardMappings[idx] = rec; }
+    else { rec.id = ++S.nid; S.classcardMappings.push(rec); }
   });
   save();
   toast('✅ 매핑 저장 완료');
@@ -8428,9 +8432,11 @@ const FB_APP_NAME = 'homework_v4'; // 별도 앱 인스턴스 이름
 let _fbApp = null, _fbDB = null, _fbReady = false;
 let _isSavingToFb = false; // 자기 echo 방지
 let _saveDebounceTimer = null;
-let _lastSyncedById = { assigns: {}, books: {}, students: {} };
+let _lastSyncedById = { assigns: {}, books: {}, students: {}, classcardMappings: {} };
   // ★ 레코드 단위(충돌 없는) 저장 대상: id를 가진 배열들 — 통째 덮어쓰기 대신 바뀐 것만 개별 기록
-const RECORD_KEYS = ['assigns', 'books', 'students'];
+  // ★ v176: classcardMappings도 여기 포함 — 예전엔 통째 배열 덮어쓰기라서, 여러 선생님이 동시에 쓸 때
+  //   한 명이 맵핑을 고쳐도 다른 사람이 무관한 작업만 저장해도 그 사람의 "저장 당시 기억" 값으로 되돌아가는 문제가 있었음
+const RECORD_KEYS = ['assigns', 'books', 'students', 'classcardMappings'];
 
 /* 경로 안전 검증 — homework_v4로 시작 안 하면 에러 */
 function _validatePath(path) {
@@ -8506,7 +8512,12 @@ async function migrateAssignsIfNeeded() {
       const val = snap.val();
       if (Array.isArray(val)) {
         const keyed = {};
-        val.forEach(rec => { if (rec && rec.id != null) keyed[rec.id] = rec; });
+        val.forEach(rec => {
+          if (!rec) return;
+          // ★ classcardMappings처럼 원래 id 필드가 없던 레코드는 마이그레이션 시점에 새 id를 부여
+          if (rec.id == null) rec.id = ++S.nid;
+          keyed[rec.id] = rec;
+        });
         await _fbDB.ref(path).set(Object.keys(keyed).length ? keyed : null);
         console.log(`[Firebase 마이그레이션] ${key} ${Object.keys(keyed).length}건을 레코드 단위 구조로 변환 완료`);
       }
@@ -8977,6 +8988,15 @@ function load() {
     const maxAssignId  = S.assigns.reduce((max, a)  => Math.max(max, a.id  || 0), 0);
     const maxStudentId = S.students.reduce((max, s) => Math.max(max, s.id  || 0), 0);
     S.nid = Math.max(S.nid, maxAssignId + 1, maxStudentId + 1);
+
+    // ★ v176: classcardMappings 레코드 단위 동기화 전환 — id 없는 예전 레코드에 새 id 부여
+    let mappingIdsFilled = 0;
+    (S.classcardMappings || []).forEach(m => {
+      if (m && m.id == null) { m.id = ++S.nid; mappingIdsFilled++; }
+    });
+    if (mappingIdsFilled > 0) {
+      console.log(`[마이그레이션] classcardMappings ${mappingIdsFilled}건에 id 부여 (레코드 단위 동기화 전환)`);
+    }
 
     // 마이그레이션: 기존 학생 중 accessKey 없으면 자동 생성 (영구 유지)
     let migrated = 0;
