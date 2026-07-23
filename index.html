@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v183</title>
+<title>숙제 관리 v188</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v183</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v188</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -1053,6 +1053,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
     <select id="mappings-filter" onchange="renderMappingsPage()" style="padding:.5rem .7rem">
       <option value="">전체 보기</option>
       <option value="mapped">✅ 교재 연결된 것만</option>
+      <option value="failed">⚠ 회차 추출 실패 있는 것만</option>
       <option value="ignore">🚫 무시로 정한 것만</option>
     </select>
     <button class="btn bd2" onclick="resetAllClasscardMappings()">🔄 전체 매핑 초기화</button>
@@ -4684,6 +4685,21 @@ function _computeClassGroupBreakdown(bulkClass) {
   return counts;
 }
 
+/* ★ v188: 이 매핑(클래스명)이 보카형 교재이고, 지금 열려있는 리포트 파일 기준으로
+   회차 추출이 하나라도 실패하는 세트명이 있는지 확인 — "실패만 보기" 필터에서 사용 */
+function _mappingExtractFails(m) {
+  if (m.mode === 'ignore' || m.bookId == null) return false;
+  const book = getBook(m.bookId);
+  if (!book || book.mode !== 'voca') return false;
+  const matchedClass = Array.isArray(_bulkClasses)
+    ? _bulkClasses.find(c => c.name === m.className || _classNameKey(c.name) === _classNameKey(m.className))
+    : null;
+  if (!matchedClass) return false; // 파일이 없거나 이 클래스가 이번 파일엔 없으면 판단 불가 → 실패로 안 침
+  const rule = book.vocaExtractRule || { type: 'paren', pattern: '' };
+  const setNames = [...new Set((matchedClass.rows||[]).map(r => String(r['세트명']||'').trim()).filter(Boolean))];
+  return setNames.some(sn => _extractRound(sn, rule) == null);
+}
+
 function renderMappingsPage() {
   const listEl = $('mappings-list');
   const summaryEl = $('mappings-summary');
@@ -4707,6 +4723,7 @@ function renderMappingsPage() {
   let rows = all.slice();
   if (filter === 'mapped') rows = rows.filter(m => m.mode !== 'ignore');
   else if (filter === 'ignore') rows = rows.filter(m => m.mode === 'ignore');
+  else if (filter === 'failed') rows = rows.filter(m => _mappingExtractFails(m));
   if (q) rows = rows.filter(m => m.className.toLowerCase().includes(q) || (getBook(m.bookId)?.name||'').toLowerCase().includes(q));
 
   if (!rows.length) { listEl.innerHTML = `<div class="distrib-empty">해당하는 매핑이 없습니다</div>`; return; }
@@ -4738,6 +4755,8 @@ function renderMappingsPage() {
       <optgroup label="📗 보카형">${bookOptionsHtml('voca')}</optgroup>`;
 
   listEl.innerHTML = groupList.map(g => {
+    // ★ v187: 회차 추출 규칙은 이제 "교재(book.vocaExtractRule)" 하나에만 저장 — 이 카드(교재) 전체에 공통 적용
+    const groupBook = g.bookId != null ? getBook(g.bookId) : null;
     const itemsHtml = g.items.map(m => {
       const matchedClass = Array.isArray(_bulkClasses)
         ? _bulkClasses.find(c => c.name === m.className || _classNameKey(c.name) === _classNameKey(m.className))
@@ -4754,12 +4773,11 @@ function renderMappingsPage() {
       const cnEsc = escHtml(m.className).replace(/'/g,"\\'");
 
       // ★ 보카형 교재는 "회차 추출"이 제대로 되는지가 중요 — 이번 파일 세트명으로 미리 검증해서 보여줌
-      let vocaHtml = '';
-      if (g.bookMode === 'voca') {
-        const ruleType = m.vocaRuleType || 'paren';
-        let failWarn = '';
+      //   (규칙 자체는 교재 공통이라, 여기선 이번 파일 기준 성공/실패 여부만 클래스별로 다르게 보여줌)
+      let failWarn = '';
+      if (g.bookMode === 'voca' && groupBook) {
+        const rule = groupBook.vocaExtractRule || { type: 'paren', pattern: '' };
         if (matchedClass) {
-          const rule = { type: ruleType, pattern: m.vocaRulePattern || '' };
           const setNames = [...new Set((matchedClass.rows||[]).map(r => String(r['세트명']||'').trim()).filter(Boolean))];
           const failed = setNames.filter(sn => _extractRound(sn, rule) == null);
           if (failed.length) {
@@ -4772,18 +4790,6 @@ function renderMappingsPage() {
         } else {
           failWarn = `<div style="margin-top:.3rem;font-size:.66rem;color:var(--mu)">리포트 파일을 열면 회차 추출이 잘 되는지 여기서 바로 확인할 수 있어요</div>`;
         }
-        vocaHtml = `<div style="display:flex;align-items:center;gap:.4rem;margin-top:.35rem;flex-wrap:wrap;padding-left:.1rem">
-          <span style="font-size:.66rem;color:var(--mu)">회차 추출 방식</span>
-          <select onchange="mappingsUpdateVocaRule('${cnEsc}', this.value)" style="font-size:.68rem;padding:.15rem .3rem">
-            <option value="paren" ${ruleType==='paren'?'selected':''}>괄호 안 숫자 — "DAY (03)"→3</option>
-            <option value="last"  ${ruleType==='last'?'selected':''}>마지막 숫자 — "DAY 03"→3</option>
-            <option value="first" ${ruleType==='first'?'selected':''}>첫 숫자 — "1차 DAY03"→1</option>
-            <option value="regex" ${ruleType==='regex'?'selected':''}>직접 정규식</option>
-          </select>
-          ${ruleType==='regex' ? `<input type="text" value="${escHtml(m.vocaRulePattern||'')}" placeholder="예: DAY\\\\s*0*(\\\\d+)"
-            data-fk="mgvoca-${cnEsc}" oninput="mappingsUpdateVocaPattern('${cnEsc}', this.value)"
-            style="font-size:.68rem;padding:.15rem .3rem;font-family:monospace;flex:1;min-width:120px">` : ''}
-        </div>${failWarn}`;
       }
 
       return `<div style="background:var(--s2);border-radius:6px;padding:.4rem .55rem;margin-bottom:.35rem">
@@ -4797,9 +4803,27 @@ function renderMappingsPage() {
         </select>
         <button class="btn bd2 bsm" style="font-size:.66rem;padding:.15rem .35rem;flex-shrink:0;white-space:nowrap" onclick="mappingsDeleteRow('${cnEsc}')">🗑</button>
       </div>
-      ${vocaHtml}
+      ${failWarn}
       </div>`;
     }).join('');
+
+    // ★ v187: 회차 추출 방식 편집은 교재(book) 하나에만 저장되므로, 카드(교재)당 한 번만 보여줌
+    let vocaRuleEditorHtml = '';
+    if (g.bookMode === 'voca' && groupBook) {
+      const rule = groupBook.vocaExtractRule || { type: 'paren', pattern: '' };
+      vocaRuleEditorHtml = `<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-bottom:.5rem;padding:.4rem .5rem;background:var(--s2);border-radius:6px">
+        <span style="font-size:.7rem;color:var(--mu)">회차 추출 방식</span>
+        <select onchange="mappingsUpdateBookVocaRule(${g.bookId}, this.value)" style="font-size:.72rem;padding:.15rem .3rem">
+          <option value="paren" ${rule.type==='paren'?'selected':''}>괄호 안 숫자 — "DAY (03)"→3</option>
+          <option value="last"  ${rule.type==='last'?'selected':''}>마지막 숫자 — "DAY 03"→3</option>
+          <option value="first" ${rule.type==='first'?'selected':''}>첫 숫자 — "1차 DAY03"→1</option>
+          <option value="regex" ${rule.type==='regex'?'selected':''}>직접 정규식</option>
+        </select>
+        ${rule.type==='regex' ? `<input type="text" value="${escHtml(rule.pattern||'')}" placeholder="예: DAY\\\\s*0*(\\\\d+)"
+          data-fk="mgvoca-book-${g.bookId}" oninput="mappingsUpdateBookVocaPattern(${g.bookId}, this.value)"
+          style="font-size:.72rem;padding:.15rem .3rem;font-family:monospace;flex:1;min-width:120px">` : ''}
+      </div>`;
+    }
 
     const addBoxId = `mgadd-${g.key.replace(/[^a-zA-Z0-9_-]/g,'_')}`;
     const addBoxHtml = g.mode === 'ignore' ? '' : `
@@ -4812,6 +4836,7 @@ function renderMappingsPage() {
       <div style="font-weight:700;font-size:.86rem;margin-bottom:.5rem">${escHtml(g.label)}
         <span style="font-weight:400;font-size:.7rem;color:var(--mu)">· 클래스카드 클래스 ${g.items.length}개 연결됨</span>
       </div>
+      ${vocaRuleEditorHtml}
       ${itemsHtml}
       ${addBoxHtml}
     </div>`;
@@ -4827,19 +4852,20 @@ function renderMappingsPage() {
   }
 }
 
-/* ★ v181: 맵핑 관리 탭에서 바로 회차 추출 방식을 바꾸고, 실패 여부를 즉시 확인 */
-function mappingsUpdateVocaRule(className, type) {
-  const rec = (S.classcardMappings || []).find(m => m.className === className);
-  if (!rec) return;
-  rec.vocaRuleType = type;
+/* ★ v187: 회차 추출 방식은 이제 교재(book.vocaExtractRule) 하나에만 저장 —
+   맵핑 관리 탭·점수 가져오기 화면 어디서 고쳐도 항상 같은 값을 봄 */
+function mappingsUpdateBookVocaRule(bookId, type) {
+  const book = getBook(bookId);
+  if (!book) return;
+  book.vocaExtractRule = { type, pattern: (book.vocaExtractRule||{}).pattern || '' };
   save();
   renderMappingsPage();
 }
 let _mgPatternDebounce = null;
-function mappingsUpdateVocaPattern(className, pattern) {
-  const rec = (S.classcardMappings || []).find(m => m.className === className);
-  if (!rec) return;
-  rec.vocaRulePattern = pattern;
+function mappingsUpdateBookVocaPattern(bookId, pattern) {
+  const book = getBook(bookId);
+  if (!book) return;
+  book.vocaExtractRule = { type: 'regex', pattern };
   clearTimeout(_mgPatternDebounce);
   _mgPatternDebounce = setTimeout(() => { save(); renderMappingsPage(); }, 300);
 }
@@ -4870,7 +4896,7 @@ function mappingsAddToGroup(groupKey, inputId) {
     S.classcardMappings = S.classcardMappings.filter(m => m.className !== className);
   }
 
-  S.classcardMappings.push({ id: ++S.nid, className, mode, bookId, vocaRuleType: 'paren', vocaRulePattern: '' });
+  S.classcardMappings.push({ id: ++S.nid, className, mode, bookId });
   save();
   toast(`✅ '${className}' 연결했습니다`);
   renderMappingsPage();
@@ -4909,9 +4935,7 @@ function addMappingFromPicker() {
     id: ++S.nid, // ★ v176: 레코드 단위 동기화를 위한 고유 id
     className,
     mode: info.bookMode === 'voca' ? 'voca' : 'book',
-    bookId: info.bookId,
-    vocaRuleType: 'paren',
-    vocaRulePattern: ''
+    bookId: info.bookId
   });
   save();
   toast(`✅ '${className}' → '${info.bookName}'로 연결했습니다`);
@@ -6288,7 +6312,7 @@ function _applyScoreImport() {
 
 let _bulkRows = null;        // 업로드된 엑셀의 원본 행들
 let _bulkClasses = [];       // 고유 클래스명별 요약 {name, count, samples:[{setName, studyDate}], rows:[...]}
-let _bulkDraftMap = {};      // 편집 중인 매핑 (className → {mode, bookId, vocaRuleType, vocaRulePattern})
+let _bulkDraftMap = {};      // 편집 중인 매핑 (className → {mode, bookId}) — ★ v187: 회차 추출 규칙은 book.vocaExtractRule에 저장
 let _bulkPreview = null;     // 미리보기 결과
 let _bulkOverwriteMode = 'skip'; // ★ 'skip' | 'overwrite' — 재렌더링해도 유지되도록 DOM이 아닌 변수로 관리
 
@@ -6380,7 +6404,7 @@ async function _parseBulkReportFile(file) {
     const saved = _findMappingByClassName(c.name);
     _bulkDraftMap[c.name] = saved
       ? { ...saved }
-      : { mode: '', bookId: null, vocaRuleType: 'paren', vocaRulePattern: '' };
+      : { mode: '', bookId: null };
   });
 
   return { rowCount: rows.length, excludedByPrefix, fileName: file.name };
@@ -6555,7 +6579,8 @@ function _renderBulkClassList() {
 
       let voccaExtra = '';
       if (draft.mode === 'voca') {
-        const rule = { type: draft.vocaRuleType, pattern: draft.vocaRulePattern };
+        const vocaBook = getBook(draft.bookId);
+        const rule = vocaBook?.vocaExtractRule || { type: 'paren', pattern: '' };
         const previewRows = c.samples.slice(0, 3).map(s => {
           const round = _extractRound(s.setName, rule);
           return `<div style="display:flex;gap:.4rem;font-size:.72rem;padding:.15rem 0">
@@ -6590,22 +6615,21 @@ function _renderBulkClassList() {
           vocaWarnHtml = `<div style="margin-top:.4rem;padding:.4rem .5rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;font-size:.7rem;line-height:1.5">${parts.join('')}</div>`;
         }
 
-        const ruleLabels = { paren: '괄호 안 숫자', last: '마지막 숫자', first: '첫 숫자', regex: '직접 정규식' };
         voccaExtra = `
           <div style="margin-top:.4rem;padding:.5rem;background:var(--s2);border-radius:6px">
             <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.3rem">
-              <label style="margin:0;font-size:.72rem;white-space:nowrap">회차 추출 방식</label>
-              <select onchange="_updateBulkVocaRule('${escHtml(c.name).replace(/'/g,"\\'")}', this.value)" style="font-size:.72rem;padding:.15rem .3rem">
-                  <option value="paren" ${draft.vocaRuleType==='paren'?'selected':''}>괄호 안 숫자 — "DAY (03)" → 3</option>
-                  <option value="last"  ${draft.vocaRuleType==='last'?'selected':''}>마지막 숫자 — "DAY 03" → 3</option>
-                  <option value="first" ${draft.vocaRuleType==='first'?'selected':''}>첫 숫자 — "1차 DAY03" → 1</option>
-                  <option value="regex" ${draft.vocaRuleType==='regex'?'selected':''}>직접 정규식 입력</option>
+              <label style="margin:0;font-size:.72rem;white-space:nowrap">회차 추출 방식 (이 교재 공통)</label>
+              <select onchange="_updateBulkVocaRule(${draft.bookId}, this.value)" style="font-size:.72rem;padding:.15rem .3rem">
+                  <option value="paren" ${rule.type==='paren'?'selected':''}>괄호 안 숫자 — "DAY (03)" → 3</option>
+                  <option value="last"  ${rule.type==='last'?'selected':''}>마지막 숫자 — "DAY 03" → 3</option>
+                  <option value="first" ${rule.type==='first'?'selected':''}>첫 숫자 — "1차 DAY03" → 1</option>
+                  <option value="regex" ${rule.type==='regex'?'selected':''}>직접 정규식 입력</option>
                 </select>
             </div>
-            ${(draft.vocaRuleType==='regex') ? `
-              <input type="text" value="${escHtml(draft.vocaRulePattern||'')}" placeholder="예: DAY\\\\s*0*(\\\\d+)"
-                data-fk="regex-${escHtml(c.name)}"
-                oninput="_updateBulkVocaPattern('${escHtml(c.name).replace(/'/g,"\\'")}', this.value)"
+            ${(rule.type==='regex') ? `
+              <input type="text" value="${escHtml(rule.pattern||'')}" placeholder="예: DAY\\\\s*0*(\\\\d+)"
+                data-fk="regex-book-${draft.bookId}"
+                oninput="_updateBulkVocaPattern(${draft.bookId}, this.value)"
                 style="width:100%;font-size:.72rem;padding:.25rem .4rem;margin-bottom:.3rem;font-family:monospace">
             ` : ''}
             <div style="font-size:.68rem;color:var(--mu);margin-bottom:.15rem">이 클래스의 실제 세트명으로 미리 확인:</div>
@@ -6697,7 +6721,7 @@ function _resetAllBulkMappings() {
   S.classcardMappings = [];
   save();
   _bulkClasses.forEach(c => {
-    _bulkDraftMap[c.name] = { mode: '', bookId: null, vocaRuleType: 'paren', vocaRulePattern: '' };
+    _bulkDraftMap[c.name] = { mode: '', bookId: null };
   });
   toast('✅ 매핑이 전부 초기화됐습니다');
   _renderBulkStep2();
@@ -6785,15 +6809,20 @@ function _parseExcelDate(rawDate) {
   return `${y}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
-function _updateBulkVocaRule(className, type) {
-  _bulkDraftMap[className].vocaRuleType = type;
+function _updateBulkVocaRule(bookId, type) {
+  const book = getBook(bookId);
+  if (!book) return;
+  book.vocaExtractRule = { type, pattern: (book.vocaExtractRule||{}).pattern || '' };
+  save();
   _renderBulkClassList();
 }
 let _bulkPatternDebounce = null;
-function _updateBulkVocaPattern(className, pattern) {
-  _bulkDraftMap[className].vocaRulePattern = pattern;
+function _updateBulkVocaPattern(bookId, pattern) {
+  const book = getBook(bookId);
+  if (!book) return;
+  book.vocaExtractRule = { type: 'regex', pattern };
   clearTimeout(_bulkPatternDebounce);
-  _bulkPatternDebounce = setTimeout(() => _renderBulkStep2(), 250); // 정규식은 미리보기 정확도가 중요하므로 반영은 하되, 조합 깨짐 방지 위해 살짝 지연
+  _bulkPatternDebounce = setTimeout(() => { save(); _renderBulkStep2(); }, 250); // 정규식은 미리보기 정확도가 중요하므로 반영은 하되, 조합 깨짐 방지 위해 살짝 지연
 }
 
 /* 매핑 저장 → S.classcardMappings에 반영 → 미리보기로 이동
@@ -6821,8 +6850,7 @@ function _saveBulkMappingsAndPreview() {
     //   지금 파일의 정확한(ID 포함) 이름이 서로 다른 항목으로 중복 생성됨
     const key = _classNameKey(c.name);
     const idx = S.classcardMappings.findIndex(m => m.className === c.name || _classNameKey(m.className) === key);
-    const rec = { className: c.name, mode: d.mode, bookId: d.bookId || null,
-                  vocaRuleType: d.vocaRuleType, vocaRulePattern: d.vocaRulePattern, locked: !!d.locked };
+    const rec = { className: c.name, mode: d.mode, bookId: d.bookId || null };
     // ★ v176: id를 계속 유지 — 기존 레코드를 고치는 거면 원래 id 그대로, 새 레코드면 새 id 부여
     //   (id가 바뀌면 다른 기기/탭에서 예전 id로 저장한 게 별개 레코드로 남아 중복되는 문제 발생)
     if (idx >= 0) { rec.id = S.classcardMappings[idx].id; S.classcardMappings[idx] = rec; }
@@ -6878,13 +6906,9 @@ function _computeBulkPreview() {
         return;
       }
 
-      // ★ 엄격 원칙: "교재 배정"에서 정식으로 배정(배부)받은 학생만 처리.
-      //   전체 리포트 업로드가 정식 배정 없이 배부 목록에 몰래 끼워 넣는 걸 막기 위함
-      //   (교재 배정 → 배정 목록 → 배정 내역 순서를 거꾸로 만들지 않기 위해)
-      if (!Array.isArray(student.books) || !student.books.includes(book.name)) {
-        out.skippedNoDistribution.set(`${book.name} :: ${rawName}`, (out.skippedNoDistribution.get(`${book.name} :: ${rawName}`)||0) + 1);
-        return;
-      }
+      // ★ v185: "정식 배정" 체크를 여기서 하지 않음 — 아래에서 "기존 기록 업데이트"인지
+      //   "새 기록 생성"인지에 따라 다르게 처리함 (완료 처리된 교재라도 이미 있는 기록의
+      //   점수를 갱신하는 건 범위를 안 넓히니 허용하고, 새 단원/회차를 새로 만드는 것만 막음)
       // ★ 차수(예: "5차")가 있는 클래스는, 책 이름만으로는 부족함 —
       //   "이 학생이 정확히 이 차수로 정식 배정받은 적 있는지"까지 확인해야
       //   (안 그러면 6차만 정식 배정받은 학생인데도 5차 리포트 데이터가 그냥 들어와버림)
@@ -6934,7 +6958,7 @@ function _computeBulkPreview() {
 
       if (book.mode === 'voca') {
         const setName = String(row['세트명']||'').trim();
-        const round = _extractRound(setName, { type: map.vocaRuleType, pattern: map.vocaRulePattern });
+        const round = _extractRound(setName, book.vocaExtractRule || { type: 'paren', pattern: '' });
         if (round == null) {
           const key = `${c.name} :: ${setName}`;
           out.skippedNoLabel.set(key, (out.skippedNoLabel.get(key)||0) + 1);
@@ -6950,6 +6974,12 @@ function _computeBulkPreview() {
           out.updates.push({ assignId: existing.id, oldResult: hasResult?existing.result:null, newResult: score,
             studentName: student.name, bookName: book.name, label: `${round}회차${cohort?` (${cohort})`:''}` });
         } else {
+          // ★ v185: 기존 기록이 없어서 "새로" 만드는 경우에만 정식 배정(활성 배부목록) 여부를 확인.
+          //   완료 처리돼서 배부목록엔 없어도, 이미 있던 회차의 점수를 갱신하는 건 위 existing 분기에서 처리되므로 안전함.
+          if (!Array.isArray(student.books) || !student.books.includes(book.name)) {
+            out.skippedNoDistribution.set(`${book.name} :: ${rawName}`, (out.skippedNoDistribution.get(`${book.name} :: ${rawName}`)||0) + 1);
+            return;
+          }
           // 새 배정: 학습일을 그대로 사용 (실제로 그 날 학습한 기록이므로)
           const dateStr = _parseExcelDate(row['학습일']) || getTodayStr();
           out.newAssigns.push({ studentId: student.id, studentName: student.name, bookId: book.id, bookName: book.name,
@@ -6972,6 +7002,11 @@ function _computeBulkPreview() {
           out.updates.push({ assignId: existing.id, oldResult: hasResult?existing.result:null, newResult: score,
             studentName: student.name, bookName: book.name, label: matchedLabel });
         } else {
+          // ★ v185: 새로 만드는 경우에만 정식 배정 여부 확인 (기존 기록 업데이트는 위 existing 분기)
+          if (!Array.isArray(student.books) || !student.books.includes(book.name)) {
+            out.skippedNoDistribution.set(`${book.name} :: ${rawName}`, (out.skippedNoDistribution.get(`${book.name} :: ${rawName}`)||0) + 1);
+            return;
+          }
           const dateStr = _parseExcelDate(row['학습일']) || getTodayStr();
           out.newAssigns.push({ studentId: student.id, studentName: student.name, bookId: book.id, bookName: book.name,
             type: 'book', date: dateStr, label: matchedLabel, score });
@@ -7068,7 +7103,7 @@ function _renderBulkStep3() {
       ${out.skippedInvalidScore ? `· 점수 없음: ${out.skippedInvalidScore}건<br>` : ''}
       ${out.skipBlankDone ? `· 완료여부 빈칸이라 건너뜀: ${out.skipBlankDone}건<br>` : ''}
       ${out.skippedNoStudent.size ? `· ⚠ 이름 매칭 안 됨: ${noStudentHtml}<br>` : ''}
-      ${out.skippedNoDistribution.size ? `· 🚫 정식 교재 배정 없어서 건너뜀 (먼저 📅 교재 배정에서 배부하세요): ${noDistribHtml}<br>` : ''}
+      ${out.skippedNoDistribution.size ? `· 🚫 정식 배정 없어서 "새 기록"만 건너뜀 (이미 있던 기록은 위에서 정상 업데이트됨 · 새로 배정하려면 📅 교재 배정에서 배부하세요): ${noDistribHtml}<br>` : ''}
       ${out.skippedNoLabel.size ? `· ⚠ 레이블/회차 매칭 안 됨: ${noLabelHtml}` : ''}
     </div>
   `;
@@ -8510,11 +8545,10 @@ const FB_APP_NAME = 'homework_v4'; // 별도 앱 인스턴스 이름
 let _fbApp = null, _fbDB = null, _fbReady = false;
 let _isSavingToFb = false; // 자기 echo 방지
 let _saveDebounceTimer = null;
-let _lastSyncedById = { assigns: {}, books: {}, students: {}, classcardMappings: {} };
+let _lastSyncedById = { assigns: {}, books: {}, students: {}, classcardMappings: {}, classPauses: {} };
   // ★ 레코드 단위(충돌 없는) 저장 대상: id를 가진 배열들 — 통째 덮어쓰기 대신 바뀐 것만 개별 기록
-  // ★ v176: classcardMappings도 여기 포함 — 예전엔 통째 배열 덮어쓰기라서, 여러 선생님이 동시에 쓸 때
-  //   한 명이 맵핑을 고쳐도 다른 사람이 무관한 작업만 저장해도 그 사람의 "저장 당시 기억" 값으로 되돌아가는 문제가 있었음
-const RECORD_KEYS = ['assigns', 'books', 'students', 'classcardMappings'];
+  // ★ v187: classPauses도 편입 — 반별 일시정지 설정을 여러 선생님이 동시에 건드려도 서로 안 덮어쓰게
+const RECORD_KEYS = ['assigns', 'books', 'students', 'classcardMappings', 'classPauses'];
 
 /* 경로 안전 검증 — homework_v4로 시작 안 하면 에러 */
 function _validatePath(path) {
