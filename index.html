@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v189</title>
+<title>숙제 관리 v191</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v189</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v191</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -448,14 +448,13 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
     <div class="nav-sec">메뉴</div>
     <button class="nb active" data-page="p-assign" onclick="goPage('p-assign')">📅 교재 배정</button>
     <button class="nb" data-page="p-list" onclick="goPage('p-list')">📋 교재 배정 목록</button>
-    <button class="nb" data-page="p-archive" onclick="goPage('p-archive')">🗄 완료 이력</button>
     <button class="nb" data-page="p-history" onclick="goPage('p-history')">📊 숙제 배정 내역</button>
+    <button class="nb" data-page="p-mappings" onclick="goPage('p-mappings')">🔗 맵핑 관리</button>
     <button class="nb" data-page="p-today" onclick="goPage('p-today')">🎯 숙제 현황</button>
-
     <button class="nb" data-page="p-students" onclick="goPage('p-students')">👥 학생 관리</button>
     <button class="nb" data-page="p-books" onclick="goPage('p-books')">📖 교재 관리</button>
+    <button class="nb" data-page="p-archive" onclick="goPage('p-archive')">🗄 완료 이력</button>
     <button class="nb" data-page="p-export" onclick="goPage('p-export')">💾 내보내기</button>
-    <button class="nb" data-page="p-mappings" onclick="goPage('p-mappings')">🔗 맵핑 관리</button>
     <div id="deadline-banner-wrap"></div>
   </div>
   <div style="margin-top:auto;font-size:.7rem;color:var(--mu);padding:.4rem .4rem;line-height:2">
