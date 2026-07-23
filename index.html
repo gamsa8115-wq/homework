@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v181</title>
+<title>숙제 관리 v182</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v181</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v182</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4689,6 +4689,11 @@ function renderMappingsPage() {
   const summaryEl = $('mappings-summary');
   if (!listEl) return;
 
+  // ★ 정규식 입력창 등 타이핑 중 재렌더링돼도 커서 위치가 안 튀도록 포커스 상태 기억
+  const _active = document.activeElement;
+  const _focusKey = (_active && _active.dataset && _active.dataset.fk) ? _active.dataset.fk : null;
+  const _prevCursor = _focusKey && typeof _active.selectionStart === 'number' ? _active.selectionStart : null;
+
   const all = S.classcardMappings || [];
   const mappedCount = all.filter(m => m.mode !== 'ignore').length;
   const ignoreCount = all.filter(m => m.mode === 'ignore').length;
@@ -4747,7 +4752,42 @@ function renderMappingsPage() {
         countHtml = `<div style="font-size:.68rem;color:var(--mu);margin-top:.1rem">${groupTxt} · 🕐 ${escHtml(m.lastFileCheckedAt||'')} 기준 ${m.lastFileCount||0}건</div>`;
       }
       const cnEsc = escHtml(m.className).replace(/'/g,"\\'");
-      return `<div style="display:flex;align-items:center;gap:.35rem;padding:.4rem .55rem;background:var(--s2);border-radius:6px;margin-bottom:.35rem;flex-wrap:nowrap">
+
+      // ★ 보카형 교재는 "회차 추출"이 제대로 되는지가 중요 — 이번 파일 세트명으로 미리 검증해서 보여줌
+      let vocaHtml = '';
+      if (g.bookMode === 'voca') {
+        const ruleType = m.vocaRuleType || 'paren';
+        let failWarn = '';
+        if (matchedClass) {
+          const rule = { type: ruleType, pattern: m.vocaRulePattern || '' };
+          const setNames = [...new Set((matchedClass.rows||[]).map(r => String(r['세트명']||'').trim()).filter(Boolean))];
+          const failed = setNames.filter(sn => _extractRound(sn, rule) == null);
+          if (failed.length) {
+            failWarn = `<div style="margin-top:.3rem;padding:.35rem .5rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;font-size:.68rem;color:#b91c1c;line-height:1.5">
+              ⚠ 회차 추출 실패 (${failed.length}/${setNames.length}개): ${failed.slice(0,3).map(s=>escHtml(s)).join(', ')}${failed.length>3?` 외 ${failed.length-3}개`:''}
+            </div>`;
+          } else if (setNames.length) {
+            failWarn = `<div style="margin-top:.3rem;font-size:.66rem;color:#166534">✅ 이번 파일 세트명 ${setNames.length}개 전부 회차 추출 성공</div>`;
+          }
+        } else {
+          failWarn = `<div style="margin-top:.3rem;font-size:.66rem;color:var(--mu)">리포트 파일을 열면 회차 추출이 잘 되는지 여기서 바로 확인할 수 있어요</div>`;
+        }
+        vocaHtml = `<div style="display:flex;align-items:center;gap:.4rem;margin-top:.35rem;flex-wrap:wrap;padding-left:.1rem">
+          <span style="font-size:.66rem;color:var(--mu)">회차 추출 방식</span>
+          <select onchange="mappingsUpdateVocaRule('${cnEsc}', this.value)" style="font-size:.68rem;padding:.15rem .3rem">
+            <option value="paren" ${ruleType==='paren'?'selected':''}>괄호 안 숫자 — "DAY (03)"→3</option>
+            <option value="last"  ${ruleType==='last'?'selected':''}>마지막 숫자 — "DAY 03"→3</option>
+            <option value="first" ${ruleType==='first'?'selected':''}>첫 숫자 — "1차 DAY03"→1</option>
+            <option value="regex" ${ruleType==='regex'?'selected':''}>직접 정규식</option>
+          </select>
+          ${ruleType==='regex' ? `<input type="text" value="${escHtml(m.vocaRulePattern||'')}" placeholder="예: DAY\\\\s*0*(\\\\d+)"
+            data-fk="mgvoca-${cnEsc}" oninput="mappingsUpdateVocaPattern('${cnEsc}', this.value)"
+            style="font-size:.68rem;padding:.15rem .3rem;font-family:monospace;flex:1;min-width:120px">` : ''}
+        </div>${failWarn}`;
+      }
+
+      return `<div style="background:var(--s2);border-radius:6px;padding:.4rem .55rem;margin-bottom:.35rem">
+      <div style="display:flex;align-items:center;gap:.35rem;flex-wrap:nowrap">
         <div style="flex:1;min-width:0">
           <div style="font-size:.76rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escHtml(m.className)}">${escHtml(m.className)}</div>
           ${countHtml}
@@ -4756,6 +4796,8 @@ function renderMappingsPage() {
           ${moveSelectHtml(m)}
         </select>
         <button class="btn bd2 bsm" style="font-size:.66rem;padding:.15rem .35rem;flex-shrink:0;white-space:nowrap" onclick="mappingsDeleteRow('${cnEsc}')">🗑</button>
+      </div>
+      ${vocaHtml}
       </div>`;
     }).join('');
 
@@ -4774,6 +4816,32 @@ function renderMappingsPage() {
       ${addBoxHtml}
     </div>`;
   }).join('');
+
+  // ★ 정규식 입력창 포커스/커서 복원 (재렌더링돼도 타이핑이 안 끊기도록)
+  if (_focusKey) {
+    const el = document.querySelector(`[data-fk="${_focusKey}"]`);
+    if (el) {
+      el.focus();
+      if (_prevCursor != null) el.setSelectionRange(_prevCursor, _prevCursor);
+    }
+  }
+}
+
+/* ★ v181: 맵핑 관리 탭에서 바로 회차 추출 방식을 바꾸고, 실패 여부를 즉시 확인 */
+function mappingsUpdateVocaRule(className, type) {
+  const rec = (S.classcardMappings || []).find(m => m.className === className);
+  if (!rec) return;
+  rec.vocaRuleType = type;
+  save();
+  renderMappingsPage();
+}
+let _mgPatternDebounce = null;
+function mappingsUpdateVocaPattern(className, pattern) {
+  const rec = (S.classcardMappings || []).find(m => m.className === className);
+  if (!rec) return;
+  rec.vocaRulePattern = pattern;
+  clearTimeout(_mgPatternDebounce);
+  _mgPatternDebounce = setTimeout(() => { save(); renderMappingsPage(); }, 300);
 }
 
 /* ★ v180: 교재 그룹 카드 하단의 "+ 추가"에서 — 이 교재(또는 무시 그룹)에 클래스명을 새로 연결
