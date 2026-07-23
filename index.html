@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v179</title>
+<title>숙제 관리 v180</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v179</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v180</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4704,71 +4704,108 @@ function renderMappingsPage() {
   else if (filter === 'ignore') rows = rows.filter(m => m.mode === 'ignore');
   if (q) rows = rows.filter(m => m.className.toLowerCase().includes(q) || (getBook(m.bookId)?.name||'').toLowerCase().includes(q));
 
-  rows.sort((a,b) => a.className.localeCompare(b.className, 'ko'));
-
   if (!rows.length) { listEl.innerHTML = `<div class="distrib-empty">해당하는 매핑이 없습니다</div>`; return; }
+
+  // ★ v180: "클래스명 하나하나"가 아니라 "교재 하나 → 거기 연결된 클래스카드 클래스들"로 묶어서 보여줌
+  //   (같은 교재를 여러 반이 같이 쓸 때, 그 반들이 전부 한 덩어리로 눈에 보여야 "추가"와 "교체"를 헷갈리지 않음)
+  const groups = new Map(); // key: 'book-{id}' | 'ignore' | 'unset'
+  rows.forEach(m => {
+    const key = m.mode === 'ignore' ? 'ignore' : (m.bookId != null ? `book-${m.bookId}` : 'unset');
+    if (!groups.has(key)) {
+      let label, sortKey, bookMode = '';
+      if (m.mode === 'ignore') { label = '🚫 무시로 정한 클래스'; sortKey = '\uffff2'; }
+      else if (m.bookId != null) {
+        const book = getBook(m.bookId);
+        bookMode = book?.mode || '';
+        label = book ? `${book.mode==='voca'?'📗':'📘'} ${book.name}` : '⚠️ (삭제된 교재)';
+        sortKey = book ? book.name : '\uffff1';
+      } else { label = '❓ 교재 미설정'; sortKey = '\uffff0'; }
+      groups.set(key, { key, label, sortKey, bookId: m.bookId, mode: m.mode, bookMode, items: [] });
+    }
+    groups.get(key).items.push(m);
+  });
+  const groupList = [...groups.values()].sort((a,b) => a.sortKey.localeCompare(b.sortKey, 'ko'));
 
   const bookOptionsHtml = mode => S.books.filter(b => b.mode===mode).sort((a,b)=>a.name.localeCompare(b.name,'ko'))
     .map(b => `<option value="${b.id}">${escHtml(b.name)}</option>`).join('');
+  const moveSelectHtml = m => `<option value="">교재 이동...</option>
+      <optgroup label="📘 교재형">${bookOptionsHtml('book')}</optgroup>
+      <optgroup label="📗 보카형">${bookOptionsHtml('voca')}</optgroup>`;
 
-  listEl.innerHTML = rows.map(m => {
-    const isIgnore = m.mode === 'ignore';
-    const book = getBook(m.bookId);
-    const statusBadge = isIgnore
-      ? `<span style="font-size:.66rem;font-weight:700;color:var(--mu)">🚫 무시</span>`
-      : `<span style="font-size:.66rem;font-weight:700;color:#166534">✅ 연결됨</span>`;
+  listEl.innerHTML = groupList.map(g => {
+    const itemsHtml = g.items.map(m => {
+      const matchedClass = Array.isArray(_bulkClasses)
+        ? _bulkClasses.find(c => c.name === m.className || _classNameKey(c.name) === _classNameKey(m.className))
+        : null;
+      let countHtml = '';
+      if (matchedClass) {
+        const breakdown = _computeClassGroupBreakdown(matchedClass);
+        const groupTxt = Object.entries(breakdown).sort((a,b)=>b[1]-a[1]).map(([gr,c])=>`${escHtml(gr)}(${c})`).join(' · ') || '(반 확인 안 됨)';
+        countHtml = `<div style="font-size:.68rem;color:#0e7490;margin-top:.1rem">${groupTxt} · 📄 이번 파일 <b>${matchedClass.count}건</b></div>`;
+      } else if (m.lastGroupBreakdown && Object.keys(m.lastGroupBreakdown).length) {
+        const groupTxt = Object.entries(m.lastGroupBreakdown).sort((a,b)=>b[1]-a[1]).map(([gr,c])=>`${escHtml(gr)}(${c})`).join(' · ');
+        countHtml = `<div style="font-size:.68rem;color:var(--mu);margin-top:.1rem">${groupTxt} · 🕐 ${escHtml(m.lastFileCheckedAt||'')} 기준 ${m.lastFileCount||0}건</div>`;
+      }
+      const cnEsc = escHtml(m.className).replace(/'/g,"\\'");
+      return `<div style="display:flex;align-items:center;gap:.5rem;padding:.4rem .55rem;background:var(--s2);border-radius:6px;margin-bottom:.35rem;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:.78rem;font-weight:600">${escHtml(m.className)}</div>
+          ${countHtml}
+        </div>
+        <select onchange="mappingsChangeBook('${cnEsc}', this.value)" style="font-size:.72rem;padding:.15rem .3rem">
+          ${moveSelectHtml(m)}
+        </select>
+        <button class="btn bd2 bsm" style="font-size:.66rem" onclick="mappingsDeleteRow('${cnEsc}')">🗑 삭제</button>
+      </div>`;
+    }).join('');
 
-    // ★ 지금 열려 있는(또는 최근 파싱된) 리포트 파일에 이 클래스가 있으면, 실제 반 분포·건수를 계산해서 보여줌
-    const matchedClass = Array.isArray(_bulkClasses)
-      ? _bulkClasses.find(c => c.name === m.className || _classNameKey(c.name) === _classNameKey(m.className))
-      : null;
-    const typeLabel = isIgnore ? '' : (book?.mode === 'voca' ? '보카형' : '교재형');
-    let middleHtml;
-    if (isIgnore) {
-      middleHtml = `<div style="font-size:.76rem;color:var(--mu)">— 이 클래스는 무시로 정해둠 —</div>`;
-    } else if (matchedClass) {
-      const breakdown = _computeClassGroupBreakdown(matchedClass);
-      const sortedGroups = Object.entries(breakdown).sort((a,b) => b[1]-a[1]);
-      const groupTxt = sortedGroups.map(([g,c]) => `${escHtml(g)}(${c})`).join(' · ') || '(반 확인 안 됨)';
-      middleHtml = `
-        <div style="font-weight:700;font-size:.82rem">${groupTxt} + ${escHtml(book?.name || '(삭제된 교재)')} ${typeLabel ? `(${typeLabel})` : ''}</div>
-        <div style="margin-top:.15rem;font-size:.7rem;color:#0e7490">📄 이번 파일: <b>${matchedClass.count}건</b></div>`;
-    } else if (m.lastGroupBreakdown && Object.keys(m.lastGroupBreakdown).length) {
-      // ★ 지금 파일은 없지만, 예전에 확인해둔 반 정보가 캐시돼 있으면 그걸 계속 보여줌
-      const sortedGroups = Object.entries(m.lastGroupBreakdown).sort((a,b) => b[1]-a[1]);
-      const groupTxt = sortedGroups.map(([g,c]) => `${escHtml(g)}(${c})`).join(' · ');
-      middleHtml = `
-        <div style="font-weight:700;font-size:.82rem">${groupTxt} + ${escHtml(book?.name || '(삭제된 교재)')} ${typeLabel ? `(${typeLabel})` : ''}</div>
-        <div style="margin-top:.15rem;font-size:.7rem;color:var(--mu)">🕐 마지막 확인: ${escHtml(m.lastFileCheckedAt||'')} 기준 ${m.lastFileCount||0}건 (지금 파일 기준 아님)</div>`;
-    } else {
-      middleHtml = `<div style="font-size:.76rem;color:var(--mu)">반 · 건수를 보려면 위에서 리포트 파일을 열어주세요</div>`;
-    }
+    const addBoxId = `mgadd-${g.key.replace(/[^a-zA-Z0-9_-]/g,'_')}`;
+    const addBoxHtml = g.mode === 'ignore' ? '' : `
+      <div style="display:flex;gap:.4rem;margin-top:.4rem">
+        <input type="text" id="${addBoxId}" placeholder="+ 이 교재를 쓰는 클래스카드 클래스명 추가로 연결..." style="flex:1;font-size:.76rem;padding:.3rem .5rem">
+        <button class="btn bs bsm" style="font-size:.72rem" onclick="mappingsAddToGroup('${g.key}', '${addBoxId}')">🔗 추가</button>
+      </div>`;
 
-    const cnEsc = escHtml(m.className).replace(/'/g,"\\'");
-    const bookControl = isIgnore ? ''
-      : `<select onchange="mappingsChangeBook('${cnEsc}', this.value)" style="font-size:.76rem;padding:.2rem .35rem">
-            <option value="">교재 선택...</option>
-            <optgroup label="📘 교재형">${bookOptionsHtml('book')}</optgroup>
-            <optgroup label="📗 보카형">${bookOptionsHtml('voca')}</optgroup>
-          </select>`;
-    return `<div style="border:1.5px solid var(--bd);border-radius:8px;padding:.55rem .7rem;margin-bottom:.5rem;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
-      <div style="flex:1;min-width:220px">
-        <div style="font-weight:700;font-size:.8rem">${escHtml(m.className)}</div>
-        <div style="margin-top:.15rem">${statusBadge}</div>
+    return `<div class="card" style="margin-bottom:.7rem">
+      <div style="font-weight:700;font-size:.86rem;margin-bottom:.5rem">${escHtml(g.label)}
+        <span style="font-weight:400;font-size:.7rem;color:var(--mu)">· 클래스카드 클래스 ${g.items.length}개 연결됨</span>
       </div>
-      <div style="flex:1.4;min-width:220px;padding:0 .5rem;border-left:1px dashed var(--bd);border-right:1px dashed var(--bd)">${middleHtml}</div>
-      <div data-book-slot="${cnEsc}">${bookControl}</div>
-      <div style="display:flex;gap:.3rem;flex-shrink:0">
-        <button class="btn bd2 bsm" style="font-size:.68rem" onclick="mappingsDeleteRow('${cnEsc}')">🗑 삭제</button>
-      </div>
+      ${itemsHtml}
+      ${addBoxHtml}
     </div>`;
   }).join('');
+}
 
-  rows.forEach(m => {
-    if (m.mode === 'ignore') return;
-    const slot = listEl.querySelector(`[data-book-slot="${CSS.escape(m.className)}"] select`);
-    if (slot) slot.value = m.bookId || '';
-  });
+/* ★ v180: 교재 그룹 카드 하단의 "+ 추가"에서 — 이 교재(또는 무시 그룹)에 클래스명을 새로 연결
+   (기존 걸 지우는 게 아니라 "같은 교재를 쓰는 다른 반"을 나란히 추가하는 용도) */
+function mappingsAddToGroup(groupKey, inputId) {
+  const input = document.getElementById(inputId);
+  const className = (input?.value || '').trim();
+  if (!className) { toast('클래스명을 입력하세요'); return; }
+
+  let mode = '', bookId = null;
+  if (groupKey === 'ignore') { mode = 'ignore'; }
+  else if (groupKey.startsWith('book-')) {
+    bookId = Number(groupKey.slice('book-'.length));
+    const book = getBook(bookId);
+    if (!book) { toast('교재를 찾을 수 없어요'); return; }
+    mode = book.mode;
+  } else { toast('교재 미설정 그룹에는 바로 추가할 수 없어요 — 목록에서 교재를 먼저 선택해주세요'); return; }
+
+  const existing = (S.classcardMappings || []).find(m => m.className === className);
+  if (existing && existing.bookId === bookId && existing.mode === mode) {
+    toast('이미 연결되어 있어요'); return;
+  }
+  if (existing) {
+    const otherTxt = existing.mode === 'ignore' ? '무시' : (getBook(existing.bookId)?.name || '다른 교재');
+    if (!confirm(`'${className}'은(는) 이미 '${otherTxt}'에 연결되어 있어요.\n\n여기로 다시 연결하시겠습니까? (기존 연결은 없어져요)`)) return;
+    S.classcardMappings = S.classcardMappings.filter(m => m.className !== className);
+  }
+
+  S.classcardMappings.push({ id: ++S.nid, className, mode, bookId, vocaRuleType: 'paren', vocaRulePattern: '' });
+  save();
+  toast(`✅ '${className}' 연결했습니다`);
+  renderMappingsPage();
 }
 
 /* ★ 맵핑 현황 팝업에서 특정 클래스명의 매핑만 바로 삭제 */
