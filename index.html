@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v188</title>
+<title>숙제 관리 v189</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v188</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v189</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -448,6 +448,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
     <div class="nav-sec">메뉴</div>
     <button class="nb active" data-page="p-assign" onclick="goPage('p-assign')">📅 교재 배정</button>
     <button class="nb" data-page="p-list" onclick="goPage('p-list')">📋 교재 배정 목록</button>
+    <button class="nb" data-page="p-archive" onclick="goPage('p-archive')">🗄 완료 이력</button>
     <button class="nb" data-page="p-history" onclick="goPage('p-history')">📊 숙제 배정 내역</button>
     <button class="nb" data-page="p-today" onclick="goPage('p-today')">🎯 숙제 현황</button>
 
@@ -636,6 +637,23 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
   </div>
 
   <div id="assign-list"></div>
+</div>
+
+<!-- ════ 완료 이력 ════ -->
+<div class="page" id="p-archive">
+  <div class="ph"><h1>완료 이력</h1><p>교재완료 처리된 배정을 모아서 확인 — 활성 배정목록에서는 빠졌지만 기록은 그대로 보존됩니다</p></div>
+  <div id="archive-summary" style="background:var(--s2);border-radius:8px;padding:.6rem .8rem;margin-bottom:.8rem;font-size:.8rem"></div>
+  <div style="display:flex;gap:.45rem;margin-bottom:.9rem;flex-wrap:wrap;align-items:center">
+    <select style="width:auto" id="ar-group" onchange="renderArchive()"><option value="">전체 반</option></select>
+    <select style="width:auto" id="ar-st" onchange="renderArchive()"><option value="">전체 학생</option></select>
+    <select style="width:auto" id="ar-book" onchange="renderArchive()"><option value="">전체 교재</option></select>
+    <select style="width:auto" id="ar-sort" onchange="renderArchive()">
+      <option value="recent">최근 활동일순</option>
+      <option value="name">학생 이름순</option>
+      <option value="book">교재명순</option>
+    </select>
+  </div>
+  <div id="archive-list"></div>
 </div>
 
 <!-- ════ 학생 관리 ════ -->
@@ -1264,6 +1282,7 @@ function goPage(id) {
   if (id === 'p-today')   { setupIncomplete(); renderIncomplete(); }
   if (id === 'p-export')  { setupExport(); }
   if (id === 'p-mappings'){ renderMappingsPage(); }
+  if (id === 'p-archive'){ populateArchiveFilters(); renderArchive(); }
 }
 
 // ══════════ MODE ══════════
@@ -2392,6 +2411,117 @@ function delAssign(id) {
 // 배정 목록 다중 선택 상태 (저장되지 않는 UI 상태)
 const _selAssignIds = new Set();
 let _listVisibleIds = []; // 현재 필터 결과로 화면에 보이는 id 목록
+
+/* ★ v189: "완료 이력" — 학생이 실제로 학습 기록(assigns)은 있지만, 지금은 활성 배정목록(student.books)에서
+   빠져있는(=교재완료 처리된) (학생,교재,차수) 조합을 모아서 보여줌. 배정 기록 자체는 지우지 않고 그대로 둔 채
+   "완료됨"으로 정리해서 나중에 다시 확인할 수 있게 하는 용도. */
+function _computeCompletedArchive() {
+  const entries = [];
+  S.students.forEach(st => {
+    const activeNames = new Set(st.books || []);
+    const byKey = new Map(); // `${bookId}::${cohort}` → assigns[]
+    S.assigns.filter(a => a.studentId === st.id).forEach(a => {
+      const key = `${a.bookId}::${a.cohort||''}`;
+      if (!byKey.has(key)) byKey.set(key, []);
+      byKey.get(key).push(a);
+    });
+    byKey.forEach(list => {
+      const book = getBook(list[0].bookId);
+      if (!book) return;
+      if (activeNames.has(book.name)) return; // 아직 활성 배정 중이면 완료 이력 아님 → 제외
+      let okCount = 0, issueCount = 0, noResultCount = 0;
+      list.forEach(a => {
+        const hasResult = a.result !== '' && a.result !== null && a.result !== undefined;
+        if (!hasResult) { noResultCount++; return; }
+        const reason = _incompleteReason(book, a.result, st.group, a.date);
+        if (reason) issueCount++; else okCount++;
+      });
+      const dates = list.map(a => a.date).filter(Boolean).sort();
+      entries.push({
+        studentId: st.id, studentName: st.name, group: st.group || '',
+        bookId: book.id, bookName: book.name, bookMode: book.mode,
+        cohort: list[0].cohort || '',
+        total: list.length, okCount, issueCount, noResultCount,
+        firstDate: dates[0] || '', lastDate: dates[dates.length-1] || ''
+      });
+    });
+  });
+  return entries;
+}
+
+function populateArchiveFilters() {
+  const all = _computeCompletedArchive();
+  const gsel = $('ar-group'), bsel = $('ar-book');
+  if (gsel) {
+    const gcur = gsel.value;
+    const sortedGroups = [...S.groups].sort((a,b) => a.localeCompare(b,'ko'));
+    gsel.innerHTML = '<option value="">전체 반</option>' +
+      sortedGroups.map(g => `<option value="${escHtml(g)}" ${g===gcur?'selected':''}>${escHtml(g)}</option>`).join('');
+  }
+  _populateArchiveStudentFilter();
+  if (bsel) {
+    const bcur = bsel.value;
+    const bookIds = [...new Set(all.map(e => e.bookId))];
+    const sortedBooks = bookIds.map(id => getBook(id)).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+    bsel.innerHTML = '<option value="">전체 교재</option>' +
+      sortedBooks.map(b => `<option value="${b.id}" ${String(b.id)===bcur?'selected':''}>${escHtml(b.name)}</option>`).join('');
+  }
+}
+
+function _populateArchiveStudentFilter() {
+  const sel = $('ar-st');
+  if (!sel) return;
+  const cur = sel.value;
+  const grp = ($('ar-group')||{}).value || '';
+  const sts = (grp ? S.students.filter(s => s.group === grp) : S.students)
+    .sort((a,b) => a.name.localeCompare(b.name,'ko'));
+  const keep = sts.some(s => String(s.id) === cur);
+  sel.innerHTML = '<option value="">전체 학생</option>' +
+    sts.map(s => `<option value="${s.id}" ${keep && String(s.id)===cur?'selected':''}>${escHtml(s.name)}</option>`).join('');
+}
+
+function renderArchive() {
+  const listEl = $('archive-list');
+  const summaryEl = $('archive-summary');
+  if (!listEl) return;
+
+  _populateArchiveStudentFilter();
+
+  let entries = _computeCompletedArchive();
+  const grp = ($('ar-group')||{}).value || '';
+  const stId = ($('ar-st')||{}).value || '';
+  const bookId = ($('ar-book')||{}).value || '';
+  const sort = ($('ar-sort')||{}).value || 'recent';
+
+  if (grp) entries = entries.filter(e => e.group === grp);
+  if (stId) entries = entries.filter(e => String(e.studentId) === stId);
+  if (bookId) entries = entries.filter(e => String(e.bookId) === bookId);
+
+  if (sort === 'name') entries.sort((a,b) => a.studentName.localeCompare(b.studentName,'ko'));
+  else if (sort === 'book') entries.sort((a,b) => a.bookName.localeCompare(b.bookName,'ko'));
+  else entries.sort((a,b) => (b.lastDate||'').localeCompare(a.lastDate||'')); // 최근 활동일순 (기본)
+
+  if (summaryEl) summaryEl.innerHTML = `완료 이력 <b>${entries.length}건</b>`;
+
+  if (!entries.length) { listEl.innerHTML = `<div class="distrib-empty">완료 이력이 없습니다</div>`; return; }
+
+  listEl.innerHTML = entries.map(e => {
+    const rate = e.total ? Math.round((e.okCount / e.total) * 100) : 0;
+    const rateColor = rate >= 80 ? '#166534' : (rate >= 50 ? '#b45309' : '#b91c1c');
+    return `<div style="border:1px solid var(--bd);border-radius:8px;padding:.6rem .8rem;margin-bottom:.5rem">
+      <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+        <span style="font-weight:700;font-size:.85rem">${escHtml(e.studentName)}</span>
+        <span style="font-size:.72rem;color:var(--mu)">${escHtml(e.group)}</span>
+        <span style="font-size:.8rem">· ${escHtml(e.bookName)}${e.cohort?` (${escHtml(e.cohort)})`:''}</span>
+        <span style="margin-left:auto;font-size:.72rem;color:${rateColor};font-weight:700">통과율 ${rate}%</span>
+      </div>
+      <div style="margin-top:.3rem;font-size:.72rem;color:var(--mu)">
+        ${escHtml(e.firstDate)} ~ ${escHtml(e.lastDate)} · 총 ${e.total}건 · 통과/완료 ${e.okCount} · 미통과 ${e.issueCount} · 결과없음 ${e.noResultCount}
+      </div>
+    </div>`;
+  }).join('');
+}
+
 
 function populateListFilters() {
   // 반 select (오름차순)
