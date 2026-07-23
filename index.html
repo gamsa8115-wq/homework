@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v191</title>
+<title>숙제 관리 v192</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v191</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v192</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -1071,7 +1071,6 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
       <option value="">전체 보기</option>
       <option value="mapped">✅ 교재 연결된 것만</option>
       <option value="failed">⚠ 회차 추출 실패 있는 것만</option>
-      <option value="ignore">🚫 무시로 정한 것만</option>
     </select>
     <button class="btn bd2" onclick="resetAllClasscardMappings()">🔄 전체 매핑 초기화</button>
   </div>
@@ -4731,10 +4730,15 @@ let _histMappingBadgeInfo = null; // 맵핑 배지 클릭 시 보여줄 정보 {
 /* ★ "🔗 맵핑됨/⚠ 맵핑 안 됨" 배지 클릭 시 — 연결된 클래스명을 팝업으로 보여줌
    (모바일은 마우스 오버 툴팁이 안 먹히니, 클릭해서 확인 가능하게) */
 /* ══════════ 🔗 맵핑 관리 (전체 점검) ══════════ */
-function resetAllClasscardMappings() {
-  if (!confirm('저장된 클래스명↔교재 매핑을 전부 지우시겠습니까?\n\n이미 배정 기록(회차·점수·날짜)에는 전혀 영향 없어요 — 매핑 정보만 초기화되고, 다음에 전체 리포트 업로드할 때 클래스별로 다시 연결해줘야 해요.')) return;
+/* ★ v192: 두 화면(맵핑 관리 / 전체 리포트 업로드)에서 똑같이 쓰던 "전체 초기화" 로직을 하나로 합침 */
+function _clearAllClasscardMappings() {
   S.classcardMappings = [];
   save();
+}
+
+function resetAllClasscardMappings() {
+  if (!confirm('저장된 클래스명↔교재 매핑을 전부 지우시겠습니까?\n\n이미 배정 기록(회차·점수·날짜)에는 전혀 영향 없어요 — 매핑 정보만 초기화되고, 다음에 전체 리포트 업로드할 때 클래스별로 다시 연결해줘야 해요.')) return;
+  _clearAllClasscardMappings();
   toast('✅ 전체 매핑을 초기화했습니다');
   renderMappingsPage();
 }
@@ -4817,7 +4821,7 @@ function _computeClassGroupBreakdown(bulkClass) {
 /* ★ v188: 이 매핑(클래스명)이 보카형 교재이고, 지금 열려있는 리포트 파일 기준으로
    회차 추출이 하나라도 실패하는 세트명이 있는지 확인 — "실패만 보기" 필터에서 사용 */
 function _mappingExtractFails(m) {
-  if (m.mode === 'ignore' || m.bookId == null) return false;
+  if (m.bookId == null) return false;
   const book = getBook(m.bookId);
   if (!book || book.mode !== 'voca') return false;
   const matchedClass = Array.isArray(_bulkClasses)
@@ -4840,18 +4844,18 @@ function renderMappingsPage() {
   const _prevCursor = _focusKey && typeof _active.selectionStart === 'number' ? _active.selectionStart : null;
 
   const all = S.classcardMappings || [];
-  const mappedCount = all.filter(m => m.mode !== 'ignore').length;
-  const ignoreCount = all.filter(m => m.mode === 'ignore').length;
+  // ★ v192: "무시" 개념 제거 — 교재 연결 안 된 건 전부 "미설정"으로 통일
+  const mappedCount = all.filter(m => m.bookId != null).length;
+  const unsetCount = all.filter(m => m.bookId == null).length;
   if (summaryEl) {
-    summaryEl.innerHTML = `총 <b>${all.length}개</b> 클래스 매핑 · <span style="color:#166534">✅ 교재 연결 ${mappedCount}</span> · <span style="color:var(--mu)">🚫 무시 ${ignoreCount}</span>`;
+    summaryEl.innerHTML = `총 <b>${all.length}개</b> 클래스 매핑 · <span style="color:#166534">✅ 교재 연결 ${mappedCount}</span> · <span style="color:var(--mu)">❓ 미설정 ${unsetCount}</span>`;
   }
 
   const q = ($('mappings-search')?.value || '').trim().toLowerCase();
   const filter = $('mappings-filter')?.value || '';
 
   let rows = all.slice();
-  if (filter === 'mapped') rows = rows.filter(m => m.mode !== 'ignore');
-  else if (filter === 'ignore') rows = rows.filter(m => m.mode === 'ignore');
+  if (filter === 'mapped') rows = rows.filter(m => m.bookId != null);
   else if (filter === 'failed') rows = rows.filter(m => _mappingExtractFails(m));
   if (q) rows = rows.filter(m => m.className.toLowerCase().includes(q) || (getBook(m.bookId)?.name||'').toLowerCase().includes(q));
 
@@ -4859,19 +4863,18 @@ function renderMappingsPage() {
 
   // ★ v180: "클래스명 하나하나"가 아니라 "교재 하나 → 거기 연결된 클래스카드 클래스들"로 묶어서 보여줌
   //   (같은 교재를 여러 반이 같이 쓸 때, 그 반들이 전부 한 덩어리로 눈에 보여야 "추가"와 "교체"를 헷갈리지 않음)
-  const groups = new Map(); // key: 'book-{id}' | 'ignore' | 'unset'
+  const groups = new Map(); // key: 'book-{id}' | 'unset'
   rows.forEach(m => {
-    const key = m.mode === 'ignore' ? 'ignore' : (m.bookId != null ? `book-${m.bookId}` : 'unset');
+    const key = m.bookId != null ? `book-${m.bookId}` : 'unset';
     if (!groups.has(key)) {
       let label, sortKey, bookMode = '';
-      if (m.mode === 'ignore') { label = '🚫 무시로 정한 클래스'; sortKey = '\uffff2'; }
-      else if (m.bookId != null) {
+      if (m.bookId != null) {
         const book = getBook(m.bookId);
         bookMode = book?.mode || '';
         label = book ? `${book.mode==='voca'?'📗':'📘'} ${book.name}` : '⚠️ (삭제된 교재)';
         sortKey = book ? book.name : '\uffff1';
       } else { label = '❓ 교재 미설정'; sortKey = '\uffff0'; }
-      groups.set(key, { key, label, sortKey, bookId: m.bookId, mode: m.mode, bookMode, items: [] });
+      groups.set(key, { key, label, sortKey, bookId: m.bookId, bookMode, items: [] });
     }
     groups.get(key).items.push(m);
   });
@@ -4955,7 +4958,7 @@ function renderMappingsPage() {
     }
 
     const addBoxId = `mgadd-${g.key.replace(/[^a-zA-Z0-9_-]/g,'_')}`;
-    const addBoxHtml = g.mode === 'ignore' ? '' : `
+    const addBoxHtml = `
       <div style="display:flex;gap:.4rem;margin-top:.4rem">
         <input type="text" id="${addBoxId}" placeholder="+ 이 교재를 쓰는 클래스카드 클래스명 추가로 연결..." style="flex:1;font-size:.76rem;padding:.3rem .5rem">
         <button class="btn bs bsm" style="font-size:.72rem" onclick="mappingsAddToGroup('${g.key}', '${addBoxId}')">🔗 추가</button>
@@ -4999,7 +5002,7 @@ function mappingsUpdateBookVocaPattern(bookId, pattern) {
   _mgPatternDebounce = setTimeout(() => { save(); renderMappingsPage(); }, 300);
 }
 
-/* ★ v180: 교재 그룹 카드 하단의 "+ 추가"에서 — 이 교재(또는 무시 그룹)에 클래스명을 새로 연결
+/* ★ v180: 교재 그룹 카드 하단의 "+ 추가"에서 — 이 교재에 클래스명을 새로 연결
    (기존 걸 지우는 게 아니라 "같은 교재를 쓰는 다른 반"을 나란히 추가하는 용도) */
 function mappingsAddToGroup(groupKey, inputId) {
   const input = document.getElementById(inputId);
@@ -5007,8 +5010,7 @@ function mappingsAddToGroup(groupKey, inputId) {
   if (!className) { toast('클래스명을 입력하세요'); return; }
 
   let mode = '', bookId = null;
-  if (groupKey === 'ignore') { mode = 'ignore'; }
-  else if (groupKey.startsWith('book-')) {
+  if (groupKey.startsWith('book-')) {
     bookId = Number(groupKey.slice('book-'.length));
     const book = getBook(bookId);
     if (!book) { toast('교재를 찾을 수 없어요'); return; }
@@ -5016,11 +5018,11 @@ function mappingsAddToGroup(groupKey, inputId) {
   } else { toast('교재 미설정 그룹에는 바로 추가할 수 없어요 — 목록에서 교재를 먼저 선택해주세요'); return; }
 
   const existing = (S.classcardMappings || []).find(m => m.className === className);
-  if (existing && existing.bookId === bookId && existing.mode === mode) {
+  if (existing && existing.bookId === bookId) {
     toast('이미 연결되어 있어요'); return;
   }
   if (existing) {
-    const otherTxt = existing.mode === 'ignore' ? '무시' : (getBook(existing.bookId)?.name || '다른 교재');
+    const otherTxt = getBook(existing.bookId)?.name || '미설정';
     if (!confirm(`'${className}'은(는) 이미 '${otherTxt}'에 연결되어 있어요.\n\n여기로 다시 연결하시겠습니까? (기존 연결은 없어져요)`)) return;
     S.classcardMappings = S.classcardMappings.filter(m => m.className !== className);
   }
@@ -6616,13 +6618,11 @@ function _extractRound(setName, rule) {
    따로 갱신함 → 검색창 자체가 다시 만들어지는 일이 없어서 한글 조합이 절대 깨지지 않음 */
 function _renderBulkStep2() {
   const mappedCount = Object.values(_bulkDraftMap).filter(m => m.mode === 'book' || m.mode === 'voca').length;
-  const ignoredCount = Object.values(_bulkDraftMap).filter(m => m.mode === 'ignore').length;
-  const pendingCount = _bulkClasses.length - mappedCount - ignoredCount;
+  const pendingCount = _bulkClasses.length - mappedCount;
 
   $('bulk-import-body').innerHTML = `
     <div id="bulk-summary-line" style="background:var(--s2);border-radius:8px;padding:.55rem .8rem;margin-bottom:.7rem;font-size:.76rem">
       총 <b>${_bulkClasses.length}개</b> 클래스 · <span style="color:var(--grn)">연결됨 ${mappedCount}</span> ·
-      <span style="color:var(--mu)">무시 ${ignoredCount}</span> ·
       <span style="color:${pendingCount?'var(--amb)':'var(--mu)'}">미설정 ${pendingCount}</span>
     </div>
     <input type="text" id="bulk-map-search" placeholder="🔍 클래스명 검색... (예: 5형식, HOME보카)" oninput="_renderBulkClassList()"
@@ -6638,7 +6638,6 @@ function _renderBulkStep2() {
         <option value="mapped">✅ 연결된 것만 (교재형+보카형)</option>
         <option value="book">📘 교재형만</option>
         <option value="voca">📗 보카형만</option>
-        <option value="ignore">🚫 무시한 것만</option>
         <option value="pending">⬜ 미설정만</option>
         <option value="incomplete">⚠ 교재 선택 안 된 것만</option>
       </select>
@@ -6673,7 +6672,7 @@ function _renderBulkClassList() {
   const _prevCursor = _focusKey ? _active.selectionStart : null;
 
   // ★ "아직 확인 안 한 것"이 위로, "이미 매핑 끝난 것"은 아래로 — 뭘 해야 할지 한눈에 보이도록
-  const _modeOrder = { '': 0, book: 1, voca: 1, ignore: 2 };
+  const _modeOrder = { '': 0, book: 1, voca: 1 };
   const _sectionLabel = { 0: '⚠ 확인 필요', 1: '✅ 활성화됨 (매핑 완료)', 2: '🚫 무시로 정함' };
   let _lastGroup = null;
   const rowsHtml = _bulkClasses
@@ -6686,7 +6685,7 @@ function _renderBulkClassList() {
       if (filterMode === 'mapped') return m === 'book' || m === 'voca';
       if (filterMode === 'pending') return !m;
       if (filterMode === 'incomplete') return (m === 'book' || m === 'voca') && !d.bookId;
-      return m === filterMode; // 'book' | 'voca' | 'ignore'
+      return m === filterMode; // 'book' | 'voca'
     })
     .slice()
     .sort((a, b) => {
@@ -6769,21 +6768,16 @@ function _renderBulkClassList() {
 
       const cardStyle = {
         ''      : { border:'2px solid rgba(217,119,6,.4)',  bg:'rgba(217,119,6,.06)'  }, // 미설정 — 주황
-        ignore  : { border:'2px solid var(--bd)',            bg:'var(--s2)'            }, // 무시 — 회색
         book    : { border:'2px solid #2563eb',              bg:'rgba(37,99,235,.06)'  }, // 교재형 — 파랑
         voca    : { border:'2px solid #059669',              bg:'rgba(5,150,105,.06)'  }, // 보카형 — 초록
       }[draft.mode || ''];
 
-      // ★ "이전 매핑" 안내를 구체적으로: 뭐였는지(무시였는지 교재 연결이었는지) 바로 알 수 있게
+      // ★ "이전 매핑" 안내 — 이전에 어떤 교재로 연결해뒀는지 바로 알 수 있게
       let prevBadge = '';
       if (!isNew) {
         const savedRec = _findMappingByClassName(c.name);
-        if (savedRec.mode === 'ignore') {
-          prevBadge = '<span style="font-size:.62rem;color:var(--mu);font-weight:700">🕐 이전에 "무시"로 정해둔 클래스</span>';
-        } else {
-          const savedBook = getBook(savedRec.bookId);
-          prevBadge = `<span style="font-size:.62rem;color:var(--grn);font-weight:700">✓ 이전에 "${escHtml(savedBook?.name||'(삭제된 교재)')}"로 연결해둔 매핑</span>`;
-        }
+        const savedBook = getBook(savedRec.bookId);
+        prevBadge = `<span style="font-size:.62rem;color:var(--grn);font-weight:700">✓ 이전에 "${escHtml(savedBook?.name||'(삭제된 교재)')}"로 연결해둔 매핑</span>`;
       }
 
       // ★ 클래스명 안에 섞여있는 "반" 정보(중1, 초4,5,6 등)를 찾아서 눈에 띄는 배지로 먼저 보여줌
@@ -6800,7 +6794,7 @@ function _renderBulkClassList() {
         .filter(b => b.mode === mode)
         .sort((a,b) => a.name.localeCompare(b.name,'ko'))
         .map(b => `<option value="${b.id}" ${draft.bookId===b.id?'selected':''}>${escHtml(b.name)}</option>`).join('');
-      const bookPicker = draft.mode === 'ignore' ? '' : `
+      const bookPicker = `
         <div style="display:flex;flex-direction:column;gap:.25rem;min-width:190px">
           <input type="text" placeholder="🔍 교재 검색..." oninput="_filterBulkBookOptions(this)"
             style="font-size:.72rem;padding:.2rem .4rem">
@@ -6823,9 +6817,6 @@ function _renderBulkClassList() {
             ${prevBadge}
             ${(draft.mode==='book'||draft.mode==='voca') && draft.bookId ? `<div style="font-size:.72rem;font-weight:700;color:${draft.mode==='voca'?'#059669':'#2563eb'};margin-top:.15rem">→ 지금 선택: ${escHtml(getBook(draft.bookId)?.name||'')} ${draft.mode==='voca'?'(보카형)':'(교재형)'}</div>` : ''}
           </div>
-          <button onclick="_toggleBulkIgnore('${cnEsc}')" class="btn ${draft.mode==='ignore'?'bd2':'bg'} bsm" style="font-size:.7rem;flex-shrink:0">
-            ${draft.mode==='ignore' ? '🚫 무시 중 (해제)' : '🚫 무시'}
-          </button>
           ${bookPicker}
         </div>
         ${voccaExtra}
@@ -6844,11 +6835,10 @@ function _renderBulkClassList() {
   }
 }
 
-/* ★ 잘못 저장된 매핑(예: 예전 버그로 전부 "무시"가 되어버린 것) 전체 초기화 */
+/* ★ v192: 공용 초기화 헬퍼(_clearAllClasscardMappings) 재사용 + 이 화면만의 뒷정리(draft 초기화)만 추가 */
 function _resetAllBulkMappings() {
   if (!confirm('저장해둔 클래스명↔교재 매핑을 전부 지우시겠습니까?\n(엑셀 파일이나 배정 기록에는 영향 없습니다 — 매핑 정보만 초기화돼요)')) return;
-  S.classcardMappings = [];
-  save();
+  _clearAllClasscardMappings();
   _bulkClasses.forEach(c => {
     _bulkDraftMap[c.name] = { mode: '', bookId: null };
   });
@@ -6856,18 +6846,6 @@ function _resetAllBulkMappings() {
   _renderBulkStep2();
 }
 
-/* ★ "무시" 토글 — 누르면 무시로, 다시 누르면 미설정으로 되돌아감 */
-function _toggleBulkIgnore(className) {
-  const d = _bulkDraftMap[className];
-  if (!d) return;
-  if (d.mode === 'ignore') {
-    d.mode = '';
-  } else {
-    d.mode = 'ignore';
-    d.bookId = null;
-  }
-  _renderBulkClassList();
-}
 
 /* 검색창에 입력할 때마다, 바로 옆 <select>의 옵션만 다시 그림(검색창 자체는 안 건드려서 한글 조합 안 깨짐) */
 function _filterBulkBookOptions(inputEl) {
@@ -7009,7 +6987,7 @@ function _computeBulkPreview() {
 
   _bulkClasses.forEach(c => {
     const map = _bulkDraftMap[c.name];
-    if (!map.mode || map.mode === 'ignore' || !map.bookId) { out.skippedNoMap += c.rows.length; return; }
+    if (!map.mode || !map.bookId) { out.skippedNoMap += c.rows.length; return; }
     const book = getBook(map.bookId);
     if (!book) { out.skippedNoMap += c.rows.length; return; }
 
@@ -9256,6 +9234,14 @@ function load() {
     });
     if (mappingIdsFilled > 0) {
       console.log(`[마이그레이션] classcardMappings ${mappingIdsFilled}건에 id 부여 (레코드 단위 동기화 전환)`);
+    }
+
+    // ★ v192: "무시" 개념 제거 — 예전에 mode:'ignore'로 저장해둔 레코드는 그냥 삭제(=미설정과 동일하게 취급)
+    const beforeIgnoreClean = (S.classcardMappings || []).length;
+    S.classcardMappings = (S.classcardMappings || []).filter(m => m.mode !== 'ignore');
+    const ignoreCleaned = beforeIgnoreClean - S.classcardMappings.length;
+    if (ignoreCleaned > 0) {
+      console.log(`[마이그레이션] "무시" 상태였던 매핑 ${ignoreCleaned}건을 정리했습니다 (미설정과 동일하게 처리)`);
     }
 
     // 마이그레이션: 기존 학생 중 accessKey 없으면 자동 생성 (영구 유지)
