@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v180</title>
+<title>숙제 관리 v181</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v180</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v181</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -4747,15 +4747,15 @@ function renderMappingsPage() {
         countHtml = `<div style="font-size:.68rem;color:var(--mu);margin-top:.1rem">${groupTxt} · 🕐 ${escHtml(m.lastFileCheckedAt||'')} 기준 ${m.lastFileCount||0}건</div>`;
       }
       const cnEsc = escHtml(m.className).replace(/'/g,"\\'");
-      return `<div style="display:flex;align-items:center;gap:.5rem;padding:.4rem .55rem;background:var(--s2);border-radius:6px;margin-bottom:.35rem;flex-wrap:wrap">
-        <div style="flex:1;min-width:200px">
-          <div style="font-size:.78rem;font-weight:600">${escHtml(m.className)}</div>
+      return `<div style="display:flex;align-items:center;gap:.35rem;padding:.4rem .55rem;background:var(--s2);border-radius:6px;margin-bottom:.35rem;flex-wrap:nowrap">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.76rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escHtml(m.className)}">${escHtml(m.className)}</div>
           ${countHtml}
         </div>
-        <select onchange="mappingsChangeBook('${cnEsc}', this.value)" style="font-size:.72rem;padding:.15rem .3rem">
+        <select onchange="mappingsChangeBook('${cnEsc}', this.value)" style="font-size:.68rem;padding:.15rem .2rem;max-width:5.5rem;flex-shrink:0">
           ${moveSelectHtml(m)}
         </select>
-        <button class="btn bd2 bsm" style="font-size:.66rem" onclick="mappingsDeleteRow('${cnEsc}')">🗑 삭제</button>
+        <button class="btn bd2 bsm" style="font-size:.66rem;padding:.15rem .35rem;flex-shrink:0;white-space:nowrap" onclick="mappingsDeleteRow('${cnEsc}')">🗑</button>
       </div>`;
     }).join('');
 
