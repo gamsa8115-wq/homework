@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v182</title>
+<title>숙제 관리 v183</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v182</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v183</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -6882,7 +6882,7 @@ function _computeBulkPreview() {
       //   전체 리포트 업로드가 정식 배정 없이 배부 목록에 몰래 끼워 넣는 걸 막기 위함
       //   (교재 배정 → 배정 목록 → 배정 내역 순서를 거꾸로 만들지 않기 위해)
       if (!Array.isArray(student.books) || !student.books.includes(book.name)) {
-        out.skippedNoDistribution.set(rawName, (out.skippedNoDistribution.get(rawName)||0) + 1);
+        out.skippedNoDistribution.set(`${book.name} :: ${rawName}`, (out.skippedNoDistribution.get(`${book.name} :: ${rawName}`)||0) + 1);
         return;
       }
       // ★ 차수(예: "5차")가 있는 클래스는, 책 이름만으로는 부족함 —
@@ -6903,7 +6903,7 @@ function _computeBulkPreview() {
         const hasAmbiguousCohorts = studentBookCohorts.size > 1;
         if (hasAmbiguousCohorts) {
           if (!studentBookCohorts.has(cohort)) {
-            out.skippedNoDistribution.set(`${rawName} (${cohort} 정식 배정 없음)`, (out.skippedNoDistribution.get(`${rawName} (${cohort} 정식 배정 없음)`)||0) + 1);
+            out.skippedNoDistribution.set(`${book.name} :: ${rawName} (${cohort} 정식 배정 없음)`, (out.skippedNoDistribution.get(`${book.name} :: ${rawName} (${cohort} 정식 배정 없음)`)||0) + 1);
             return;
           }
         } else if (studentBookCohorts.size === 1) {
@@ -7002,8 +7002,18 @@ function _renderBulkStep3() {
 
   const noStudentHtml = [...out.skippedNoStudent.entries()].slice(0,30)
     .map(([n,c]) => `${escHtml(n)}(${c}건)`).join(', ');
-  const noDistribHtml = [...out.skippedNoDistribution.entries()].slice(0,30)
-    .map(([n,c]) => `${escHtml(n)}(${c}건)`).join(', ');
+  // ★ v183: "학생명(건수)"만 나열하면 어느 교재 때문에 걸러졌는지 헷갈림 → 교재별로 묶어서 표시
+  const noDistribByBook = new Map();
+  for (const [key, c] of out.skippedNoDistribution.entries()) {
+    const sep = key.indexOf(' :: ');
+    const bookName = sep >= 0 ? key.slice(0, sep) : '(교재 미상)';
+    const rest = sep >= 0 ? key.slice(sep + 4) : key;
+    if (!noDistribByBook.has(bookName)) noDistribByBook.set(bookName, []);
+    noDistribByBook.get(bookName).push(`${rest}(${c}건)`);
+  }
+  const noDistribHtml = [...noDistribByBook.entries()].map(([bn, arr]) =>
+    `<b>${escHtml(bn)}</b>: ${arr.slice(0,30).join(', ')}${arr.length>30?` 외 ${arr.length-30}명`:''}`
+  ).join('<br>&nbsp;&nbsp;');
   const noLabelHtml = [...out.skippedNoLabel.entries()].slice(0,30)
     .map(([k,c]) => `${escHtml(k)}(${c}건)`).join(', ');
 
