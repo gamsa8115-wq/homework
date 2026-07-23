@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v177</title>
+<title>숙제 관리 v179</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v177</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v179</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -1033,7 +1033,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 
 <!-- ════ 맵핑 관리 ════ -->
 <div class="page" id="p-mappings">
-  <div class="ph"><h1>맵핑 관리</h1><p>클래스카드 클래스명 ↔ 교재 연결 전체를 한눈에 점검 · 확정(잠금)/수정/삭제</p></div>
+  <div class="ph"><h1>맵핑 관리</h1><p>클래스카드 클래스명 ↔ 교재 연결 전체를 한눈에 확인 · 수정/삭제</p></div>
   <div id="mappings-summary" style="background:var(--s2);border-radius:8px;padding:.6rem .8rem;margin-bottom:.8rem;font-size:.8rem"></div>
 
   <div class="card" style="margin-bottom:.9rem">
@@ -1052,8 +1052,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
       style="flex:1;min-width:200px;padding:.5rem .7rem">
     <select id="mappings-filter" onchange="renderMappingsPage()" style="padding:.5rem .7rem">
       <option value="">전체 보기</option>
-      <option value="unlocked">🔓 잠기지 않은 것만 (점검 필요)</option>
-      <option value="locked">🔒 잠긴 것만</option>
+      <option value="mapped">✅ 교재 연결된 것만</option>
       <option value="ignore">🚫 무시로 정한 것만</option>
     </select>
     <button class="btn bd2" onclick="resetAllClasscardMappings()">🔄 전체 매핑 초기화</button>
@@ -4610,28 +4609,6 @@ function resetAllClasscardMappings() {
   renderMappingsPage();
 }
 
-/* 지금 목록에서 바로 "확정(잠금)" — 이 페이지엔 원본 엑셀이 없을 수 있어 학생 명단 미리보기는 생략,
-   대신 문구로 한 번 더 신중하게 확인시킴 */
-function mappingsLockRow(className) {
-  const rec = (S.classcardMappings||[]).find(m => m.className === className);
-  if (!rec) return;
-  const bookTxt = rec.mode === 'ignore' ? '무시' : (getBook(rec.bookId)?.name || '(삭제된 교재)');
-  if (!confirm(`'${className}' → '${bookTxt}' 연결을 확정(잠금)하시겠습니까?\n\n확정하면 실수로 못 바꾸도록 잠기고, 나중에 바꾸려면 잠금 해제를 먼저 눌러야 해요.\n\n⚠ 정말 이 클래스가 맞는지 클래스명을 다시 한번 확인해주세요.`)) return;
-  rec.locked = true;
-  save();
-  renderMappingsPage();
-  toast('🔒 확정(잠금)했습니다');
-}
-
-function mappingsUnlockRow(className) {
-  const rec = (S.classcardMappings||[]).find(m => m.className === className);
-  if (!rec) return;
-  if (!confirm(`'${className}' 매핑의 잠금을 해제하시겠습니까?\n\n이미 들어간 데이터에는 영향 없지만, 앞으로 실수로 바뀌지 않도록 다시 확정(잠금)해두는 걸 잊지 마세요.`)) return;
-  rec.locked = false;
-  save();
-  renderMappingsPage();
-}
-
 function mappingsDeleteRow(className) {
   if (!confirm(`'${className}' 매핑을 삭제하시겠습니까?\n(이미 반영된 배정 기록에는 영향 없어요 — 연결 정보만 삭제됩니다)`)) return;
   S.classcardMappings = (S.classcardMappings||[]).filter(m => m.className !== className);
@@ -4643,7 +4620,6 @@ function mappingsDeleteRow(className) {
 function mappingsChangeBook(className, bookIdStr) {
   const rec = (S.classcardMappings||[]).find(m => m.className === className);
   if (!rec) return;
-  if (rec.locked) { toast('🔒 잠긴 매핑이에요. 먼저 잠금 해제를 눌러주세요'); renderMappingsPage(); return; }
   const bookId = bookIdStr ? Number(bookIdStr) : null;
   if (!bookId) { rec.mode = ''; rec.bookId = null; }
   else {
@@ -4714,27 +4690,21 @@ function renderMappingsPage() {
   if (!listEl) return;
 
   const all = S.classcardMappings || [];
-  const lockedCount = all.filter(m => m.locked).length;
-  const unlockedCount = all.filter(m => !m.locked && m.mode !== 'ignore').length;
+  const mappedCount = all.filter(m => m.mode !== 'ignore').length;
   const ignoreCount = all.filter(m => m.mode === 'ignore').length;
   if (summaryEl) {
-    summaryEl.innerHTML = `총 <b>${all.length}개</b> 클래스 매핑 · <span style="color:#166534">🔒 확정 ${lockedCount}</span> · <span style="color:#b91c1c;font-weight:700">🔓 미확정(점검 필요) ${unlockedCount}</span> · <span style="color:var(--mu)">🚫 무시 ${ignoreCount}</span>`;
+    summaryEl.innerHTML = `총 <b>${all.length}개</b> 클래스 매핑 · <span style="color:#166534">✅ 교재 연결 ${mappedCount}</span> · <span style="color:var(--mu)">🚫 무시 ${ignoreCount}</span>`;
   }
 
   const q = ($('mappings-search')?.value || '').trim().toLowerCase();
   const filter = $('mappings-filter')?.value || '';
 
   let rows = all.slice();
-  if (filter === 'unlocked') rows = rows.filter(m => !m.locked && m.mode !== 'ignore');
-  else if (filter === 'locked') rows = rows.filter(m => m.locked);
+  if (filter === 'mapped') rows = rows.filter(m => m.mode !== 'ignore');
   else if (filter === 'ignore') rows = rows.filter(m => m.mode === 'ignore');
   if (q) rows = rows.filter(m => m.className.toLowerCase().includes(q) || (getBook(m.bookId)?.name||'').toLowerCase().includes(q));
 
-  rows.sort((a,b) => {
-    const ua = !a.locked && a.mode !== 'ignore', ub = !b.locked && b.mode !== 'ignore';
-    if (ua !== ub) return ua ? -1 : 1;
-    return a.className.localeCompare(b.className, 'ko');
-  });
+  rows.sort((a,b) => a.className.localeCompare(b.className, 'ko'));
 
   if (!rows.length) { listEl.innerHTML = `<div class="distrib-empty">해당하는 매핑이 없습니다</div>`; return; }
 
@@ -4744,13 +4714,9 @@ function renderMappingsPage() {
   listEl.innerHTML = rows.map(m => {
     const isIgnore = m.mode === 'ignore';
     const book = getBook(m.bookId);
-    const needsReview = !m.locked && !isIgnore;
-    const borderColor = needsReview ? '#f59e0b' : (m.locked ? '#059669' : 'var(--bd)');
     const statusBadge = isIgnore
       ? `<span style="font-size:.66rem;font-weight:700;color:var(--mu)">🚫 무시</span>`
-      : m.locked
-        ? `<span style="font-size:.66rem;font-weight:700;color:#166534">🔒 확정됨</span>`
-        : `<span style="font-size:.66rem;font-weight:700;color:#b91c1c">🔓 미확정 — 점검 필요</span>`;
+      : `<span style="font-size:.66rem;font-weight:700;color:#166534">✅ 연결됨</span>`;
 
     // ★ 지금 열려 있는(또는 최근 파싱된) 리포트 파일에 이 클래스가 있으면, 실제 반 분포·건수를 계산해서 보여줌
     const matchedClass = Array.isArray(_bulkClasses)
@@ -4780,14 +4746,12 @@ function renderMappingsPage() {
 
     const cnEsc = escHtml(m.className).replace(/'/g,"\\'");
     const bookControl = isIgnore ? ''
-      : m.locked
-        ? `<span style="font-size:.78rem;font-weight:700">${escHtml(book?.name || '(삭제된 교재)')}</span>`
-        : `<select onchange="mappingsChangeBook('${cnEsc}', this.value)" style="font-size:.76rem;padding:.2rem .35rem">
+      : `<select onchange="mappingsChangeBook('${cnEsc}', this.value)" style="font-size:.76rem;padding:.2rem .35rem">
             <option value="">교재 선택...</option>
             <optgroup label="📘 교재형">${bookOptionsHtml('book')}</optgroup>
             <optgroup label="📗 보카형">${bookOptionsHtml('voca')}</optgroup>
           </select>`;
-    return `<div style="border:1.5px solid ${borderColor};border-radius:8px;padding:.55rem .7rem;margin-bottom:.5rem;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
+    return `<div style="border:1.5px solid var(--bd);border-radius:8px;padding:.55rem .7rem;margin-bottom:.5rem;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
       <div style="flex:1;min-width:220px">
         <div style="font-weight:700;font-size:.8rem">${escHtml(m.className)}</div>
         <div style="margin-top:.15rem">${statusBadge}</div>
@@ -4795,15 +4759,13 @@ function renderMappingsPage() {
       <div style="flex:1.4;min-width:220px;padding:0 .5rem;border-left:1px dashed var(--bd);border-right:1px dashed var(--bd)">${middleHtml}</div>
       <div data-book-slot="${cnEsc}">${bookControl}</div>
       <div style="display:flex;gap:.3rem;flex-shrink:0">
-        ${needsReview ? `<button class="btn bs bsm" style="font-size:.68rem" onclick="mappingsLockRow('${cnEsc}')">✅ 확정(잠금)</button>` : ''}
-        ${m.locked ? `<button class="btn bg bsm" style="font-size:.68rem" onclick="mappingsUnlockRow('${cnEsc}')">🔓 잠금 해제</button>` : ''}
         <button class="btn bd2 bsm" style="font-size:.68rem" onclick="mappingsDeleteRow('${cnEsc}')">🗑 삭제</button>
       </div>
     </div>`;
   }).join('');
 
   rows.forEach(m => {
-    if (m.mode === 'ignore' || m.locked) return;
+    if (m.mode === 'ignore') return;
     const slot = listEl.querySelector(`[data-book-slot="${CSS.escape(m.className)}"] select`);
     if (slot) slot.value = m.bookId || '';
   });
@@ -6528,18 +6490,14 @@ function _renderBulkClassList() {
           <div style="margin-top:.4rem;padding:.5rem;background:var(--s2);border-radius:6px">
             <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.3rem">
               <label style="margin:0;font-size:.72rem;white-space:nowrap">회차 추출 방식</label>
-              ${draft.locked ? `
-                <span style="font-size:.72rem;color:var(--mu)">🔒 ${ruleLabels[draft.vocaRuleType]||draft.vocaRuleType}${draft.vocaRuleType==='regex' ? ` (${escHtml(draft.vocaRulePattern||'')})` : ''}</span>
-              ` : `
-                <select onchange="_updateBulkVocaRule('${escHtml(c.name).replace(/'/g,"\\'")}', this.value)" style="font-size:.72rem;padding:.15rem .3rem">
+              <select onchange="_updateBulkVocaRule('${escHtml(c.name).replace(/'/g,"\\'")}', this.value)" style="font-size:.72rem;padding:.15rem .3rem">
                   <option value="paren" ${draft.vocaRuleType==='paren'?'selected':''}>괄호 안 숫자 — "DAY (03)" → 3</option>
                   <option value="last"  ${draft.vocaRuleType==='last'?'selected':''}>마지막 숫자 — "DAY 03" → 3</option>
                   <option value="first" ${draft.vocaRuleType==='first'?'selected':''}>첫 숫자 — "1차 DAY03" → 1</option>
                   <option value="regex" ${draft.vocaRuleType==='regex'?'selected':''}>직접 정규식 입력</option>
                 </select>
-              `}
             </div>
-            ${(!draft.locked && draft.vocaRuleType==='regex') ? `
+            ${(draft.vocaRuleType==='regex') ? `
               <input type="text" value="${escHtml(draft.vocaRulePattern||'')}" placeholder="예: DAY\\\\s*0*(\\\\d+)"
                 data-fk="regex-${escHtml(c.name)}"
                 oninput="_updateBulkVocaPattern('${escHtml(c.name).replace(/'/g,"\\'")}', this.value)"
@@ -6584,11 +6542,7 @@ function _renderBulkClassList() {
         .filter(b => b.mode === mode)
         .sort((a,b) => a.name.localeCompare(b.name,'ko'))
         .map(b => `<option value="${b.id}" ${draft.bookId===b.id?'selected':''}>${escHtml(b.name)}</option>`).join('');
-      const bookPicker = draft.mode === 'ignore' ? '' : draft.locked ? `
-        <div style="display:flex;flex-direction:column;gap:.25rem;min-width:190px">
-          <div style="font-size:.72rem;padding:.25rem .4rem;background:var(--s2);border-radius:4px;color:var(--mu)">🔒 ${escHtml(getBook(draft.bookId)?.name||'')}</div>
-          <button class="btn bg bsm" style="font-size:.68rem;padding:.15rem .4rem" onclick="_unlockBulkMapping('${cnEsc}')">🔓 잠금 해제</button>
-        </div>` : `
+      const bookPicker = draft.mode === 'ignore' ? '' : `
         <div style="display:flex;flex-direction:column;gap:.25rem;min-width:190px">
           <input type="text" placeholder="🔍 교재 검색..." oninput="_filterBulkBookOptions(this)"
             style="font-size:.72rem;padding:.2rem .4rem">
@@ -6679,7 +6633,6 @@ function _filterBulkBookOptions(inputEl) {
 function _updateBulkBookSelection(className, bookIdStr) {
   const d = _bulkDraftMap[className];
   if (!d) return;
-  if (d.locked) { toast('🔒 잠긴 매핑이에요. 먼저 잠금 해제를 눌러주세요'); _renderBulkClassList(); return; }
 
   const bookId = bookIdStr ? Number(bookIdStr) : null;
   if (!bookId) { d.mode = ''; d.bookId = null; _renderBulkClassList(); return; }
@@ -6688,16 +6641,16 @@ function _updateBulkBookSelection(className, bookIdStr) {
 
   // ★ 이 클래스로 처음 매핑하는 거면(예전에 저장된 적 없으면), 실제 학생 명단을 보여주고
   //   확인받은 뒤에만 적용 — 엉뚱한 반을 잘못 연결하는 걸 방지
+  //   (v179: "확정(잠금)" 개념은 제거 — 확인 후에도 언제든 자유롭게 다시 바꿀 수 있음)
   const alreadySaved = (S.classcardMappings || []).some(m => m.className === className);
   if (!alreadySaved) {
     const c = _bulkClasses.find(cc => cc.name === className);
     const names = [...new Set((c?.rows||[]).map(r => String(r['학생이름']||'').trim()).filter(Boolean))].slice(0, 12);
     const more = (c?.rows?.length && names.length < new Set((c.rows||[]).map(r=>r['학생이름'])).size) ? ' 등' : '';
-    if (!confirm(`'${className}' 클래스를 처음으로 '${book.name}'에 연결합니다.\n\n이 클래스의 학생 명단:\n${names.join(', ')}${more}\n\n이 학생들이 맞는 반이 확실한가요? 확인 후에는 실수로 못 바꾸도록 잠깁니다 (필요하면 나중에 잠금 해제 가능).`)) {
+    if (!confirm(`'${className}' 클래스를 '${book.name}'에 연결합니다.\n\n이 클래스의 학생 명단:\n${names.join(', ')}${more}\n\n이 학생들이 맞는 반이 확실한가요?`)) {
       _renderBulkClassList(); // select가 되돌려지도록 다시 그림
       return;
     }
-    d.locked = true;
   }
 
   d.mode = book.mode; // 'book' | 'voca'
@@ -6705,14 +6658,7 @@ function _updateBulkBookSelection(className, bookIdStr) {
   _renderBulkClassList();
 }
 
-/* ★ 잠긴 매핑을 바꾸고 싶을 때 — 신중하게 한 번 더 확인받고 잠금 해제 */
-function _unlockBulkMapping(className) {
-  const d = _bulkDraftMap[className];
-  if (!d) return;
-  if (!confirm(`'${className}' 매핑의 잠금을 해제하시겠습니까?\n\n지금까지 이 클래스로 이미 들어간 데이터에는 영향 없지만, 앞으로 다른 교재로 잘못 연결되지 않도록 신중하게 확인하세요.`)) return;
-  d.locked = false;
-  _renderBulkClassList();
-}
+
 /* ★ 엑셀에서 읽은 "학습일" 값을 안전하게 YYYY-MM-DD로 변환
    - Date 객체(cellDates:true 덕분에 보통 이 경우)면 그대로 사용
    - 혹시 숫자(엑셀 시리얼 날짜)로 넘어와도 정확한 공식으로 변환 (문자열로 잘못 파싱해서 연도가 깨지는 사고 방지)
@@ -8518,7 +8464,11 @@ function initFirebase() {
 }
 
 /* ★ id 있는 배열(assigns/books/students) 마이그레이션: 예전엔 통째 배열로 저장됨 → 레코드 단위(id별) 객체로 1회 변환
-   (여러 선생님이 동시에 삭제/수정해도 서로 안 덮어쓰도록 하기 위함) */
+   (여러 선생님이 동시에 삭제/수정해도 서로 안 덮어쓰도록 하기 위함)
+   ★ v178: 여러 선생님이 거의 동시에 처음 접속하면, 이 변환 자체가 여러 브라우저에서 겹쳐 실행되면서
+   —각자 자기 브라우저에 캐시된(서로 다른 시점의) 스냅샷을 기준으로 통째로 덮어써서—
+   먼저 저장된 내용이 사라지는 사고가 있었음. Firebase 트랜잭션으로 "이 키의 변환은 딱 한 사람만
+   실행"하도록 잠가서, 여러 명이 동시에 켜도 절대 겹쳐 실행되지 않게 함. */
 async function migrateAssignsIfNeeded() {
   if (!_fbReady) return;
   for (const key of RECORD_KEYS) {
@@ -8528,6 +8478,21 @@ async function migrateAssignsIfNeeded() {
       const snap = await _fbDB.ref(path).once('value');
       const val = snap.val();
       if (Array.isArray(val)) {
+        // ★ 마이그레이션 잠금 — 트랜잭션으로 "아직 잠기지 않았을 때만 내가 잠근다"를 원자적으로 처리
+        const lockPath = `${FB_PATH}/_migrationLock/${key}`;
+        _validatePath(lockPath);
+        let lockWon = true;
+        try {
+          const txResult = await _fbDB.ref(lockPath).transaction(cur => cur ? undefined : true);
+          lockWon = !!(txResult && txResult.committed);
+        } catch (lockErr) {
+          console.warn(`[Firebase 마이그레이션] ${key} 잠금 획득 오류 — 건너뜀:`, lockErr);
+          lockWon = false;
+        }
+        if (!lockWon) {
+          console.log(`[Firebase 마이그레이션] ${key} — 다른 기기/탭이 이미 처리 중이거나 완료함, 건너뜀`);
+          continue;
+        }
         const keyed = {};
         val.forEach(rec => {
           if (!rec) return;
