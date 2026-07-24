@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>숙제 관리 v192</title>
+<title>숙제 관리 v193</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -439,7 +439,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <div class="app">
 
 <nav class="sidebar">
-  <div class="logo">📚 숙제관리<span>선생님 전용 v192</span></div>
+  <div class="logo">📚 숙제관리<span>선생님 전용 v193</span></div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
     <span id="fb-status-text">연결 중...</span>
@@ -5975,12 +5975,23 @@ async function _onScoreImportFileSelect(ev) {
 /* 점수값 파싱 (숫자만 허용, 그 외는 null) */
 /* ★ "완료여부"가 비어있어도, 암기·리콜·스펠·스피킹·테스트 등 진행 지표 중 하나라도
    실제 값이 있으면(빈 셀이 아니면) "시도는 한 것"으로 봄 — 그래야 완료 표시만 안 붙은
-   실제 응시 기록을 "아직 시도 안 함"으로 착각해서 건너뛰지 않음 */
+   실제 응시 기록을 "아직 시도 안 함"으로 착각해서 건너뛰지 않음
+   ★ v193: 단, "0"이라는 값 자체는 빈칸이 아니라서 위 체크를 그냥 통과해버리는 버그가 있었음 —
+   암기 0%·리콜 0%처럼 전부 0인 행(=진짜 아무것도 안 한 행)까지 "활동 있음"으로 오인해서
+   무조건 "미통과"로 확정 짓고 있었음. 숫자 필드는 0보다 커야만 진짜 활동으로 인정하도록 수정. */
 function _rowHasActivity(row) {
-  const fields = ['암기학습(%)', '리콜학습(%)', '스펠학습(%)', '스피킹(%)', '반복횟수',
-    '매칭 (최고점)', '매칭(최고점)', '테스트 (최고점)', '테스트최고', '테스트 최고',
-    '맞은문항수', '틀린문항수'];
-  return fields.some(f => {
+  const numericFields = ['암기학습(%)', '리콜학습(%)', '스펠학습(%)', '스피킹(%)', '반복횟수',
+    '매칭 (최고점)', '매칭(최고점)', '매칭 최고', '테스트 (최고점)', '테스트최고', '테스트 최고',
+    'AI 평가 점수', '맞은문항수', '틀린문항수'];
+  const otherFields = ['테스트 제출일']; // ★ 숫자가 아닌(날짜 등) 필드는 값이 있으면 그대로 활동으로 인정
+  const hasNumeric = numericFields.some(f => {
+    const v = row[f];
+    if (v === undefined || v === null || String(v).trim() === '') return false;
+    const n = Number(v);
+    return isNaN(n) ? String(v).trim() !== '' : n > 0; // 숫자면 0보다 커야 인정, 숫자가 아니면 값 있으면 인정
+  });
+  if (hasNumeric) return true;
+  return otherFields.some(f => {
     const v = row[f];
     return v !== undefined && v !== null && String(v).trim() !== '';
   });
