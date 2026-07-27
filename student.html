@@ -641,8 +641,21 @@ function renderMainView(student, assigns, vacations, books) {
   const myAssigns = dedupeVocaAssigns(assigns.filter(a => a.studentId === student.id), books);
 
   // ★ "완료"의 기준을 선생님 앱과 동일하게: 미수행·미통과·(반별 기준 설정된) 점수 미달은 모두 미완료로 취급
-  const reasonOf = (a) => incompleteReason(getBookById(books, a.bookId), a.result, student.group, a.date);
-  const hasResultOf = (a) => a.result !== '' && a.result !== null && a.result !== undefined;
+  // ★ 교재완료 처리된 태그의 배정은 전부 "완료"로 본다.
+  //   교재완료는 배정 기록을 남겨두는 설계라, 완료된 태그의 배정이 계속 "지난 미완료"로 뜨던 문제가 있었음.
+  const completedList = Array.isArray(student.completedBooks) ? student.completedBooks : [];
+  const isCohortDone = (a) => {
+    if (!completedList.length) return false;
+    const book = getBookById(books, a.bookId);
+    return completedList.some(c => c
+      && ((c.bookId != null) ? c.bookId === a.bookId
+                             : (book ? c.bookName === book.name : c.bookName === a.bookName))
+      && (c.cohort || '') === (a.cohort || ''));
+  };
+  const reasonOf = (a) => isCohortDone(a)
+    ? null
+    : incompleteReason(getBookById(books, a.bookId), a.result, student.group, a.date);
+  const hasResultOf = (a) => isCohortDone(a) || (a.result !== '' && a.result !== null && a.result !== undefined);
 
   // ★ 받은 교재(지금 배부 목록에 있는 것) + 교재별 진행률
   //   교재형: 전체 레이블(book.rows) 기준 — 아직 배정 안 된 부분도 "남은 분량"이므로 분모에 넣는다.
@@ -667,7 +680,7 @@ function renderMainView(student, assigns, vacations, books) {
     const activeCohorts = [...cohorts].filter(c => !completed.some(x => x
       && ((x.bookId != null) ? x.bookId === book.id : x.bookName === book.name)
       && (x.cohort || '') === c));
-    const hasPending = bAssigns.some(a => !hasResultOf(a));
+    const hasPending = bAssigns.some(a => !hasResultOf(a)); // 완료된 태그의 배정은 hasResultOf가 true
     if (!activeCohorts.length && !hasPending) return null;
     const isVoca = book.mode === 'voca';
     let total, done;
