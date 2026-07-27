@@ -727,6 +727,8 @@ function renderMainView(student, assigns, vacations, books) {
   // ★ 요일/방학 검사를 하지 않는다 — 배정을 만들 때 선생님 앱이 이미 수업요일·공휴일·방학·일시정지를
   //   전부 걸러내므로(isClassDay), 여기서 또 거르면 "선생님이 일부러 낸 주말 숙제"가 학생에게 안 보였다.
   const todays = myAssigns.filter(a => a.date === today && !hasResultOf(a));
+  // ★ 목록에서 거르는 용도가 아니라, 숙제가 없을 때 "쉬는 날" 안내 문구를 고르는 용도로만 쓴다
+  const isTodayClassDay = !isNonClassDay(today, vacations);
 
   // 지난 미완료: 미완료 + 과거 (요일/방학 검사 없음 — 위 "오늘 숙제"와 같은 이유)
   const overdue = myAssigns
