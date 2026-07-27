@@ -645,15 +645,30 @@ function renderMainView(student, assigns, vacations, books) {
   const hasResultOf = (a) => a.result !== '' && a.result !== null && a.result !== undefined;
 
   // ★ 받은 교재(지금 배부 목록에 있는 것) + 교재별 진행률
-  //   진행률 = (이 학생에게 실제 배정된 회차/레이블 중 결과가 입력된 것) / (전체 배정된 것)
+  //   교재형: 전체 레이블(book.rows) 기준 — 아직 배정 안 된 부분도 "남은 분량"이므로 분모에 넣는다.
+  //           (예전엔 배정된 것만 분모로 써서, 171개짜리 교재를 11개만 배정받아 다 하면 100%로 보였음)
+  //   보카형: 배정된 회차가 곧 전체 분량이라 그대로 배정 기준
   const myBookNames = Array.isArray(student.books) ? student.books : [];
   const bookProgressList = myBookNames.map(bn => {
     const book = books.find(b => b && b.name === bn);
     if (!book) return null;
     const bAssigns = myAssigns.filter(a => a.bookId === book.id);
-    const total = bAssigns.length;
-    const done = bAssigns.filter(hasResultOf).length;
     const isVoca = book.mode === 'voca';
+    let total, done;
+    if (isVoca) {
+      const norm = v => String(Number(v));
+      const units = new Set(bAssigns.map(a => norm(a.unitFrom)));
+      const doneUnits = new Set(bAssigns.filter(hasResultOf).map(a => norm(a.unitFrom)));
+      total = units.size;
+      done = doneUnits.size;
+    } else {
+      const allRows = Array.isArray(book.rows) ? book.rows : [];
+      const doneLabels = new Set();
+      bAssigns.filter(hasResultOf).forEach(a => (a.probLabels || []).forEach(l => doneLabels.add(l)));
+      // rows 정보가 없는 옛 교재는 예전 방식(배정 기준)으로 물러남
+      total = allRows.length || bAssigns.length;
+      done = allRows.length ? doneLabels.size : bAssigns.filter(hasResultOf).length;
+    }
     const category = isVoca ? (bAssigns[0]?.category || '수업보카') : '교재';
     return { name: bn, total, done, category };
   }).filter(Boolean);
