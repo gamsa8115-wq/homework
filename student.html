@@ -505,7 +505,11 @@ function incompleteReason(book, result, group, assignDate) {
     return '미수행';
   }
   if (!book) return null;
-  if (book.score === '통과' && result !== '통과') return result === '미수행' ? '미수행' : '미통과';
+  // ★ '미수행'은 채점방식과 무관하게 항상 미완료다.
+  //   점수형 교재는 아래에서 Number(result)로만 판정하는데, '미수행'은 숫자가 아니라 NaN이 되어
+  //   조용히 "완료로 인정됨"으로 빠져나갔음 → 선생님이 미수행으로 표시해도 학생 화면엔 안 보였던 원인.
+  if (result === '미수행') return '미수행';
+  if (book.score === '통과' && result !== '통과') return '미통과';
   if (book.score === '완료' && result !== '완료') return '미수행';
   if (book.score === '점수') {
     const classCfg = book.classThresholds?.[group];
@@ -701,7 +705,7 @@ function renderMainView(student, assigns, vacations, books) {
       return hasResult && !reasonOf(a) && (a.date === today || a.date === yestStr);
     })
     .sort((a,b) => b.date.localeCompare(a.date))
-    .slice(0, 10);
+    .slice(0, 5); // ★ 최신순 5개만 — 완료 목록이 길어지면 정작 중요한 "오늘/지난 미완료"가 아래로 밀림
 
   // 헤더
   const todayKor = fmtDateKor(today);
@@ -785,7 +789,7 @@ function renderMainView(student, assigns, vacations, books) {
           <div class="s-section-title-left">
             <span>✅ 최근 완료</span>
           </div>
-          <span class="s-section-count">${recentDone.length}개</span>
+          <span class="s-section-count">최근 ${recentDone.length}개</span>
         </div>
         <div class="s-hw-list">${recentDone.map((a,i) => renderHwCard(a, 'done', null, i)).join('')}</div>
       </div>
