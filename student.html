@@ -722,18 +722,15 @@ function renderMainView(student, assigns, vacations, books) {
     }
   }
 
-  // 오늘 숙제: 오늘이 수업일이고 + 아직 결과가 없는 것 (오늘 배정은 "미수행" 딱지 없이도 항상 목록엔 나와야 함 —
+  // 오늘 숙제: 오늘 날짜 배정 중 아직 결과가 없는 것 (오늘 배정은 "미수행" 딱지 없이도 항상 목록엔 나와야 함 —
   // reasonOf는 "날짜가 지나야 미수행"이라 오늘 것엔 null을 주는데, 그건 배지 표시용이지 목록 포함 여부완 별개)
-  // (오늘이 방학/공휴일이면 오늘 카드 비워둠 - 빈 상태)
-  const isTodayClassDay = !isNonClassDay(today, vacations);
-  const todays = isTodayClassDay
-    ? myAssigns.filter(a => a.date === today && !hasResultOf(a))
-    : [];
+  // ★ 요일/방학 검사를 하지 않는다 — 배정을 만들 때 선생님 앱이 이미 수업요일·공휴일·방학·일시정지를
+  //   전부 걸러내므로(isClassDay), 여기서 또 거르면 "선생님이 일부러 낸 주말 숙제"가 학생에게 안 보였다.
+  const todays = myAssigns.filter(a => a.date === today && !hasResultOf(a));
 
-  // 지난 미완료: 미완료 + 과거 + 방학/공휴일에 배정된 것은 제외
+  // 지난 미완료: 미완료 + 과거 (요일/방학 검사 없음 — 위 "오늘 숙제"와 같은 이유)
   const overdue = myAssigns
     .filter(a => a.date < today && reasonOf(a))
-    .filter(a => !isNonClassDay(a.date, vacations))
     .sort((a,b) => b.date.localeCompare(a.date)); // 최근 미완료부터
 
   // 최근 완료: 결과가 있고 + 미완료 사유가 없는 것 (진짜로 통과/완료/기준 이상인 것만)
