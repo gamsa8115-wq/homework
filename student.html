@@ -786,6 +786,20 @@ function renderMainView(student, assigns, vacations, books) {
       }
     </div>
 
+    ${overdue.length > 0 ? `
+      <div class="s-section">
+        <div class="s-section-title">
+          <div class="s-section-title-left">
+            <span>🔴 지난 미완료</span>
+          </div>
+          <span class="s-section-count hot">${overdue.length}개 남음</span>
+        </div>
+        <div class="s-hw-list">
+          ${overdue.map((a,i) => renderHwCard(a, 'overdue', reasonOf(a), i)).join('')}
+        </div>
+      </div>
+    ` : ''}
+
     ${bookProgressList.length > 0 ? `
     <div class="s-section">
       <div class="s-section-title">
@@ -810,20 +824,6 @@ function renderMainView(student, assigns, vacations, books) {
       </div>
       <div class="s-book-list">${bookProgressList.map(renderBookProgressCard).join('')}</div>
     </div>
-    ` : ''}
-
-    ${overdue.length > 0 ? `
-      <div class="s-section">
-        <div class="s-section-title">
-          <div class="s-section-title-left">
-            <span>🔴 지난 미완료</span>
-          </div>
-          <span class="s-section-count hot">${overdue.length}개 남음</span>
-        </div>
-        <div class="s-hw-list">
-          ${overdue.map((a,i) => renderHwCard(a, 'overdue', reasonOf(a), i)).join('')}
-        </div>
-      </div>
     ` : ''}
 
     ${recentDone.length > 0 ? `
