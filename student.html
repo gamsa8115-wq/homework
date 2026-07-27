@@ -653,6 +653,22 @@ function renderMainView(student, assigns, vacations, books) {
     const book = books.find(b => b && b.name === bn);
     if (!book) return null;
     const bAssigns = myAssigns.filter(a => a.bookId === book.id);
+    // ★ 배부 목록에 이름은 남아있지만 실제로는 모든 태그가 교재완료된 교재는 제외한다.
+    //   (선생님 화면에는 진행중으로 안 뜨는데 여기만 계속 보이는 "유령 교재"가 됐음)
+    const completed = Array.isArray(student.completedBooks) ? student.completedBooks : [];
+    const dates = student.bookDates || {};
+    const prefix = `${book.id}::`;
+    const cohorts = new Set();
+    Object.keys(dates).forEach(k => {
+      if (k === String(book.id)) cohorts.add('');
+      else if (k.startsWith(prefix)) cohorts.add(k.slice(prefix.length));
+    });
+    if (!cohorts.size) cohorts.add('');
+    const activeCohorts = [...cohorts].filter(c => !completed.some(x => x
+      && ((x.bookId != null) ? x.bookId === book.id : x.bookName === book.name)
+      && (x.cohort || '') === c));
+    const hasPending = bAssigns.some(a => !hasResultOf(a));
+    if (!activeCohorts.length && !hasPending) return null;
     const isVoca = book.mode === 'voca';
     let total, done;
     if (isVoca) {
