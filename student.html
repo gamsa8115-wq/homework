@@ -176,6 +176,14 @@ body {
 }
 
 /* ── 숙제 카드 ── */
+.s-sub-group { margin-bottom: .7rem; }
+.s-sub-group:last-child { margin-bottom: 0; }
+.s-sub-title {
+  display: flex; align-items: center; gap: .35rem;
+  font-size: .78rem; font-weight: 700; color: #4b5563;
+  margin: 0 0 .35rem 2px;
+}
+.s-sub-count { font-size: .72rem; font-weight: 700; color: #b83224; margin-left: auto; }
 .s-hw-list {
   display: flex;
   flex-direction: column;
@@ -750,6 +758,26 @@ function renderMainView(student, assigns, vacations, books) {
     .sort((a,b) => b.date.localeCompare(a.date))
     .slice(0, 5); // ★ 최신순 5개만 — 완료 목록이 길어지면 정작 중요한 "오늘/지난 미완료"가 아래로 밀림
 
+  // ★ 지난 미완료를 "보카 숙제 / 교재 숙제"로 나눠서 보여준다 —
+  //   성격이 다른 숙제가 한 덩어리로 섞여 있으면 뭘 먼저 해야 할지 판단하기 어려움
+  const isVocaAssign = (a) => {
+    const book = getBookById(books, a.bookId);
+    return (book?.mode || a.type) === 'voca';
+  };
+  const overdueVoca = overdue.filter(isVocaAssign);
+  const overdueBook = overdue.filter(a => !isVocaAssign(a));
+  const subList = (title, items, startIdx) => items.length ? `
+    <div class="s-sub-group">
+      <div class="s-sub-title">${title}<span class="s-sub-count">${items.length}개</span></div>
+      <div class="s-hw-list">
+        ${items.map((a,i) => renderHwCard(a, 'overdue', reasonOf(a), startIdx + i)).join('')}
+      </div>
+    </div>` : '';
+  // 한쪽만 있으면 소제목 없이 예전처럼 한 덩어리로 보여줌 (불필요한 구분선 방지)
+  const overdueSplitHtml = (overdueVoca.length && overdueBook.length)
+    ? subList('📝 보카 숙제', overdueVoca, 0) + subList('📖 교재 숙제', overdueBook, overdueVoca.length)
+    : `<div class="s-hw-list">${overdue.map((a,i) => renderHwCard(a, 'overdue', reasonOf(a), i)).join('')}</div>`;
+
   // 헤더
   const todayKor = fmtDateKor(today);
 
@@ -794,9 +822,7 @@ function renderMainView(student, assigns, vacations, books) {
           </div>
           <span class="s-section-count hot">${overdue.length}개 남음</span>
         </div>
-        <div class="s-hw-list">
-          ${overdue.map((a,i) => renderHwCard(a, 'overdue', reasonOf(a), i)).join('')}
-        </div>
+        ${overdueSplitHtml}
       </div>
     ` : ''}
 
