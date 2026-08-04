@@ -265,23 +265,45 @@ body {
   white-space: nowrap;
   min-width: 0;
 }
-.s-book-bar-wrap {
-  background: #eef0f2;
-  border-radius: 6px;
-  height: 7px;
-  overflow: hidden;
-}
-.s-book-bar {
-  height: 100%;
-  background: linear-gradient(90deg, var(--brand-1), var(--brand-2));
-  border-radius: 6px;
-  transition: width .2s;
-}
 .s-book-count {
   font-size: .72rem;
   color: #6b7280;
   margin-top: .3rem;
 }
+/* ★ v349 — 진행 막대를 완료/밀림/오늘/남음 네 구간으로 나누고, 요약을 한 줄로 합쳤다.
+   숫자에 색을 입혀 그 줄이 막대의 범례를 겸한다 (설명 문구를 따로 두지 않기 위함) */
+.s-bar4 { display:flex; height:8px; border-radius:6px; overflow:hidden; background:#eef0f2; }
+.s-bar4 > span { display:block; height:100%; transition:width .35s cubic-bezier(.16,1,.3,1); }
+.s-book-line {
+  display:flex; flex-wrap:wrap; gap:.1rem .55rem;
+  margin-top:.45rem; font-size:.73rem; font-weight:700;
+}
+.s-n-done { color:#0a4771; } .s-n-miss { color:#b83224; }
+.s-n-today{ color:#a8600a; } .s-n-rest { color:#9aa1a9; }
+.s-n-none { color:#9aa1a9; font-weight:600; }
+.s-book-done { background:#fafcfb; border-color:#dfeee8; }
+.s-tag-done {
+  background:#e6f6f0; color:#0d7a5f; font-size:.66rem; font-weight:800;
+  padding:.12rem .42rem; border-radius:5px;
+}
+/* 회차·문항 격자 — 칸 안에 번호를 직접 적어서, 화면을 캡처해도 그대로 읽히게 한다 */
+.s-grid { display:flex; flex-direction:column; gap:3px; margin-top:.55rem; }
+.s-grow { display:flex; gap:3px; align-items:center; }
+.s-glab {
+  flex:0 0 50px; font-size:.64rem; font-weight:800; color:#40566b;
+  font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.s-cell {
+  flex:0 0 auto; width:28px; height:19px; border-radius:3px;
+  background:#eef0f2; color:#b3b9c0;
+  font-size:.625rem; font-weight:700; font-variant-numeric:tabular-nums;
+  display:flex; align-items:center; justify-content:center;
+}
+.s-cell.done  { background:#1c6ca8; color:#fff; }
+.s-cell.miss  { background:#fff; box-shadow:inset 0 0 0 1.5px #b83224; color:#b83224; }
+.s-cell.today { background:#e8890c; color:#fff; }
+.s-sec-hint { font-size:.7rem; color:#8a9099; margin:-.35rem 0 .55rem; }
 .s-hw-icon {
   flex: 0 0 auto;
   width: 24px; height: 24px;
@@ -555,6 +577,70 @@ function renderError(title, sub) {
   `;
 }
 
+/* ★ v349 — 교재형 레이블을 유형코드별로 묶는다.
+   "11pss- 중1- 08" 처럼 [코드]-[구분]-[번호] 꼴이 대부분일 때만 묶고,
+   "1과  풀기"처럼 형식이 다르면 묶지 않고 순번 격자로 그린다. */
+function groupLabels(rows) {
+  const parsed = rows.map(l => {
+    const m = String(l).match(/^\s*([^\s-]{1,10})\s*-\s*.*-\s*([^\s-]{1,6})\s*$/);
+    return m ? { pre: m[1], num: m[2] } : null;
+  });
+  const ok = parsed.filter(Boolean).length;
+  const pres = new Set(parsed.filter(Boolean).map(x => x.pre));
+  if (ok < rows.length * 0.8 || pres.size < 2) return null;
+  const g = new Map();
+  rows.forEach((l, i) => {
+    const pre = parsed[i] ? parsed[i].pre : '기타';
+    const num = parsed[i] ? parsed[i].num : String(i + 1);
+    if (!g.has(pre)) g.set(pre, []);
+    g.get(pre).push({ key: l, text: num });
+  });
+  return [...g.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+                         .map(([code, items]) => ({ code, items }));
+}
+
+/* 칸 하나 — 완료/밀림/오늘/남음 상태에 따라 색이 달라진다 */
+function progCell(key, text, b) {
+  let cls = 's-cell';
+  if (b.doneKeys.has(key))       cls += ' done';
+  else if (b.missKeys.has(key))  cls += ' miss';
+  else if (b.todayKeys.has(key)) cls += ' today';
+  return `<span class="${cls}">${escHtml(text)}</span>`;
+}
+
+function renderProgGrid(b) {
+  // 아직 아무것도 시작하지 않은 교재는 격자를 생략한다 (빈 칸만 길게 나와 부담스러움)
+  if (!b.doneKeys.size && !b.missKeys.size && !b.todayKeys.size) return '';
+  // 보카형 — 1회차부터 세트수까지, 칸 안에 회차 번호
+  if (b.isVoca) {
+    const per = 15;
+    let rows = '';
+    for (let s = 1; s <= b.total; s += per) {
+      let cells = '';
+      for (let u = s; u < s + per && u <= b.total; u++) cells += progCell(String(u), u, b);
+      rows += `<div class="s-grow">${cells}</div>`;
+    }
+    return `<div class="s-grid">${rows}</div>`;
+  }
+  // 교재형 — 레이블이 등록돼 있어야 그린다
+  if (!b.rows) return '';
+  const groups = groupLabels(b.rows);
+  if (groups) {
+    return `<div class="s-grid">${groups.map(g => `<div class="s-grow">
+      <span class="s-glab">${escHtml(g.code)}</span>
+      ${g.items.map(it => progCell(it.key, it.text, b)).join('')}
+    </div>`).join('')}</div>`;
+  }
+  const per = 15;
+  let rows = '';
+  for (let i = 0; i < b.rows.length; i += per) {
+    let cells = '';
+    for (let k = i; k < i + per && k < b.rows.length; k++) cells += progCell(b.rows[k], k + 1, b);
+    rows += `<div class="s-grow">${cells}</div>`;
+  }
+  return `<div class="s-grid">${rows}</div>`;
+}
+
 function renderBookProgressCard(b, idx) {
   const catMeta = {
     '수업보카': { bg: '#3b4a7a', label: '🏫 수업보카' },
@@ -562,17 +648,49 @@ function renderBookProgressCard(b, idx) {
     '교재':     { bg: '#1c6ca8', label: '📖 교재' }
   }[b.category] || { bg: '#1c6ca8', label: '📖 교재' };
   const pct = b.total > 0 ? Math.round((b.done / b.total) * 100) : 0;
+  const name = `<span class="s-book-name">${escHtml(b.name)}${b.cohort ? ` <span class="s-book-cohort">(${escHtml(b.cohort)})</span>` : ''}</span>`;
+  const head = `<span class="s-hw-cat" style="background:${catMeta.bg};margin-bottom:0">${catMeta.label}</span>${name}`;
+
+  // 다 끝낸 교재 — 막대 없이 한 줄로
+  if (b.total > 0 && b.rest === 0 && b.miss === 0 && b.todayN === 0) {
+    return `<div class="s-book-card s-book-done" style="--i:${idx}">
+      <div class="s-book-top">
+        <div class="s-book-top-left">${head}</div>
+        <span class="s-tag-done">✅ 교재완료</span>
+      </div>
+    </div>`;
+  }
+
+  if (!b.total) {
+    return `<div class="s-book-card" style="--i:${idx}">
+      <div class="s-book-top"><div class="s-book-top-left">${head}</div></div>
+      <div class="s-book-line"><span class="s-n-none">아직 배정된 회차가 없어요</span></div>
+    </div>`;
+  }
+
+  const w = n => (n / b.total * 100).toFixed(2) + '%';
+  const unit = b.isVoca ? '회차' : '개';
+  const started = b.done || b.miss || b.todayN;
+  const parts = [];
+  if (!started) parts.push(`<span class="s-n-none">아직 시작 전 · 전체 ${b.total}${unit}</span>`);
+  else parts.push(`<span class="s-n-done">${b.isVoca ? `${b.done}${unit}까지 · 전체 ${b.total}${unit}` : `완료 ${b.done}/${b.total}${unit}`}</span>`);
+  if (b.miss)   parts.push(`<span class="s-n-miss">밀림 ${b.miss}</span>`);
+  if (b.todayN) parts.push(`<span class="s-n-today">오늘 ${b.todayN}</span>`);
+  if (b.rest && started) parts.push(`<span class="s-n-rest">남음 ${b.rest}</span>`);
+
   return `
     <div class="s-book-card" style="--i:${idx}">
       <div class="s-book-top">
-        <div class="s-book-top-left">
-          <span class="s-hw-cat" style="background:${catMeta.bg};margin-bottom:0">${catMeta.label}</span>
-          <span class="s-book-name">${escHtml(b.name)}${b.cohort ? ` <span class="s-book-cohort">(${escHtml(b.cohort)})</span>` : ''}</span>
-        </div>
+        <div class="s-book-top-left">${head}</div>
         <span class="s-book-pct">${pct}%</span>
       </div>
-      <div class="s-book-bar-wrap"><div class="s-book-bar" data-pct="${pct}" style="width:0%"></div></div>
-      <div class="s-book-count">${b.total > 0 ? `${b.done}/${b.total}건 완료` : '아직 배정된 회차가 없어요'}</div>
+      <div class="s-bar4">
+        <span data-w="${w(b.done)}"   style="width:0;background:linear-gradient(90deg,var(--brand-1),var(--brand-2))"></span>
+        <span data-w="${w(b.miss)}"   style="width:0;background:#f0a49c"></span>
+        <span data-w="${w(b.todayN)}" style="width:0;background:#e8890c"></span>
+      </div>
+      <div class="s-book-line">${parts.join('')}</div>
+      ${renderProgGrid(b)}
     </div>
   `;
 }
@@ -681,11 +799,14 @@ function renderMainView(student, assigns, vacations, books) {
 
   // ★ 받은 교재(지금 배부 목록에 있는 것) + 교재별 진행률
   //   교재형: 전체 레이블(book.rows) 기준 — 아직 배정 안 된 부분도 "남은 분량"이므로 분모에 넣는다.
-  //           (예전엔 배정된 것만 분모로 써서, 171개짜리 교재를 11개만 배정받아 다 하면 100%로 보였음)
-  //   보카형: 배정된 회차가 곧 전체 분량이라 그대로 배정 기준
+  //   보카형: 세트수(vocaConfig.setCount)가 곧 전체 분량. 없으면 배정된 회차 수로 대신한다.
+  //   ★ v349: "완료"의 기준을 결과 유무가 아니라 "미완료 사유 없음"으로 바꿨다.
+  //     미통과·점수 미달이 완료로 잡히면, 아래 「지난 미완료」에는 빨갛게 뜨는데
+  //     진행률에서는 완료로 세어지는 모순이 생겼다.
+  const isCompleteOf = (a) => isCohortDone(a)
+    || (a.result !== '' && a.result !== null && a.result !== undefined && reasonOf(a) === null);
   const myBookNames = Array.isArray(student.books) ? student.books : [];
   // ★ 진행 중인 태그(차수)마다 한 장씩 — 같은 교재를 3차·4차로 동시에 진행하면 카드도 따로 나온다.
-  //   예전엔 교재 하나당 한 장이라 3차·4차 진도가 뒤섞여 계산됐다.
   const bookProgressList = [];
   myBookNames.forEach(bn => {
     const book = books.find(b => b && b.name === bn);
@@ -716,19 +837,37 @@ function renderMainView(student, assigns, vacations, books) {
       if (isDone(cohort) && !pending) return;
       if (!mine.length && dates[cohort ? prefix + cohort : String(book.id)] == null) return;
 
-      let total, done;
+      // 단위별 상태 — 완료 / 미완료(밀림) / 오늘 / 남음
+      const doneKeys = new Set(), missKeys = new Set(), todayKeys = new Set();
+      const keysOf = a => isVoca ? [norm(a.unitFrom)] : (a.probLabels || []);
+      const hasRes = a => a.result !== '' && a.result !== null && a.result !== undefined;
+      mine.forEach(a => {
+        const ks = keysOf(a);
+        if (!ks.length) return;
+        if (isCompleteOf(a))               ks.forEach(k => doneKeys.add(k));
+        // 결과가 있는데 완료가 아니면(미통과·점수 미달) 날짜와 무관하게 밀린 것으로 본다
+        else if (hasRes(a))                ks.forEach(k => missKeys.add(k));
+        else if (a.date === today)         ks.forEach(k => todayKeys.add(k));
+        else if (a.date && a.date < today) ks.forEach(k => missKeys.add(k));
+      });
+      doneKeys.forEach(k => { missKeys.delete(k); todayKeys.delete(k); });
+
+      let total, rows = null;
       if (isVoca) {
-        total = new Set(mine.map(a => norm(a.unitFrom))).size;
-        done  = new Set(mine.filter(hasResultOf).map(a => norm(a.unitFrom))).size;
+        const cfg = mine.find(a => a.vocaConfig && a.vocaConfig.setCount != null);
+        total = cfg ? Number(cfg.vocaConfig.setCount) : 0;
+        if (!total) total = new Set(mine.map(a => norm(a.unitFrom))).size;
       } else {
-        const allRows = Array.isArray(book.rows) ? book.rows : [];
-        const doneLabels = new Set();
-        mine.filter(hasResultOf).forEach(a => (a.probLabels || []).forEach(l => doneLabels.add(l)));
-        total = allRows.length || mine.length;
-        done  = allRows.length ? doneLabels.size : mine.filter(hasResultOf).length;
+        rows = Array.isArray(book.rows) && book.rows.length ? book.rows : null;
+        total = rows ? rows.length : new Set([...doneKeys, ...missKeys, ...todayKeys]).size;
       }
+      const done = doneKeys.size, miss = missKeys.size, todayN = todayKeys.size;
+      if (total < done + miss + todayN) total = done + miss + todayN;
+
       const category = isVoca ? (mine.find(a => a.category)?.category || '수업보카') : '교재';
-      bookProgressList.push({ name: bn, cohort, total, done, category });
+      bookProgressList.push({ name: bn, cohort, total, done, miss, todayN,
+        rest: Math.max(0, total - done - miss - todayN),
+        isVoca, rows, doneKeys, missKeys, todayKeys, category });
     });
   });
 
@@ -870,6 +1009,8 @@ function renderMainView(student, assigns, vacations, books) {
           ` : ''}
         </div>
       </div>
+      ${bookProgressList.some(b => b.miss || b.todayN)
+        ? '<div class="s-sec-hint">빨간 테두리는 밀린 곳, 주황은 오늘 할 곳이에요</div>' : ''}
       <div class="s-book-list">${bookProgressList.map(renderBookProgressCard).join('')}</div>
     </div>
     ` : ''}
@@ -895,8 +1036,8 @@ function renderMainView(student, assigns, vacations, books) {
   // ★ 진행률 바가 0%에서 실제 값까지 차오르는 애니메이션 (렌더 직후 다음 프레임에 실제 폭 적용)
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      document.querySelectorAll('.s-book-bar[data-pct]').forEach(el => {
-        el.style.width = el.dataset.pct + '%';
+      document.querySelectorAll('.s-bar4 > span[data-w]').forEach(el => {
+        el.style.width = el.dataset.w;
       });
     });
   });
