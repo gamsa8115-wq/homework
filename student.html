@@ -288,9 +288,11 @@ body {
 }
 /* 회차·문항 격자 — 칸 안에 번호를 직접 적어서, 화면을 캡처해도 그대로 읽히게 한다 */
 .s-grid { display:flex; flex-direction:column; gap:3px; margin-top:.55rem; }
-.s-grow { display:flex; gap:3px; align-items:center; }
+/* ★ 칸 수를 고정하지 않고 줄바꿈시킨다 — 폰 폭이 좁아도 잘리지 않게 */
+.s-grow { display:flex; gap:3px; align-items:flex-start; }
+.s-gcells { display:flex; flex-wrap:wrap; gap:3px; flex:1 1 0; min-width:0; }
 .s-glab {
-  flex:0 0 50px; font-size:.64rem; font-weight:800; color:#40566b;
+  flex:0 0 46px; padding-top:2px; font-size:.64rem; font-weight:800; color:#40566b;
   font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
@@ -611,16 +613,12 @@ function progCell(key, text, b) {
 function renderProgGrid(b) {
   // 아직 아무것도 시작하지 않은 교재는 격자를 생략한다 (빈 칸만 길게 나와 부담스러움)
   if (!b.doneKeys.size && !b.missKeys.size && !b.todayKeys.size) return '';
+
   // 보카형 — 1회차부터 세트수까지, 칸 안에 회차 번호
   if (b.isVoca) {
-    const per = 15;
-    let rows = '';
-    for (let s = 1; s <= b.total; s += per) {
-      let cells = '';
-      for (let u = s; u < s + per && u <= b.total; u++) cells += progCell(String(u), u, b);
-      rows += `<div class="s-grow">${cells}</div>`;
-    }
-    return `<div class="s-grid">${rows}</div>`;
+    let cells = '';
+    for (let u = 1; u <= b.total; u++) cells += progCell(String(u), u, b);
+    return `<div class="s-grid"><div class="s-grow"><div class="s-gcells">${cells}</div></div></div>`;
   }
   // 교재형 — 레이블이 등록돼 있어야 그린다
   if (!b.rows) return '';
@@ -628,17 +626,11 @@ function renderProgGrid(b) {
   if (groups) {
     return `<div class="s-grid">${groups.map(g => `<div class="s-grow">
       <span class="s-glab">${escHtml(g.code)}</span>
-      ${g.items.map(it => progCell(it.key, it.text, b)).join('')}
+      <div class="s-gcells">${g.items.map(it => progCell(it.key, it.text, b)).join('')}</div>
     </div>`).join('')}</div>`;
   }
-  const per = 15;
-  let rows = '';
-  for (let i = 0; i < b.rows.length; i += per) {
-    let cells = '';
-    for (let k = i; k < i + per && k < b.rows.length; k++) cells += progCell(b.rows[k], k + 1, b);
-    rows += `<div class="s-grow">${cells}</div>`;
-  }
-  return `<div class="s-grid">${rows}</div>`;
+  const cells = b.rows.map((l, i) => progCell(l, i + 1, b)).join('');
+  return `<div class="s-grid"><div class="s-grow"><div class="s-gcells">${cells}</div></div></div>`;
 }
 
 function renderBookProgressCard(b, idx) {
@@ -821,8 +813,14 @@ function renderMainView(student, assigns, vacations, books) {
     const prefix = `${book.id}::`;
     const cohorts = new Set();
     Object.keys(dates).forEach(k => {
-      if (k === String(book.id)) cohorts.add('');
-      else if (k.startsWith(prefix)) cohorts.add(k.slice(prefix.length));
+      if (k === String(book.id)) { cohorts.add(''); return; }
+      if (!k.startsWith(prefix)) return;
+      // ★ 배부 날짜 키는 `교재ID::태그` 또는 `교재ID::태그~~카테고리` 형태다.
+      //   ~~ 뒤는 카테고리(수업보카/홈보카)이지 태그가 아니므로 떼어내야 한다.
+      //   (안 떼면 "5차~~홈보카"라는 없는 차수가 생겨 빈 카드가 하나 더 떴다)
+      const rest = k.slice(prefix.length);
+      const i = rest.indexOf('~~');
+      cohorts.add(i < 0 ? rest : rest.slice(0, i));
     });
     bAssigns.forEach(a => cohorts.add(a.cohort || '')); // 날짜 기록이 없는 태그도 배정이 있으면 포함
     if (!cohorts.size) cohorts.add('');
