@@ -291,6 +291,13 @@ body {
 /* ★ 칸 수를 고정하지 않고 줄바꿈시킨다 — 폰 폭이 좁아도 잘리지 않게 */
 .s-grow { display:flex; gap:3px; align-items:flex-start; }
 .s-gcells { display:flex; flex-wrap:wrap; gap:3px; flex:1 1 0; min-width:0; }
+.s-gcode {
+  flex:0 0 auto; align-self:center;
+  font-size:.6rem; font-weight:800; color:#5b6d7d;
+  font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding:0 .18rem 0 .3rem; letter-spacing:-.2px;
+}
+.s-gcode:first-child { padding-left:0; }
 .s-glab {
   flex:0 0 46px; padding-top:2px; font-size:.64rem; font-weight:800; color:#40566b;
   font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -442,9 +449,26 @@ const FB_PATH = 'homework_v4';
 // ══════════════════════════════════════════════════════════
 // URL에서 접근 키 추출
 // ══════════════════════════════════════════════════════════
+const KEY_STORE = 'thefirst.student.key';
+
+/* ★ 홈 화면 아이콘으로 열면 주소에 접근 키가 붙지 않는다
+   (매니페스트의 start_url이 ./student.html 하나뿐이라 학생별 키를 담을 수 없다).
+   그래서 링크로 처음 들어왔을 때 키를 이 기기에 저장해 두고,
+   주소에 키가 없으면 저장해 둔 키를 대신 쓴다.
+   저장은 이 기기에만 남고 다른 사람에게 전달되지 않는다. */
 function getAccessKey() {
   const params = new URLSearchParams(window.location.search);
-  return params.get('k') || '';
+  const fromUrl = params.get('k') || '';
+  if (fromUrl) {
+    try { localStorage.setItem(KEY_STORE, fromUrl); } catch (e) {}
+    return fromUrl;
+  }
+  try { return localStorage.getItem(KEY_STORE) || ''; } catch (e) { return ''; }
+}
+
+// 저장된 키가 더 이상 유효하지 않을 때(학생 탈퇴·키 재발급) 지운다
+function clearAccessKey() {
+  try { localStorage.removeItem(KEY_STORE); } catch (e) {}
 }
 
 // ══════════════════════════════════════════════════════════
@@ -581,26 +605,14 @@ function renderError(title, sub) {
   `;
 }
 
-/* ★ v349 — 교재형 레이블을 유형코드별로 묶는다.
-   "11pss- 중1- 08" 처럼 [코드]-[구분]-[번호] 꼴이 대부분일 때만 묶고,
-   "1과  풀기"처럼 형식이 다르면 묶지 않고 순번 격자로 그린다. */
-function groupLabels(rows) {
-  const parsed = rows.map(l => {
-    const m = String(l).match(/^\s*([^\s-]{1,10})\s*-\s*.*-\s*([^\s-]{1,6})\s*$/);
-    return m ? { pre: m[1], num: m[2] } : null;
-  });
-  const ok = parsed.filter(Boolean).length;
-  const pres = new Set(parsed.filter(Boolean).map(x => x.pre));
-  if (ok < rows.length * 0.8 || pres.size < 2) return null;
-  const g = new Map();
-  rows.forEach((l, i) => {
-    const pre = parsed[i] ? parsed[i].pre : '기타';
-    const num = parsed[i] ? parsed[i].num : String(i + 1);
-    if (!g.has(pre)) g.set(pre, []);
-    g.get(pre).push({ key: l, text: num });
-  });
-  return [...g.entries()].sort((a, b) => a[0].localeCompare(b[0]))
-                         .map(([code, items]) => ({ code, items }));
+/* ★ v351 — 교재형 격자는 교재 관리에 등록된 레이블 순서 그대로 그린다.
+   예전에는 유형코드별로 묶으면서 코드 이름순으로 다시 정렬했는데,
+   그러면 "교재 전체에서 어디쯤인지"가 실제 교재 순서와 어긋난다.
+   대신 유형코드가 바뀌는 자리에 코드 표를 하나씩 끼워 넣어,
+   순서는 그대로 두면서 어느 유형인지도 함께 보이게 한다. */
+function parseLabel(l) {
+  const m = String(l).match(/^\s*([^\s-]{1,10})\s*-\s*.*-\s*([^\s-]{1,6})\s*$/);
+  return m ? { code: m[1], num: m[2] } : null;
 }
 
 /* 칸 하나 — 완료/밀림/오늘/남음 상태에 따라 색이 달라진다 */
@@ -609,7 +621,7 @@ function progCell(key, text, b) {
   if (b.doneKeys.has(key))       cls += ' done';
   else if (b.missKeys.has(key))  cls += ' miss';
   else if (b.todayKeys.has(key)) cls += ' today';
-  return `<span class="${cls}">${escHtml(text)}</span>`;
+  return `<span class="${cls}" title="${escHtml(key)}">${escHtml(text)}</span>`;
 }
 
 function renderProgGrid(b) {
@@ -622,17 +634,25 @@ function renderProgGrid(b) {
     for (let u = 1; u <= b.total; u++) cells += progCell(String(u), u, b);
     return `<div class="s-grid"><div class="s-grow"><div class="s-gcells">${cells}</div></div></div>`;
   }
+
   // 교재형 — 레이블이 등록돼 있어야 그린다
   if (!b.rows) return '';
-  const groups = groupLabels(b.rows);
-  if (groups) {
-    return `<div class="s-grid">${groups.map(g => `<div class="s-grow">
-      <span class="s-glab">${escHtml(g.code)}</span>
-      <div class="s-gcells">${g.items.map(it => progCell(it.key, it.text, b)).join('')}</div>
-    </div>`).join('')}</div>`;
-  }
-  const cells = b.rows.map((l, i) => progCell(l, i + 1, b)).join('');
-  return `<div class="s-grid"><div class="s-grow"><div class="s-gcells">${cells}</div></div></div>`;
+  const parsed = b.rows.map(parseLabel);
+  // 레이블이 [코드]-[구분]-[번호] 꼴이 대부분일 때만 코드 표를 붙인다
+  const useCode = parsed.filter(Boolean).length >= b.rows.length * 0.8;
+
+  let html = '', prev = null;
+  b.rows.forEach((l, i) => {
+    const p = parsed[i];
+    if (useCode) {
+      const code = p ? p.code : '기타';
+      if (code !== prev) { html += `<span class="s-gcode">${escHtml(code)}</span>`; prev = code; }
+      html += progCell(l, p ? p.num : String(i + 1), b);
+    } else {
+      html += progCell(l, i + 1, b);
+    }
+  });
+  return `<div class="s-grid"><div class="s-grow"><div class="s-gcells">${html}</div></div></div>`;
 }
 
 function renderBookProgressCard(b, idx) {
@@ -1048,13 +1068,13 @@ function renderMainView(student, assigns, vacations, books) {
 // 초기화 + Firebase 데이터 로드
 // ══════════════════════════════════════════════════════════
 // ★ 새 버전을 올릴 때 이 값을 함께 올린다 — 화면 맨 아래에 표시된다
-const APP_VERSION = 'v350';
+const APP_VERSION = 'v352';
 
 async function main() {
   const key = getAccessKey();
   if (!key) {
     renderError('접근 키가 없습니다',
-      'URL에 접근 키가 포함되어 있지 않습니다.\n선생님께 다시 URL을 받아주세요.');
+      '선생님께 받은 링크로 한 번만 접속하면\n이 기기에 기억되어 다음부터는 바로 열립니다.\n\n선생님께 URL을 다시 받아주세요.');
     return;
   }
 
@@ -1081,6 +1101,7 @@ async function main() {
     // 내 accessKey에 매칭되는 학생 찾기
     const me = students.find(s => s.accessKey === key);
     if (!me) {
+      clearAccessKey(); // 저장된 키가 무효 — 다음엔 선생님이 준 새 링크로 들어오게 한다
       renderError('숙제 정보를 찾을 수 없습니다',
         '접근 키가 유효하지 않습니다.\n학생 탈퇴로 인해 URL이 무효화되었을 수 있어요.\n선생님께 문의해주세요.');
       return;
