@@ -605,14 +605,27 @@ function renderError(title, sub) {
   `;
 }
 
-/* ★ v351 — 교재형 격자는 교재 관리에 등록된 레이블 순서 그대로 그린다.
-   예전에는 유형코드별로 묶으면서 코드 이름순으로 다시 정렬했는데,
-   그러면 "교재 전체에서 어디쯤인지"가 실제 교재 순서와 어긋난다.
-   대신 유형코드가 바뀌는 자리에 코드 표를 하나씩 끼워 넣어,
-   순서는 그대로 두면서 어느 유형인지도 함께 보이게 한다. */
+/* ★ v353 — 교재형 격자는 유형코드마다 한 줄씩 (줄머리에 코드).
+   줄의 순서는 코드 이름순이 아니라 "교재에 등록된 레이블 순서"를 따른다
+   — 코드가 처음 나오는 자리가 그 줄의 자리가 된다.
+   같은 코드가 교재 뒤쪽에 또 나오면 첫 줄에 이어 붙인다. */
 function parseLabel(l) {
   const m = String(l).match(/^\s*([^\s-]{1,10})\s*-\s*.*-\s*([^\s-]{1,6})\s*$/);
   return m ? { code: m[1], num: m[2] } : null;
+}
+
+function groupLabels(rows) {
+  const parsed = rows.map(parseLabel);
+  // [코드]-[구분]-[번호] 꼴이 대부분일 때만 코드별로 묶는다 ("1과  풀기" 같은 교재는 순번 격자)
+  if (parsed.filter(Boolean).length < rows.length * 0.8) return null;
+  const g = new Map(); // Map은 넣은 순서를 유지 — 코드가 처음 나온 순서가 그대로 줄 순서가 된다
+  rows.forEach((l, i) => {
+    const p = parsed[i];
+    const code = p ? p.code : '기타';
+    if (!g.has(code)) g.set(code, []);
+    g.get(code).push({ key: l, text: p ? p.num : String(i + 1) });
+  });
+  return [...g.entries()].map(([code, items]) => ({ code, items }));
 }
 
 /* 칸 하나 — 완료/밀림/오늘/남음 상태에 따라 색이 달라진다 */
@@ -637,22 +650,15 @@ function renderProgGrid(b) {
 
   // 교재형 — 레이블이 등록돼 있어야 그린다
   if (!b.rows) return '';
-  const parsed = b.rows.map(parseLabel);
-  // 레이블이 [코드]-[구분]-[번호] 꼴이 대부분일 때만 코드 표를 붙인다
-  const useCode = parsed.filter(Boolean).length >= b.rows.length * 0.8;
-
-  let html = '', prev = null;
-  b.rows.forEach((l, i) => {
-    const p = parsed[i];
-    if (useCode) {
-      const code = p ? p.code : '기타';
-      if (code !== prev) { html += `<span class="s-gcode">${escHtml(code)}</span>`; prev = code; }
-      html += progCell(l, p ? p.num : String(i + 1), b);
-    } else {
-      html += progCell(l, i + 1, b);
-    }
-  });
-  return `<div class="s-grid"><div class="s-grow"><div class="s-gcells">${html}</div></div></div>`;
+  const groups = groupLabels(b.rows);
+  if (groups) {
+    return `<div class="s-grid">${groups.map(g => `<div class="s-grow">
+      <span class="s-glab">${escHtml(g.code)}</span>
+      <div class="s-gcells">${g.items.map(it => progCell(it.key, it.text, b)).join('')}</div>
+    </div>`).join('')}</div>`;
+  }
+  const cells = b.rows.map((l, i) => progCell(l, i + 1, b)).join('');
+  return `<div class="s-grid"><div class="s-grow"><div class="s-gcells">${cells}</div></div></div>`;
 }
 
 function renderBookProgressCard(b, idx) {
@@ -1068,7 +1074,7 @@ function renderMainView(student, assigns, vacations, books) {
 // 초기화 + Firebase 데이터 로드
 // ══════════════════════════════════════════════════════════
 // ★ 새 버전을 올릴 때 이 값을 함께 올린다 — 화면 맨 아래에 표시된다
-const APP_VERSION = 'v352';
+const APP_VERSION = 'v353';
 
 async function main() {
   const key = getAccessKey();
