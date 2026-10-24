@@ -14100,7 +14100,7 @@ function _rmApplyMaster(lists) {
   RM_TRACKS.forEach(t => {
     const pool = old.filter(x => x.track === t.key);
     (lists[t.key] || []).forEach((name, i) => {
-      let idx = pool.findIndex(x => _rmNorm(x.name) === _rmNorm(name));
+      let idx = pool.findIndex(x => _rmMatchNorm(x.name) === _rmMatchNorm(name)); // Phonics↔파닉스처럼 표기만 다른 이름도 같은 칸
       // ★ 이름이 달라도 같은 교재에 연결된 단계면 그 단계를 이어받는다 (학생 기록·건너뛰기 표시 보존)
       if (idx < 0) { const g = rmGuessBook(t.key, name); if (g != null) idx = pool.findIndex(x => x.bookId === g); }
       if (idx >= 0) {
@@ -14119,8 +14119,8 @@ function _rmApplyMaster(lists) {
   S.roadmapSteps = next;
   return { kept, added, removed: old.length - kept };
 }
-function rmSeedDefault() {
-  if ((S.roadmapSteps || []).length && !confirm('마스터 커리를 학원 기본 로드맵(엑셀)으로 되돌릴까요?\n이름이 같은 단계는 그대로 유지됩니다.')) return;
+function rmSeedDefault(skipConfirm) {
+  if (!skipConfirm && (S.roadmapSteps || []).length && !confirm('마스터 커리를 학원 기본 로드맵(홈보카·수업보카·교재·부교재 4줄)으로 바꿀까요?\n이름이 같거나 같은 교재에 연결된 단계는 그대로 이어받아 학생 기록이 유지됩니다.')) return;
   const r = _rmApplyMaster(RM_DEFAULT);
   save(); renderRoadmapPage();
   const linked = S.roadmapSteps.filter(x => x.bookId != null).length;
@@ -14762,8 +14762,21 @@ function _rmSizeCells() {
 }
 window.addEventListener('resize', () => { if ($('p-roadmap')?.classList.contains('active')) { clearTimeout(window._rmRz); window._rmRz = setTimeout(_rmSizeCells, 120); } });
 
+/* ★ v378 — 예전(부교재 없는 3줄) 로드맵이 저장돼 있으면 학원 기본 로드맵(4줄)으로 바꿀지 한 번 묻는다 */
+function _rmOfferV2Upgrade() {
+  const steps = S.roadmapSteps || [];
+  if (!steps.length || steps.some(x => x && x.track === 'sub')) return;
+  let asked = false; try { asked = localStorage.getItem('rm_v2_asked') === '1'; } catch (e) {}
+  if (asked) return;
+  try { localStorage.setItem('rm_v2_asked', '1'); } catch (e) {}
+  setTimeout(() => {
+    if (confirm('학원 기본 로드맵이 네 줄(홈보카 · 수업보카 · 교재 · 부교재)로 바뀌었어요.\n저장된 로드맵을 새 기본 로드맵으로 바꿀까요?\n\n· 이름이 같거나 같은 교재에 연결된 칸은 그대로 이어받아 학생 기록이 유지돼요.\n· 나중에 ⚙ 마스터 커리 편집 → "학원 기본 로드맵으로"로도 바꿀 수 있어요.')) rmSeedDefault(true);
+  }, 150);
+}
+
 function renderRoadmapPage() {
   const root = $('rm-root'); if (!root) return;
+  _rmOfferV2Upgrade();
   rmUpdateNavBadge();
   if (!(S.roadmapSteps || []).length) {
     root.innerHTML = `<div class="card" style="max-width:560px">
@@ -14858,7 +14871,7 @@ function _rmMasterHtml() {
       <span style="flex:1"></span>
       ${unlinked ? `<button class="btn bg bsm" onclick="rmAutoMatchAll()">🔗 이름으로 자동 연결 (미연결 ${unlinked})</button>` : ''}
       <button class="btn bg bsm" onclick="$('rm-xlsx').click()">📤 엑셀에서 다시 불러오기</button>
-      <button class="btn bg bsm" onclick="rmSeedDefault()">기본 로드맵으로</button>
+      <button class="btn bg bsm" onclick="rmSeedDefault()">🏫 학원 기본 로드맵으로</button>
     </div><div class="rm-cols">${cols}</div></div>`;
 }
 
