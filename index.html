@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="더퍼스트 숙제관리">
-<title>숙제 관리 v377</title>
+<title>숙제 관리 v378</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -654,20 +654,34 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 .rm-toolbar select,.rm-toolbar input{width:auto;min-width:120px}
 .rm-chk{display:inline-flex;white-space:nowrap;align-items:center;gap:.3rem;margin:0;font-size:.75rem}
 .rm-toolbar .rm-chk input{width:14px;height:14px;min-width:0;margin:0;padding:0;flex:none;accent-color:var(--acc)}
-.rm-layout{display:grid;grid-template-columns:200px minmax(0,1fr);gap:1rem;align-items:start}
-@media (max-width:860px){.rm-layout{grid-template-columns:1fr}.rm-list{max-height:190px}}
-.rm-side{padding:.45rem;position:sticky;top:0}
-.rm-list{max-height:calc(100vh - 220px);overflow-y:auto}
-.rm-gh{font-size:.62rem;font-weight:800;color:var(--mu);letter-spacing:.5px;padding:.55rem .5rem .2rem}
-.rm-stu{display:flex;align-items:center;justify-content:space-between;padding:.38rem .55rem;border-radius:8px;font-size:.8rem;cursor:pointer;transition:background .12s}
+.rm-layout{display:grid;grid-template-columns:116px minmax(0,1fr);gap:.7rem;align-items:start}
+.rm-side{padding:.3rem;position:sticky;top:0}
+.rm-list{max-height:calc(100vh - 210px);overflow-y:auto;position:relative}
+.rm-gh{font-size:.6rem;font-weight:800;color:var(--mu);padding:.45rem .35rem .15rem}
+.rm-stu{display:flex;align-items:center;justify-content:space-between;gap:.25rem;padding:.32rem .4rem;border-radius:7px;font-size:.78rem;cursor:pointer;white-space:nowrap}
+.rm-stu>span:first-child{overflow:hidden;text-overflow:ellipsis}
 .rm-stu:hover{background:var(--s2)}
 .rm-stu.on{background:var(--acc);color:#fff;font-weight:700}
-.rm-stu.on .rm-dot{box-shadow:0 0 0 1.5px #fff}
-.rm-dots{display:flex;gap:3px}
-.rm-dot{width:7px;height:7px;border-radius:50%;display:inline-block;background:#dcdcd6}
-.rm-dot-active{background:#f0a23a}.rm-dot-waiting{background:#e5484d}.rm-dot-finished{background:#1f9d63}
-.rm-bulk{border-top:1px solid var(--bd);margin-top:.45rem;padding:.55rem .35rem .25rem;display:flex;flex-wrap:wrap;gap:.3rem;align-items:center}
-.rm-bulk select{font-size:.72rem;padding:.28rem .35rem;width:100%}
+.rm-badge{display:flex;align-items:center;gap:3px;flex:none}
+.rm-cnt{font-size:.62rem;font-weight:800;min-width:15px;height:15px;line-height:15px;text-align:center;border-radius:8px;background:#fff1a8;color:#6b5200;padding:0 3px}
+.rm-wait{width:7px;height:7px;border-radius:50%;background:#e5484d;display:inline-block}
+.rm-stu.on .rm-cnt{background:#fff;color:var(--acc)}
+.rm-stu.on .rm-wait{box-shadow:0 0 0 1.5px #fff}
+.rm-bulkd{font-size:.75rem}
+.rm-bulkd>summary{cursor:pointer;color:var(--acc);font-weight:700;list-style:none;padding:.3rem .55rem;border:1px solid var(--bd);border-radius:7px;background:var(--surface)}
+.rm-bulkd>summary::-webkit-details-marker{display:none}
+.rm-bulkd[open]>summary{border-color:var(--acc)}
+.rm-bulk{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;margin-top:.35rem}
+.rm-bulk select{font-size:.72rem;padding:.28rem .35rem;width:auto;min-width:0}
+/* 태블릿·휴대폰: 학생 목록을 위쪽 한 줄(옆으로 넘기기)로 */
+@media (max-width:860px){
+  .rm-layout{grid-template-columns:minmax(0,1fr);gap:.5rem}
+  .rm-side{position:static;padding:.3rem;min-width:0}
+  .rm-list{display:flex;gap:.25rem;overflow-x:auto;overflow-y:hidden;max-height:none;padding-bottom:2px}
+  .rm-gh{flex:none;align-self:center;padding:0 .2rem 0 .4rem}
+  .rm-stu{flex:none;padding:.3rem .55rem;border:1px solid var(--bd)}
+  .rm-stu.on{border-color:var(--acc)}
+}
 .rm-main.card{padding:.9rem 1rem;min-width:0}
 .rm-head{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;margin-bottom:1rem;padding-bottom:.7rem;border-bottom:1px solid var(--bd)}
 .rm-avatar{width:42px;height:42px;border-radius:50%;background:rgba(79,70,229,.1);color:var(--acc);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;flex:none}
@@ -679,34 +693,54 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 .rm-legend{font-size:.66rem;color:var(--mu);display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
 .rm-legend>span{display:inline-flex;align-items:center;gap:.25rem}
 .rm-lg{display:inline-block;width:12px;height:12px;border-radius:3px}
-.rm-lg.rm-bl-lg{height:4px;width:14px;border-radius:2px;background:#e9a43a;animation:rmblink 1s ease-in-out infinite}
+.rm-lg.rm-bl-lg{height:4px;width:14px;border-radius:2px;background:#b45309;animation:rmblink 1s ease-in-out infinite}
 .rm-track{margin:0 0 1.3rem}
 .rm-th{display:flex;align-items:baseline;gap:.4rem;flex-wrap:wrap;margin-bottom:.45rem}
 .rm-ticon{font-size:.9rem}
 .rm-tname{font-size:.95rem;font-weight:800}
 .rm-tsum{font-size:.78rem;color:#6b7280}
-.rm-now{color:#a35a00;font-weight:800}
+.rm-now{color:#8a6a00;font-weight:800}
 .rm-unset{color:var(--mu)}
 .rm-go{border:none;background:var(--acc);color:#fff;border-radius:999px;font-size:.66rem;padding:.12rem .55rem;cursor:pointer;font-weight:800}
 .rm-own{font-size:.6rem;font-weight:700;color:#7c3aed;background:rgba(124,58,237,.1);border-radius:4px;padding:.05rem .35rem}
 .rm-link{background:none;border:none;color:var(--acc);font-size:.66rem;cursor:pointer;text-decoration:underline;padding:0}
-.rm-line{display:flex;gap:3px;align-items:stretch;overflow-x:auto;padding:2px 2px 3px}
-.rm-c{flex:1 0 20px;min-width:20px;min-height:168px;border-radius:4px;font-size:12px;line-height:1.08;display:flex;flex-direction:column;align-items:center;overflow:hidden;cursor:pointer;box-sizing:border-box}
+.rm-line{display:flex;gap:2px;align-items:stretch;overflow-x:auto;padding:2px 2px 3px}
+.rm-c{flex:0 0 var(--rm-w,24px);width:var(--rm-w,24px);min-width:0;height:var(--rm-h,170px);border-radius:4px;font-size:12px;line-height:1.08;display:flex;flex-direction:column;align-items:center;overflow:hidden;cursor:pointer;box-sizing:border-box}
 .rm-c:hover{filter:brightness(.97)}
-.rm-t{writing-mode:vertical-rl;text-orientation:upright;letter-spacing:-.5px;white-space:nowrap;padding:5px 0;flex:1}
-.rm-c.rm-done,.rm-lg.rm-done{background:#cfedd2;color:#1f7a34;border:1px solid #bfe3c3}
-.rm-c.rm-active,.rm-lg.rm-active{background:#fbe1a6;color:#8a4b00;border:1.5px solid #e9b450;font-weight:700}
-.rm-c.rm-done.rm-act{border:1.5px solid #e9b450}
-.rm-c.rm-future,.rm-lg.rm-future{background:#fafaf8;color:#555;border:1px solid #e0e0da}
+.rm-lab{flex:1;display:flex;flex-direction:column;align-items:center;padding:6px 0 4px;width:100%}
+.rm-t{display:flex;flex-direction:column;align-items:center;gap:0;font-size:12.5px}
+.rm-sub{display:flex;flex-direction:column;align-items:center;gap:0;font-size:10.5px;font-weight:500;opacity:.72;margin-top:5px;padding-top:5px;border-top:1px solid color-mix(in srgb,currentColor 35%,transparent)}
+.rm-ch{line-height:1.12}
+.rm-tcu{font-size:1em;font-weight:800;letter-spacing:-.6px;line-height:1.15;white-space:nowrap}
+.rm-hz{font-size:9px;font-weight:800;letter-spacing:-.6px;line-height:1.3;white-space:nowrap}
+.rm-en{font-weight:700;letter-spacing:-.3px}
+.rm-enl{writing-mode:vertical-rl;text-orientation:sideways;font-weight:700;font-size:11px;letter-spacing:0;line-height:1.1;margin:1px 0 2px;white-space:nowrap}
+.rm-c.rm-done,.rm-lg.rm-done{background:#d6e6fb;color:#1e4f9c;border:1px solid #bcd4f5}
+.rm-c.rm-active,.rm-lg.rm-active{background:#fff1a8;color:#6b5200;border:1.5px solid #e6c229;font-weight:700}
+.rm-c.rm-done.rm-act{border:1.5px solid #e6c229}
+.rm-c.rm-future,.rm-lg.rm-future{background:#ececea;color:#5f5f5a;border:1px solid #dcdcd7}
 .rm-c.rm-gap,.rm-lg.rm-gap{background:#fff;color:#555;border:1.5px dashed #a8a8a0}
 .rm-c.rm-skip,.rm-lg.rm-skip{background:repeating-linear-gradient(135deg,#f3f3f0 0 4px,#e2e2dc 4px 6px);color:#b0b0a8;border:1px solid #e0e0da}
 .rm-c.rm-skip .rm-t{text-decoration:line-through}
 .rm-c.rm-picked{outline:2px solid var(--acc);outline-offset:1px}
 .rm-bars{width:100%;display:flex;flex-direction:column;gap:1px;padding:0 3px 4px;box-sizing:border-box}
 .rm-bars i{display:block;height:4px;border-radius:1px}
-.rm-bd{background:#1b6e2a}
-.rm-bl{background:#e9a43a;animation:rmblink 1s ease-in-out infinite}
-@keyframes rmblink{0%,100%{opacity:1}50%{opacity:.15}}
+.rm-bars{gap:2px}
+.rm-rc{display:block;height:13px;line-height:13px;border-radius:3px;font-size:9px;font-weight:800;text-align:center;color:#fff;cursor:pointer;letter-spacing:-.3px}
+.rm-rc-d{background:#1e4f9c}
+.rm-rc-a{background:#b45309;animation:rmblink 1s ease-in-out infinite}
+.rm-rc:hover{filter:brightness(1.15)}
+.rm-rc.on{outline:2px solid var(--acc);outline-offset:1px;animation:none}
+.rm-dist-row{display:flex;flex-wrap:wrap;gap:.5rem .8rem;align-items:center;margin:.35rem 0 .5rem;font-size:.76rem}
+.rm-dist-row label{display:inline-flex;align-items:center;gap:.3rem;margin:0;font-size:.74rem;color:var(--tx);font-weight:600}
+.rm-dist-row input[type=date]{width:auto;padding:.25rem .4rem;font-size:.74rem}
+.rm-ck input{width:14px;height:14px;margin:0;accent-color:var(--acc)}
+.rm-whos{background:var(--surface);border:1px solid var(--bd);border-radius:8px;padding:.4rem .55rem;justify-content:flex-start}
+.rm-whos label.rm-ck{flex:none;width:auto;display:inline-flex}
+.rm-whos .rm-ck input[type=checkbox]{width:14px;min-width:14px;height:14px;padding:0;flex:none}
+.rm-bd{background:#1e4f9c}
+.rm-bl{background:#b45309;animation:rmblink 1s ease-in-out infinite}
+@keyframes rmblink{0%,100%{opacity:1}50%{opacity:.3}}
 @media (prefers-reduced-motion:reduce){.rm-bl,.rm-lg.rm-bl-lg{animation-duration:2.5s}}
 .rm-gaps{font-size:.72rem;color:var(--mu);margin-top:.35rem}
 .rm-panel{margin-top:.6rem;border-radius:10px;padding:.6rem .7rem;background:var(--s2);border:1px solid var(--bd)}
@@ -717,7 +751,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 .rm-panel-btns select{width:auto;max-width:200px;font-size:.72rem;padding:.28rem .35rem}
 .rm-panel-btns .btn:disabled{opacity:.35;cursor:default}
 .rm-sep{width:1px;height:18px;background:var(--bd);margin:0 .15rem}
-.rm-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem}
+.rm-cols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.6rem}
 @media (max-width:900px){.rm-cols{grid-template-columns:1fr}}
 .rm-col{border:1px solid var(--bd);border-radius:10px;display:flex;flex-direction:column;min-width:0}
 .rm-colhd{display:flex;gap:.4rem;align-items:center;padding:.45rem .6rem;border-bottom:2px solid;font-size:.8rem}
@@ -763,7 +797,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <nav class="sidebar">
   <div class="logo" style="display:flex;flex-direction:column;align-items:flex-start;gap:.35rem;padding:.4rem .4rem .6rem">
     <img src="data:image/jpeg;base64,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" alt="THE FIRST - For Better Days" style="width:119px;height:auto;flex:0 0 auto;border-radius:3px">
-    <span style="font-weight:500;font-size:.72rem;color:#0a4771;letter-spacing:-.2px">숙제관리 v377</span>
+    <span style="font-weight:500;font-size:.72rem;color:#0a4771;letter-spacing:-.2px">숙제관리 v378</span>
   </div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
@@ -12725,7 +12759,11 @@ function _bdKey(bookId, cohort, category) {
   // ★ 홈보카/수업보카는 서로 다른 교재로 다루므로 배부 날짜도 따로 보관한다.
   //   단, 카테고리를 안 넘기거나 수업보카(기본값)일 때는 예전 키를 그대로 써서
   //   기존 데이터가 그대로 읽히게 한다 — 마이그레이션 없이 호환.
-  return (category && category !== '수업보카') ? `${base}~~${category}` : base;
+  // ★ v378 — 태그 없이 카테고리만 붙을 때도 '::'를 넣어 `교재ID::~~홈보카`로 만든다.
+  //   예전엔 `교재ID~~홈보카`가 되어, 다른 곳(저장 전 정리·유령 날짜 정리·진행중 판정)이
+  //   '::'로만 키를 나눠서 이 키를 못 알아보고 저장할 때마다 지워 버렸다.
+  if (category && category !== '수업보카') return `${bookId}::${cohort || ''}~~${category}`;
+  return base;
 }
 
 /* ★ 날짜/메모 키에서 카테고리를 떼어낸 기본 키 (옛 데이터 조회·정리용) */
@@ -13913,16 +13951,23 @@ const RM_TRACKS = [
   { key:'home',  label:'홈보카',   icon:'🏠', cat:'홈보카',   mode:'voca', color:'#92600f' },
   { key:'class', label:'수업보카', icon:'🏫', cat:'수업보카', mode:'voca', color:'#3b4a7a' },
   { key:'book',  label:'교재',     icon:'📘', cat:null,       mode:'book', color:'#047857' },
+  { key:'sub',   label:'부교재',   icon:'📗', cat:null,       mode:'book', color:'#0e7490' },
 ];
+/* 학원 기본 로드맵 (2026-10-24 선생님 정리본 · 앱 교재명 기준) */
 const RM_DEFAULT = (() => {
-  const nums = (p, n) => Array.from({ length:n }, (_, i) => `${p} ${i + 1}`);
-  const base = [...nums('파닉스', 6), ...nums('스토리', 6), ...nums('베이직', 12)];
-  const voca = [...base, '초등필수', '5형식', '과거 과거분사', '중등필수', '천문장 입문', '천문장 기본', '천문장 완성', '한끝단어'];
+  const nums = (p, n, from = 1) => Array.from({ length:n }, (_, i) => `${p} ${i + from}`);
+  const voca = [...nums('스토리', 6), ...nums('베이직', 12), '초등필수 단어', '5형식 단어', '과거 과거분사 단어', '중등필수 단어',
+    '천문장 입문 단어', '천문장 기본 단어', '한끝 고등 기본'];
   return {
     home: voca, class: voca,
-    book: [...base, '5형식(주어 동사 시제)', '5형식(부사구)', '5형식(준동사)', '5형식(분석)', '5형식(해석)',
-      '3800제 1단계 (해석)', '3800제 2단계 (해석)', '3800제 드릴 1단계', '3800제 드릴 2단계', '3800제 드릴 3단계',
-      '천문장 입문 테스트', '천문장 기본 테스트'],
+    book: [...nums('Alphabet', 2), ...nums('Phonics', 6), ...nums('Story', 6), ...nums('Basic', 12),
+      '5형식 (주+동+시)', '5형식 (부사구)', '5형식 (준동사)', '5형식 (분석)', '5형식 (해석)', '5형식 (분석/해석)',
+      '3800제 (1단계)', '3800제 (2단계)', '3800제 (3단계)', '천문장 입문(Test)', '천문장 기본(Test)', '천문장 완성(Test)'],
+    sub: [...nums('Alphabet 쓰기', 2), ...nums('Phonics WB', 6), ...nums('Phonics S-WB', 3),
+      '3800 해석 (1단계)', '3800 해석 (2단계)', '3800 해석 (3단계)', '초등필수 단어장', '중등필수 단어장', '3인칭 일반동사(단어장)',
+      '과거 일반동사 (단어장)', '과거/과거분사1(단어장)', '과거/과거분사2(단어장)', '과거/과거분사(W-test)', '고등 미니 모의고사',
+      'Prerequisite(초 A단계)', 'Prerequisite(초 B단계)', 'Prerequisite(중 intro A)', 'Prerequisite(중 intro B)',
+      ...nums('워크북 E', 6).map(x => x.replace(' E ', ' E')), '워크북 M', '천문장 입문(Home)', '천문장 기본(Home)'],
   };
 })();
 
@@ -14001,6 +14046,8 @@ function rmStepInfo(st, track, step) {
     _rmActivePairs(st, book).filter(p => cat == null || catOf(p.category) === cat)
       .forEach(p => { if (seen.has(p.cohort)) return; seen.add(p.cohort); rounds.push({ k:'a', cohort:p.cohort, date:p.since }); });
   }
+  const _cn = c => { const m = String(c || '').match(/(\d+)/); return c ? (m ? +m[1] : 999) : 1; };
+  rounds.sort((a, b) => _cn(a.cohort) - _cn(b.cohort));
   const anyDone = rounds.some(r => r.k === 'd') || (flag && flag.f === 'done');
   const active = rounds.some(r => r.k === 'a');
   let kind = anyDone ? 'done' : active ? 'active' : (flag && flag.f === 'skip') ? 'skip' : 'pending';
@@ -14032,15 +14079,19 @@ function rmTrackView(st, track) {
 }
 
 /* ── 교재 자동 연결 / 마스터 커리 만들기·불러오기 ── */
+/* 자동 연결용 이름 비교 — 영어 교재명(Phonics/Story/Basic/Test)을 한글로 바꾸고 괄호·기호를 뺀다 */
+function _rmMatchNorm(s) {
+  return _rmNorm(s).replace(/phonics/g, '파닉스').replace(/story/g, '스토리').replace(/basic/g, '베이직').replace(/test/g, '테스트')
+    .replace(/[()\[\]+/·.,_-]/g, '');
+}
 function rmGuessBook(track, name) {
   const t = _rmTrack(track);
   const pool = S.books.filter(b => b && b.mode === t.mode);
-  const n = _rmNorm(name);
+  const n = _rmMatchNorm(name);
   if (!n) return null;
-  const exact = pool.filter(b => _rmNorm(b.name) === n);
-  if (exact.length === 1) return exact[0].id;
-  const part = pool.filter(b => { const bn = _rmNorm(b.name); return bn.includes(n) || n.includes(bn); });
-  return part.length === 1 ? part[0].id : null;
+  // ★ 이름이 같은 교재만 연결 (띄어쓰기·괄호·영어/한글 표기 차이는 무시) — 일부만 같은 이름은 잘못 연결될 수 있어 쓰지 않는다
+  const exact = pool.filter(b => _rmMatchNorm(b.name) === n);
+  return exact.length === 1 ? exact[0].id : null;
 }
 function _rmApplyMaster(lists) {
   const old = S.roadmapSteps || [];
@@ -14049,8 +14100,15 @@ function _rmApplyMaster(lists) {
   RM_TRACKS.forEach(t => {
     const pool = old.filter(x => x.track === t.key);
     (lists[t.key] || []).forEach((name, i) => {
-      const idx = pool.findIndex(x => _rmNorm(x.name) === _rmNorm(name));
-      if (idx >= 0) { const s = pool.splice(idx, 1)[0]; next.push({ ...s, name, order: i + 1 }); kept++; }
+      let idx = pool.findIndex(x => _rmNorm(x.name) === _rmNorm(name));
+      // ★ 이름이 달라도 같은 교재에 연결된 단계면 그 단계를 이어받는다 (학생 기록·건너뛰기 표시 보존)
+      if (idx < 0) { const g = rmGuessBook(t.key, name); if (g != null) idx = pool.findIndex(x => x.bookId === g); }
+      if (idx >= 0) {
+        const s = pool.splice(idx, 1)[0];
+        const ns = { ...s, name, order: i + 1 };
+        if (ns.bookId == null) { const g = rmGuessBook(t.key, name); if (g != null) ns.bookId = g; }
+        next.push(ns); kept++;
+      }
       else {
         const s = { id: S.nid++, track: t.key, order: i + 1, name, bookId: rmGuessBook(t.key, name) };
         if (s.bookId == null) delete s.bookId;
@@ -14078,8 +14136,8 @@ function rmImportExcel(ev) {
       const wb = XLSX.read(new Uint8Array(e.target.result), { type:'array' });
       const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, defval:'' });
       const head = (rows[0] || []).map(h => _rmNorm(h));
-      const col = { home: head.indexOf('홈보카'), class: head.indexOf('수업보카'), book: head.indexOf('교재') };
-      if (col.home < 0 && col.class < 0 && col.book < 0) { toast('첫 줄에 홈보카 / 수업보카 / 교재 제목이 필요합니다'); return; }
+      const col = { home: head.indexOf('홈보카'), class: head.indexOf('수업보카'), book: head.indexOf('교재'), sub: head.indexOf('부교재') };
+      if (RM_TRACKS.every(t => col[t.key] < 0)) { toast('첫 줄에 홈보카 / 수업보카 / 교재 / 부교재 제목이 필요합니다'); return; }
       const lists = {};
       RM_TRACKS.forEach(t => {
         lists[t.key] = col[t.key] < 0 ? rmMaster(t.key).map(x => x.name)
@@ -14239,39 +14297,242 @@ function _rmNextCohort(info) {
   while (used.has(`${n}차`)) n++;
   return `${n}차`;
 }
+/* ── 배부 / 차수 / 함께 처리 ──────────────────────────────
+   · 보카(홈보카·수업보카): 지난 차수(또는 지난 보카) 설정을 그대로 채운 자동 배정 창을 열고
+     차수는 다음 차수(2차, 3차…)로. 같은 조건 학생을 함께 선택해 둔다.
+     같은 트랙에 진행 중인 보카가 있으면 막고, 먼저 교재완료할지 묻는다 (보카는 한 권씩).
+   · 교재: 로드맵 안에서 시작일·종료 예정일·함께 배부할 학생을 고르는 창을 띄운다.
+   · '같은 조건' = 기존 기준(_findBatchMates): 같은 반 + 같은 교재·차수·카테고리 + 같은 배부 기간 */
+let _rmDist = null;   // 교재 배부 창 { track, idx }
+let _rmBatch = false; // 차수 창에서 '함께 완료' 목록 펼침
+
+function _rmCatOf(t, book) { return book && book.mode === 'voca' ? t.cat : null; }
+function _rmRoundLabel(r, k) { return r.cohort || `${k + 1}차`; }
+
+/* 이 트랙에서 target 칸 바로 앞의 '해 본' 칸 (함께 처리할 학생을 찾는 기준) */
+function _rmPrevStep(st, track, idx) {
+  const v = rmTrackView(st, track);
+  for (let i = idx - 1; i >= 0; i--) { const r = v.rows[i]; if (r.book && r.rounds.length) return r; }
+  return null;
+}
+/* target 칸을 함께 배부할 수 있는 같은 조건 학생 (자기 자신 제외) */
+function _rmDistMates(st, track, idx) {
+  const t = _rmTrack(track);
+  const v = rmTrackView(st, track); const r = v.rows[idx]; if (!r || !r.book) return [];
+  let base = null;
+  if (r.rounds.length) { const last = r.rounds[r.rounds.length - 1]; base = { book: r.book, cohort: last.cohort }; }
+  else { const p = _rmPrevStep(st, track, idx); if (p) { const last = p.rounds[p.rounds.length - 1]; base = { book: p.book, cohort: last.cohort }; } }
+  if (!base) return [];
+  const myNext = _rmNextCohort(r);
+  // 교재완료하면 배부일 기록이 지워져 기간 비교가 안 되므로, 첫 숙제 날짜·완료일까지 같은지 함께 본다
+  const bcat = _rmCatOf(t, base.book);
+  const sig = s => {
+    const as = S.assigns.filter(a => a && a.studentId === s.id && a.bookId === base.book.id && (a.cohort || '') === base.cohort
+      && (bcat == null || (a.category || '수업보카') === bcat)).map(a => a.date || '').sort();
+    const cd = (s.completedBooks || []).filter(c => _isSameCompleted(c, base.book, base.cohort, bcat)).map(c => c.date || '').sort().pop() || '';
+    return (as[0] || '') + '|' + cd;
+  };
+  const mySig = sig(st);
+  return _findBatchMates(st.id, base.book.id, base.cohort, bcat)
+    .filter(id => id !== st.id).map(id => _rmStu(id)).filter(Boolean)
+    .filter(s => sig(s) === mySig)
+    .filter(s => {
+      const j = rmPlanSteps(s, track).findIndex(x => x.bookId === r.book.id);
+      if (j < 0) return false;
+      const info = rmStepInfo(s, track, rmPlanSteps(s, track)[j]);
+      return !info.active && _rmNextCohort(info) === myNext;
+    });
+}
+/* 보카 트랙에서 진행 중인 { book, cohort } 목록 */
+function _rmActiveVoca(st, track) {
+  const v = rmTrackView(st, track);
+  return v.activeIdx.flatMap(i => v.rows[i].rounds.filter(x => x.k === 'a').map(x => ({ r: v.rows[i], cohort: x.cohort })));
+}
+
 function rmDistribute(sid, track, stepId) {
   const st = _rmStu(sid); const step = rmFindStep(st, stepId);
   if (!st || !step) return;
   const book = step.bookId != null ? getBook(step.bookId) : null;
   if (!book) { toast('연결된 교재가 없어요 — ⚙ 마스터 커리에서 교재를 연결하세요'); return; }
   const t = _rmTrack(track);
-  const info = rmStepInfo(st, track, step);
-  if (info.active) { toast('이미 진행 중입니다'); return; }
-  const cohort = _rmNextCohort(info);
-  const roundTxt = cohort ? ` ${cohort}` : '';
-  if (book.mode === 'voca') {
-    // 보카형은 회차·기간을 정해야 하므로 기존 자동 배정 창을 학생·교재·카테고리·차수가 채워진 상태로 연다
-    openAssignModal();
-    setVocaCategory(t.cat || '수업보카');
-    selClass(st.group);
-    const vb = $('v-book'); if (vb) vb.value = String(book.id);
-    const vc = $('v-cohort'); if (vc) vc.value = cohort;
-    S.selStudents = [st.id];
-    renderStudentChips();
-    if (typeof onVocaFormChange === 'function') onVocaFormChange();
-    toast(`${t.icon} ${st.name} · ${book.name}${roundTxt} (${t.cat}) — 회차·시작일 입력 후 자동 배정`);
+  const idx = rmPlanSteps(st, track).findIndex(x => x.id === step.id);
+  if (book.mode !== 'voca') {
+    const info = rmStepInfo(st, track, step);
+    if (info.active) { toast('이미 진행 중인 교재예요 — 먼저 교재완료해 주세요'); return; }
+    _rmDist = { track, idx }; _rmPick = { track, idx }; _rmBatch = false;
+    renderRoadmapPage();
     return;
   }
-  if (!confirm(`${st.name}에게 '${book.name}'${roundTxt}을(를) 오늘(${getTodayStr()}) 배부할까요?`)) return;
-  if (!Array.isArray(st.books)) st.books = [];
-  if (!st.books.includes(book.name)) st.books.push(book.name);
-  if (Array.isArray(st.completedBooks)) st.completedBooks = st.completedBooks.filter(c => !_isSameCompleted(c, book, cohort));
-  if (!st.bookDates) st.bookDates = {};
-  st.bookDates[_bdKey(book.id, cohort)] = getTodayStr();
-  if (st.bookEndDates) delete st.bookEndDates[_bdKey(book.id, cohort)];
+  // ── 보카: 한 권씩만 — 진행 중인 보카가 있으면 먼저 교재완료
+  const act = _rmActiveVoca(st, track);
+  if (act.length) {
+    const names = act.map(a => `${a.r.step.name} (${a.cohort || '1차'})`).join(', ');
+    if (!confirm(`${st.name} 학생은 ${t.label} '${names}'을(를) 진행 중이에요.\n${t.label}는 한 권씩만 진행하므로, 먼저 교재완료해야 다음 배부를 할 수 있어요.\n\n지금 교재완료하고 계속할까요?`)) return;
+    act.forEach(a => _completeOneAssignCore(st.id, a.r.book.id, a.cohort, t.cat));
+    save();
+  }
+  rmOpenVocaNext(st, track, idx);
+}
+
+/* 보카 다음 차수 배정 창 — 지난 설정을 그대로 채운다 */
+function rmOpenVocaNext(st, track, idx) {
+  const t = _rmTrack(track);
+  const v = rmTrackView(st, track); const r = v.rows[idx]; if (!r || !r.book) return;
+  const book = r.book, cat = t.cat;
+  const cohort = _rmNextCohort(r);
+  // 설정 출처: 이 교재의 지난 차수 → 없으면 이 학생의 같은 카테고리 최근 보카
+  const mine = S.assigns.filter(a => a && a.studentId === st.id && a.type === 'voca' && (a.category || '수업보카') === cat);
+  const sameBook = mine.filter(a => a.bookId === book.id);
+  const src = (sameBook.length ? sameBook : mine).slice().sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+  const lastA = src[src.length - 1] || null;
+  const cfg = (lastA && lastA.vocaConfig) || {};
+  // 함께 배정할 학생: 같은 조건 + 진행 중인 같은 카테고리 보카가 없는 학생
+  const matesAll = _rmDistMates(st, track, idx);
+  const busy = matesAll.filter(s => _rmActiveVoca(s, track).length);
+  const mates = matesAll.filter(s => !busy.includes(s));
+
+  openAssignModal();
+  const vocaCard = $('voca-assign-card'), bookCard = $('book-distribute-card');
+  if (vocaCard) vocaCard.style.display = '';
+  if (bookCard) bookCard.style.display = 'none';
+  setVocaCategory(cat);
+  selClass(st.group);
+  const setVal = (id, val) => { const el = $(id); if (el) el.value = (val === null || val === undefined) ? '' : val; };
+  setVal('v-book', String(book.id));
+  setVal('v-cohort', cohort);
+  setVal('v-cfg-perset', cfg.perSet);
+  setVal('v-cfg-memorize', cfg.memorize);
+  setVal('v-cfg-recall', cfg.recall);
+  setVal('v-cfg-testcriteria', cfg.testCriteria);
+  const tt = $('v-cfg-testtype'); if (tt) tt.value = cfg.testType || '';
+  setVal('v-to', sameBook.length && cfg.setCount != null ? String(cfg.setCount) : (book.total ? String(book.total) : ''));
+  // 시작일: 마지막 배정 다음 날 (오늘보다 이르면 오늘)
+  let start = getTodayStr();
+  if (lastA && lastA.date) { const d = parseYMD(lastA.date); d.setDate(d.getDate() + 1); const n = toYMD(d); if (n > start) start = n; }
+  setVal('v-start-date', start);
+  if (typeof onVocaStartDateChange === 'function') onVocaStartDateChange();
+  S.selStudents = [st.id, ...mates.map(s => s.id)];
+  renderStudentChips();
+  if (typeof onVocaFormChange === 'function') onVocaFormChange();
+  const who = mates.length ? `${st.name} 외 ${mates.length}명(같은 조건)` : st.name;
+  toast(`${t.icon} ${who} · ${book.name} ${cohort || '1차'} — 지난 설정을 채웠어요. 확인 후 자동 배정을 누르세요`
+    + (busy.length ? ` · 진행 중인 ${t.label}가 있는 ${busy.map(s => s.name).join(', ')}은(는) 제외` : ''));
+}
+
+/* 교재 배부 창 (로드맵 안) */
+function _rmDistPanelHtml(st, t, v, idx) {
+  const r = v.rows[idx]; if (!r || !r.book) return '';
+  const cohort = _rmNextCohort(r);
+  const mates = _rmDistMates(st, t.key, idx);
+  return `<div class="rm-panel rm-distp">
+    <div class="rm-panel-hd"><b>📘 ${_rmEsc(r.step.name)} ${cohort ? _rmEsc(cohort) + ' ' : ''}배부</b>
+      <span class="rm-mu">${_rmNorm(r.book.name) !== _rmNorm(r.step.name) ? '📎 ' + _rmEsc(r.book.name) : ''}</span>
+      <button class="rm-x" onclick="_rmDist=null;renderRoadmapPage()" title="닫기">✕</button></div>
+    <div class="rm-dist-row">
+      <label>시작일 <input type="date" id="rm-d-start" value="${getTodayStr()}"></label>
+      <label>종료 예정일 <input type="date" id="rm-d-end" value=""></label>
+    </div>
+    <div class="rm-dist-row rm-whos">
+      <label class="rm-ck"><input type="checkbox" class="rm-d-sid" value="${st.id}" checked> ${_rmEsc(st.name)}</label>
+      ${mates.map(s => `<label class="rm-ck"><input type="checkbox" class="rm-d-sid" value="${s.id}" checked> ${_rmEsc(s.name)}</label>`).join('')}
+      ${mates.length ? `<span class="rm-mu">같은 조건 학생 ${mates.length}명 함께 선택됨</span>` : '<span class="rm-mu">같은 조건으로 함께 배부할 학생이 없어요</span>'}
+    </div>
+    <div class="rm-panel-btns"><button class="btn bp bsm" onclick="rmDoBookDistribute(${st.id},'${t.key}',${idx})">▶ 배부</button>
+      <button class="btn bg bsm" onclick="_rmDist=null;renderRoadmapPage()">취소</button></div>
+  </div>`;
+}
+function rmDoBookDistribute(sid, track, idx) {
+  const st0 = _rmStu(sid); if (!st0) return;
+  const r0 = rmTrackView(st0, track).rows[idx]; if (!r0 || !r0.book) return;
+  const book = r0.book;
+  const start = $('rm-d-start')?.value || getTodayStr();
+  const end = $('rm-d-end')?.value || '';
+  if (end && end < start) { toast('종료 예정일이 시작일보다 빨라요'); return; }
+  const ids = [...document.querySelectorAll('.rm-d-sid:checked')].map(c => Number(c.value));
+  if (!ids.length) { toast('배부할 학생을 선택하세요'); return; }
+  let n = 0;
+  ids.forEach(id => {
+    const st = _rmStu(id); if (!st) return;
+    const j = rmPlanSteps(st, track).findIndex(x => x.bookId === book.id);
+    const info = j >= 0 ? rmStepInfo(st, track, rmPlanSteps(st, track)[j]) : { rounds: [] };
+    if (info.active) return;
+    const cohort = _rmNextCohort(info);
+    if (!Array.isArray(st.books)) st.books = [];
+    if (!st.books.includes(book.name)) st.books.push(book.name);
+    if (Array.isArray(st.completedBooks)) st.completedBooks = st.completedBooks.filter(c => !_isSameCompleted(c, book, cohort));
+    if (!st.bookDates) st.bookDates = {};
+    st.bookDates[_bdKey(book.id, cohort)] = start;
+    if (!st.bookEndDates) st.bookEndDates = {};
+    if (end) st.bookEndDates[_bdKey(book.id, cohort)] = end; else delete st.bookEndDates[_bdKey(book.id, cohort)];
+    n++;
+  });
+  _rmDist = null;
   save(); updateSidebar(); renderRoadmapPage();
   if ($('rm-next-pop')?.style.display !== 'none') rmRenderNextPop();
-  toast(`📘 ${st.name} · '${book.name}'${roundTxt} 배부 완료`);
+  toast(`📘 ${n}명에게 '${book.name}' 배부 완료`);
+}
+
+/* ── 차수 칩: 상태 확인 · 교재완료 · 함께 완료 · 되돌리기 ── */
+function rmPickRound(track, idx, k) {
+  const same = _rmPick && _rmPick.track === track && _rmPick.idx === idx && _rmPick.round === k;
+  _rmPick = same ? null : { track, idx, round: k };
+  _rmDist = null; _rmBatch = false;
+  renderRoadmapPage();
+}
+function _rmRoundMates(st, t, r, x) {
+  const cat = _rmCatOf(t, r.book);
+  return _findBatchMates(st.id, r.book.id, x.cohort, cat).filter(id => id !== st.id).map(id => _rmStu(id)).filter(s => s &&
+    _rmActivePairs(s, r.book).some(p => p.cohort === x.cohort && (cat == null || (p.category || '수업보카') === cat)));
+}
+function _rmRoundPanelHtml(st, t, v, idx, k) {
+  const r = v.rows[idx]; const x = r && r.rounds[k]; if (!x) return '';
+  const cat = _rmCatOf(t, r.book);
+  const lab = _rmRoundLabel(x, k);
+  const as = S.assigns.filter(a => a && a.studentId === st.id && a.bookId === r.book.id && (a.cohort || '') === x.cohort
+    && (cat == null || (a.category || '수업보카') === cat)).sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+  const units = as.map(a => a.unitTo || a.unitFrom).filter(Boolean);
+  const facts = [
+    x.k === 'a' ? `<b style="color:#8a6a00">진행 중</b>` : `<b style="color:#1e4f9c">교재완료</b>`,
+    x.k === 'a' ? (x.date ? `${_rmMD(x.date)} 배부` : '') : (x.date ? `${_rmMD(x.date)} 완료` : ''),
+    as.length ? `숙제 ${as.length}건 · ${_rmMD(as[0].date)}~${_rmMD(as[as.length - 1].date)}` : '숙제 배정 없음',
+    units.length ? `회차 ${units[0]}~${units[units.length - 1]}` : '',
+  ].filter(Boolean).join(' · ');
+  const mates = x.k === 'a' ? _rmRoundMates(st, t, r, x) : [];
+  const btn = [];
+  if (x.k === 'a') {
+    btn.push(`<button class="btn bp bsm" onclick="rmCompleteRound(${st.id},'${t.key}',${idx},${k},false)">✅ 교재완료</button>`);
+    if (mates.length) btn.push(`<button class="btn bg bsm" onclick="_rmBatch=!_rmBatch;renderRoadmapPage()">👥 같은 조건 ${mates.length + 1}명 함께 완료 ${_rmBatch ? '▴' : '▾'}</button>`);
+  } else btn.push(`<button class="btn bg bsm" onclick="rmUndoRound(${st.id},'${t.key}',${idx},${k})">↩ 교재완료 되돌리기</button>`);
+  return `<div class="rm-panel">
+    <div class="rm-panel-hd"><b>${_rmEsc(r.step.name)} · ${_rmEsc(lab)}</b><span class="rm-mu">${facts}</span>
+      <button class="rm-x" onclick="rmPickRound('${t.key}',${idx},${k})" title="닫기">✕</button></div>
+    <div class="rm-panel-btns">${btn.join('')}</div>
+    ${x.k === 'a' && _rmBatch && mates.length ? `<div class="rm-dist-row rm-whos" style="margin-top:.45rem">
+      <label class="rm-ck"><input type="checkbox" class="rm-b-sid" value="${st.id}" checked> ${_rmEsc(st.name)}</label>
+      ${mates.map(s => `<label class="rm-ck"><input type="checkbox" class="rm-b-sid" value="${s.id}" checked> ${_rmEsc(s.name)}</label>`).join('')}
+      <button class="btn bp bsm" onclick="rmCompleteRound(${st.id},'${t.key}',${idx},${k},true)">선택한 학생 교재완료</button></div>` : ''}
+  </div>`;
+}
+function rmCompleteRound(sid, track, idx, k, batch) {
+  const st = _rmStu(sid); const t = _rmTrack(track);
+  const r = rmTrackView(st, track).rows[idx]; const x = r && r.rounds[k]; if (!x || x.k !== 'a') return;
+  const cat = _rmCatOf(t, r.book);
+  const ids = batch ? [...document.querySelectorAll('.rm-b-sid:checked')].map(c => Number(c.value)) : [st.id];
+  if (!ids.length) { toast('교재완료할 학생을 선택하세요'); return; }
+  const names = ids.map(id => _rmStu(id)?.name).filter(Boolean).join(', ');
+  if (!confirm(`${r.book.name} ${_rmRoundLabel(x, k)}을(를) 교재완료할까요?\n\n대상 ${ids.length}명: ${names}\n\n배정 기록과 점수는 그대로 남아요.`)) return;
+  let n = 0;
+  ids.forEach(id => { if (_completeOneAssignCore(id, r.book.id, x.cohort, cat)) n++; });
+  _rmPick = null; _rmBatch = false;
+  save(); updateSidebar(); renderRoadmapPage();
+  toast(`✅ ${n}명 · ${r.book.name} ${_rmRoundLabel(x, k)} 교재완료`);
+}
+function rmUndoRound(sid, track, idx, k) {
+  const st = _rmStu(sid); const t = _rmTrack(track);
+  const r = rmTrackView(st, track).rows[idx]; const x = r && r.rounds[k]; if (!x || x.k !== 'd') return;
+  undoCompleteAssign(st.id, r.book.id, x.cohort, _rmCatOf(t, r.book));
+  _rmPick = null;
+  renderRoadmapPage();
 }
 
 /* ── 교재완료 직후 다음 교재 안내 ── */
@@ -14341,9 +14602,10 @@ function rmStep(dir) {
   _rmSelId = list[j].id; _rmPick = null; renderRoadmapPage();
   document.querySelector(`.rm-stu[data-sid="${_rmSelId}"]`)?.scrollIntoView({ block:'nearest' });
 }
-function rmSelect(id) { _rmSelId = id; _rmPick = null; renderRoadmapPage(); }
+function rmSelect(id) { _rmSelId = id; _rmPick = null; _rmDist = null; _rmBatch = false; renderRoadmapPage(); }
 function rmPickCell(track, idx) {
-  _rmPick = (_rmPick && _rmPick.track === track && _rmPick.idx === idx) ? null : { track, idx };
+  _rmPick = (_rmPick && _rmPick.track === track && _rmPick.idx === idx && _rmPick.round == null && !_rmDist) ? null : { track, idx };
+  _rmDist = null; _rmBatch = false;
   renderRoadmapPage();
 }
 document.addEventListener('keydown', e => {
@@ -14364,14 +14626,38 @@ function _rmShort(name, g) {
   n = n.replace(/\s+/g, '');
   return n || String(name).replace(/\s+/g, '');
 }
+/* 세로 칸 글씨 — 숫자·괄호·영어를 읽기 쉽게
+   · 1~2자리 숫자(1, 12)는 한 글자 자리에 가로로 묶음
+   · 3자리 이상(3800)은 작은 가로 글씨
+   · 영어(Test)는 옆으로 눕혀 한 단어로
+   · 괄호 안 내용은 괄호를 빼고, 가는 줄 아래 작고 흐린 글씨로 */
+function _rmLabelHtml(name) {
+  // 글자 덩어리(세로) · 숫자 덩어리(가로) · 영어 덩어리(눕힘)를 위아래로 쌓는다 — 서로 겹치지 않게
+  const segs = str => {
+    const out = [];
+    String(str).replace(/\s+/g, '').replace(/(\d+)|([A-Za-z]+)|([^\dA-Za-z]+)/g, (x, d, l, k) => {
+      if (d) out.push(`<div class="${d.length <= 2 ? 'rm-tcu' : 'rm-hz'}">${d}</div>`);
+      else if (l) out.push(l.length > 5 ? `<div class="rm-enl">${_rmEsc(l)}</div>` : `<div class="rm-hz rm-en">${_rmEsc(l)}</div>`);
+      else [...k].forEach(ch => out.push(`<div class="rm-ch">${_rmEsc(ch)}</div>`));
+      return x;
+    });
+    return out.join('');
+  };
+  const m = String(name || '').match(/^(.*?)\s*\((.*)\)\s*$/);
+  const main = m ? m[1] : String(name || ''), sub = m ? m[2] : '';
+  return `<div class="rm-lab"><div class="rm-t">${segs(main)}</div>${sub ? `<div class="rm-sub">${segs(sub)}</div>` : ''}</div>`;
+}
 function _rmCellHtml(st, t, r, i, picked, g) {
+  // 차수 칩 — 숫자가 적힌 작은 칩. 누르면 그 차수의 상태·교재완료 창이 열린다 (지금 하는 차수는 깜박임)
+  const pr = (_rmPick && _rmPick.track === t.key && _rmPick.idx === i) ? _rmPick.round : null;
   const bars = (r.rounds.length > 1 || r.active)
-    ? `<div class="rm-bars">${r.rounds.map(x => `<i class="${x.k === 'd' ? 'rm-bd' : 'rm-bl'}"></i>`).join('')}</div>` : '';
+    ? `<div class="rm-bars">${r.rounds.map((x, k) => `<span class="rm-rc ${x.k === 'd' ? 'rm-rc-d' : 'rm-rc-a'}${pr === k ? ' on' : ''}" title="${_rmEsc(_rmRoundLabel(x, k))} ${x.k === 'd' ? '완료' : '진행 중'} — 눌러서 상태 보기"
+        onclick="event.stopPropagation();rmPickRound('${t.key}',${i},${k})">${k + 1}</span>`).join('')}</div>` : '';
   const tip = [r.step.name, r.book ? '' : '(교재 미연결)',
     ...r.rounds.map((x, n) => `${x.cohort || (n + 1) + '차'} ${x.k === 'd' ? '완료' : '진행 중'}${x.date ? ' ' + _rmMD(x.date) : ''}`),
     r.manual ? '이전 이수' : '', r.kind === 'skip' ? '건너뜀' : '', r.kind === 'gap' ? '나중에 할 교재' : ''].filter(Boolean).join(' · ');
-  return `<div class="rm-c rm-${r.kind}${r.kind !== 'done' && r.active ? ' rm-act' : ''}${picked ? ' rm-picked' : ''}${r.book ? '' : ' rm-nob'}"
-    title="${_rmEsc(tip)}" onclick="rmPickCell('${t.key}',${i})"><div class="rm-t">${_rmEsc(r.step.name.replace(/\s+/g, ''))}</div>${bars}</div>`;
+  return `<div class="rm-c rm-${r.kind}${r.active ? ' rm-act' : ''}${picked && pr == null ? ' rm-picked' : ''}${r.book ? '' : ' rm-nob'}"
+    title="${_rmEsc(tip)}" onclick="rmPickCell('${t.key}',${i})">${_rmLabelHtml(r.step.name)}${bars}</div>`;
 }
 
 function _rmPanelHtml(st, t, v, idx) {
@@ -14381,7 +14667,8 @@ function _rmPanelHtml(st, t, v, idx) {
     ? r.rounds.map((x, k) => `${_rmEsc(x.cohort || (k + 1) + '차')} ${x.k === 'd' ? '완료' : '<b style="color:#b45309">진행 중</b>'}${x.date ? ' (' + _rmMD(x.date) + ')' : ''}`).join(' · ')
     : ({ gap:'나중에 할 교재 (앞쪽인데 아직 안 함)', skip:'건너뜀', future:'앞으로 할 교재', done: r.manual ? '이전 이수 (앱 도입 전)' : '완료' }[r.kind] || '');
   const btn = [];
-  if (r.book && !r.active) btn.push(`<button class="btn bp bsm" onclick="rmDistribute(${st.id},'${t.key}',${r.step.id})">▶ ${r.rounds.length ? _rmNextCohort(r) + ' 배부' : '배부'}</button>`);
+  if (r.book && !(r.active && r.book.mode !== 'voca')) btn.push(`<button class="btn bp bsm" onclick="rmDistribute(${st.id},'${t.key}',${r.step.id})" title="${r.active ? '진행 중인 차수를 먼저 교재완료한 뒤 배부돼요' : ''}">▶ ${r.rounds.length ? _rmNextCohort(r) + ' 배부' : '배부'}</button>`);
+  r.rounds.forEach((x, k) => btn.push(`<button class="btn bg bsm" onclick="rmPickRound('${t.key}',${idx},${k})">${x.k === 'a' ? '✅ ' + _rmEsc(_rmRoundLabel(x, k)) + ' 교재완료…' : _rmEsc(_rmRoundLabel(x, k)) + ' 완료 · 보기'}</button>`));
   if (r.kind === 'gap' || r.kind === 'future' || r.kind === 'skip')
     btn.push(`<button class="btn bg bsm" onclick="rmToggleSkip(${st.id},${r.step.id})">${r.kind === 'skip' ? '↩ 건너뛰기 취소' : '⤼ 건너뛰기'}</button>`);
   if (!r.book && !r.rounds.length && r.kind !== 'skip')
@@ -14430,7 +14717,7 @@ function _rmTrackHtml(st, t) {
   let nowTxt;
   if (act.length) nowTxt = `지금 <b class="rm-now">${_rmEsc(act.join(', '))}</b>`;
   else if (v.status === 'unset') nowTxt = `<span class="rm-unset">시작 위치 미설정 — 칸을 눌러 ⇤ 여기부터 시작</span>`;
-  else if (v.status === 'finished') nowTxt = '<b style="color:#2e7d32">🎉 전 단계 완료</b>';
+  else if (v.status === 'finished') nowTxt = '<b style="color:#1e4f9c">🎉 전 단계 완료</b>';
   else nowTxt = '<b style="color:#c2410c">배부 대기</b>';
   const next = v.nextIdx >= 0 ? v.rows[v.nextIdx] : null;
   const pick = _rmPick && _rmPick.track === t.key ? _rmPick.idx : -1;
@@ -14443,16 +14730,37 @@ function _rmTrackHtml(st, t) {
     </div>
     <div class="rm-line">${v.rows.map((r, i) => _rmCellHtml(st, t, r, i, i === pick)).join('') || '<span class="rm-mu">단계 없음</span>'}</div>
     ${v.gaps.length ? `<div class="rm-gaps">나중에 할 앞쪽 교재: ${v.gaps.map(r => _rmEsc(r.step.name)).join(', ')}</div>` : ''}
-    ${pick >= 0 ? _rmPanelHtml(st, t, v, pick) : ''}
+    ${pick >= 0 ? (_rmDist && _rmDist.track === t.key && _rmDist.idx === pick ? _rmDistPanelHtml(st, t, v, pick) : (_rmPick.round != null ? _rmRoundPanelHtml(st, t, v, pick, _rmPick.round) : _rmPanelHtml(st, t, v, pick))) : ''}
   </section>`;
 }
 
-function _rmDots(st) {
-  return RM_TRACKS.map(t => {
-    const s = rmTrackView(st, t.key).status;
-    return `<i class="rm-dot rm-dot-${s}" title="${t.label}: ${{ active:'진행 중', waiting:'배부 대기', unset:'시작 위치 미설정', finished:'전 단계 완료' }[s]}"></i>`;
-  }).join('');
+/* 학생 목록 오른쪽 표시 — 진행 중인 교재(교재 트랙) 권수 + 배부 대기 트랙이 있으면 빨간 점
+   (홈보카·수업보카는 한 권씩만 진행하므로 숫자는 교재만 센다) */
+function _rmBadge(st) {
+  const nb = rmTrackView(st, 'book').activeIdx.length, ns = rmTrackView(st, 'sub').activeIdx.length;
+  const n = nb + ns;
+  const waitT = RM_TRACKS.filter(t => rmTrackView(st, t.key).status === 'waiting').map(t => t.label);
+  return `${waitT.length ? `<i class="rm-wait" title="배부 대기: ${waitT.join(', ')}"></i>` : ''}${n ? `<b class="rm-cnt" title="진행 중 · 교재 ${nb}권, 부교재 ${ns}권">${n}</b>` : ''}`;
 }
+
+/* 세 줄(홈보카·수업보카·교재)의 칸을 같은 크기로 — 가장 칸이 많은 줄이 한 줄에 들어가는 너비,
+   가장 긴 교재 이름이 들어가는 높이를 구해서 모든 칸에 똑같이 적용 */
+function _rmSizeCells() {
+  const main = document.querySelector('#p-roadmap .rm-main'); if (!main) return;
+  const lines = [...main.querySelectorAll('.rm-line')]; if (!lines.length) return;
+  const maxN = Math.max(...lines.map(l => l.querySelectorAll('.rm-c').length), 1);
+  const avail = Math.min(...lines.map(l => l.clientWidth)) - 4;
+  const w = Math.max(21, Math.floor((avail - 2 * (maxN - 1)) / maxN));
+  main.style.setProperty('--rm-w', w + 'px');
+  main.style.removeProperty('--rm-h');
+  let h = 0;
+  main.querySelectorAll('.rm-c').forEach(c => {
+    const lab = c.querySelector('.rm-lab'), bars = c.querySelector('.rm-bars');
+    h = Math.max(h, (lab ? lab.scrollHeight : 0) + (bars ? bars.offsetHeight : 0) + 6);
+  });
+  main.style.setProperty('--rm-h', Math.max(150, Math.ceil(h)) + 'px');
+}
+window.addEventListener('resize', () => { if ($('p-roadmap')?.classList.contains('active')) { clearTimeout(window._rmRz); window._rmRz = setTimeout(_rmSizeCells, 120); } });
 
 function renderRoadmapPage() {
   const root = $('rm-root'); if (!root) return;
@@ -14484,7 +14792,7 @@ function renderRoadmapPage() {
   const listHtml = list.map(s => {
     const gh = s.group !== lastG ? `<div class="rm-gh">${_rmEsc(s.group || '반 없음')}</div>` : '';
     lastG = s.group;
-    return `${gh}<div class="rm-stu ${st && st.id === s.id ? 'on' : ''}" data-sid="${s.id}" onclick="rmSelect(${s.id})"><span>${_rmEsc(s.name)}</span><span class="rm-dots">${_rmDots(s)}</span></div>`;
+    return `${gh}<div class="rm-stu ${st && st.id === s.id ? 'on' : ''}" data-sid="${s.id}" onclick="rmSelect(${s.id})"><span>${_rmEsc(s.name)}</span><span class="rm-badge">${_rmBadge(s)}</span></div>`;
   }).join('') || '<div class="rm-mu" style="padding:.6rem">해당 학생 없음</div>';
 
   root.innerHTML = `
@@ -14493,6 +14801,11 @@ function renderRoadmapPage() {
       ${groups.map(g => `<option ${g === group ? 'selected' : ''}>${_rmEsc(g)}</option>`).join('')}</select>
     <input id="rm-search" placeholder="이름 검색" value="${_rmEsc(q)}" oninput="clearTimeout(window._rmT);window._rmT=setTimeout(()=>{renderRoadmapPage();const e=$('rm-search');e.focus();e.setSelectionRange(e.value.length,e.value.length)},250)">
     <label class="rm-chk"><input type="checkbox" id="rm-only-wait" ${onlyWait ? 'checked' : ''} onchange="renderRoadmapPage()"> 배부 대기만 <b style="color:var(--amb)">${waitN}</b></label>
+    ${group ? `<details class="rm-bulkd" ${window._rmBulkOpen ? 'open' : ''} ontoggle="window._rmBulkOpen=this.open"><summary>⇤ ${_rmEsc(group)} 시작 위치 일괄 지정</summary>
+      <div class="rm-bulk"><span class="rm-mu">시작 위치가 없는 학생만</span>
+        <select id="rm-bulk-track" onchange="renderRoadmapPage()">${RM_TRACKS.map(t => `<option value="${t.key}" ${t.key === bulkTrack ? 'selected' : ''}>${t.icon} ${t.label}</option>`).join('')}</select>
+        <select id="rm-bulk-step"><option value="">시작 교재…</option>${rmMaster(bulkTrack).map(x => `<option>${_rmEsc(x.name)}</option>`).join('')}</select>
+        <button class="btn bg bsm" onclick="rmBulkStart()">적용</button></div></details>` : ''}
     <span style="flex:1"></span>
     <button class="btn bg bsm" onclick="_rmMasterOpen=!_rmMasterOpen;renderRoadmapPage()">⚙ 마스터 커리 ${_rmMasterOpen ? '닫기' : '편집'}</button>
   </div>
@@ -14500,10 +14813,6 @@ function renderRoadmapPage() {
   <div class="rm-layout">
     <div class="card rm-side">
       <div class="rm-list">${listHtml}</div>
-      ${group ? `<div class="rm-bulk"><div class="rm-mu" style="margin-bottom:.3rem">${_rmEsc(group)} 시작 위치 일괄 지정 (미설정 학생만)</div>
-        <select id="rm-bulk-track" onchange="renderRoadmapPage()">${RM_TRACKS.map(t => `<option value="${t.key}" ${t.key === bulkTrack ? 'selected' : ''}>${t.icon} ${t.label}</option>`).join('')}</select>
-        <select id="rm-bulk-step"><option value="">시작 교재…</option>${rmMaster(bulkTrack).map(x => `<option>${_rmEsc(x.name)}</option>`).join('')}</select>
-        <button class="btn bg bsm" onclick="rmBulkStart()">적용</button></div>` : ''}
     </div>
     <div class="card rm-main">${st ? `
       <div class="rm-head">
@@ -14518,6 +14827,13 @@ function renderRoadmapPage() {
       : '<div class="rm-mu" style="padding:1rem">학생을 선택하세요</div>'}
     </div>
   </div>`;
+  _rmSizeCells();
+  // 고른 학생이 목록 안에 보이도록 (PC는 세로, 태블릿·휴대폰은 가로로 맞춤)
+  const lst = root.querySelector('.rm-list'), on = root.querySelector('.rm-stu.on');
+  if (lst && on) {
+    if (lst.scrollWidth > lst.clientWidth + 2) lst.scrollLeft = Math.max(0, on.offsetLeft - (lst.clientWidth - on.offsetWidth) / 2);
+    else lst.scrollTop = Math.max(0, on.offsetTop - (lst.clientHeight - on.offsetHeight) / 2);
+  }
 }
 
 function _rmMasterHtml() {
