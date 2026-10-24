@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="더퍼스트 숙제관리">
-<title>숙제 관리 v376</title>
+<title>숙제 관리 v377</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -645,10 +645,101 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 .voca-preview .vp-item{background:var(--surface);border:1px solid rgba(5,150,105,.25);border-radius:4px;padding:.12rem .38rem;font-family:'Space Mono',monospace;font-size:.68rem;color:#065f46;white-space:nowrap;}
 .voca-preview .vp-warn{color:var(--amb);font-weight:700;font-size:.7rem;margin-top:.28rem;line-height:1.4;}
 .voca-preview .vp-err{color:var(--red);font-weight:700;font-size:.72rem;}
+
+/* ─── 🗺 학생 로드맵 (v377) ─── */
+#p-roadmap{--rm-done-bg:#e4f4ea;--rm-done-tx:#11643f;--rm-done-bar:#1f9d63;--rm-act-bg:#fff4e2;--rm-act-bd:#f0a23a;--rm-act-tx:#8f4d00;--rm-fut-bg:#f3f3f0;--rm-fut-tx:#a5a59e;--rm-gap-bd:#bdbdb5}
+.rm-nav-badge{margin-left:auto;background:var(--amb);color:#fff;border-radius:9px;font-size:.62rem;font-weight:800;padding:0 .4rem;line-height:1.35rem;min-width:1.35rem;text-align:center}
+.rm-mu{color:var(--mu);font-size:.7rem}
+.rm-toolbar{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.9rem}
+.rm-toolbar select,.rm-toolbar input{width:auto;min-width:120px}
+.rm-chk{display:inline-flex;white-space:nowrap;align-items:center;gap:.3rem;margin:0;font-size:.75rem}
+.rm-toolbar .rm-chk input{width:14px;height:14px;min-width:0;margin:0;padding:0;flex:none;accent-color:var(--acc)}
+.rm-layout{display:grid;grid-template-columns:200px minmax(0,1fr);gap:1rem;align-items:start}
+@media (max-width:860px){.rm-layout{grid-template-columns:1fr}.rm-list{max-height:190px}}
+.rm-side{padding:.45rem;position:sticky;top:0}
+.rm-list{max-height:calc(100vh - 220px);overflow-y:auto}
+.rm-gh{font-size:.62rem;font-weight:800;color:var(--mu);letter-spacing:.5px;padding:.55rem .5rem .2rem}
+.rm-stu{display:flex;align-items:center;justify-content:space-between;padding:.38rem .55rem;border-radius:8px;font-size:.8rem;cursor:pointer;transition:background .12s}
+.rm-stu:hover{background:var(--s2)}
+.rm-stu.on{background:var(--acc);color:#fff;font-weight:700}
+.rm-stu.on .rm-dot{box-shadow:0 0 0 1.5px #fff}
+.rm-dots{display:flex;gap:3px}
+.rm-dot{width:7px;height:7px;border-radius:50%;display:inline-block;background:#dcdcd6}
+.rm-dot-active{background:#f0a23a}.rm-dot-waiting{background:#e5484d}.rm-dot-finished{background:#1f9d63}
+.rm-bulk{border-top:1px solid var(--bd);margin-top:.45rem;padding:.55rem .35rem .25rem;display:flex;flex-wrap:wrap;gap:.3rem;align-items:center}
+.rm-bulk select{font-size:.72rem;padding:.28rem .35rem;width:100%}
+.rm-main.card{padding:.9rem 1rem;min-width:0}
+.rm-head{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;margin-bottom:1rem;padding-bottom:.7rem;border-bottom:1px solid var(--bd)}
+.rm-avatar{width:42px;height:42px;border-radius:50%;background:rgba(79,70,229,.1);color:var(--acc);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;flex:none}
+.rm-who{display:flex;flex-direction:column;line-height:1.25}
+.rm-sname{font-size:1.15rem;font-weight:800;letter-spacing:-.3px}
+.rm-nav{display:flex;gap:.25rem}
+.rm-nav button{width:30px;height:30px;border-radius:50%;border:1px solid var(--bd);background:var(--surface);font-size:1.1rem;line-height:1;color:var(--tx);cursor:pointer}
+.rm-nav button:hover:not(:disabled){background:var(--s2)}.rm-nav button:disabled{opacity:.3;cursor:default}
+.rm-legend{font-size:.66rem;color:var(--mu);display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.rm-legend>span{display:inline-flex;align-items:center;gap:.25rem}
+.rm-lg{display:inline-block;width:12px;height:12px;border-radius:3px}
+.rm-lg.rm-bl-lg{height:4px;width:14px;border-radius:2px;background:#e9a43a;animation:rmblink 1s ease-in-out infinite}
+.rm-track{margin:0 0 1.3rem}
+.rm-th{display:flex;align-items:baseline;gap:.4rem;flex-wrap:wrap;margin-bottom:.45rem}
+.rm-ticon{font-size:.9rem}
+.rm-tname{font-size:.95rem;font-weight:800}
+.rm-tsum{font-size:.78rem;color:#6b7280}
+.rm-now{color:#a35a00;font-weight:800}
+.rm-unset{color:var(--mu)}
+.rm-go{border:none;background:var(--acc);color:#fff;border-radius:999px;font-size:.66rem;padding:.12rem .55rem;cursor:pointer;font-weight:800}
+.rm-own{font-size:.6rem;font-weight:700;color:#7c3aed;background:rgba(124,58,237,.1);border-radius:4px;padding:.05rem .35rem}
+.rm-link{background:none;border:none;color:var(--acc);font-size:.66rem;cursor:pointer;text-decoration:underline;padding:0}
+.rm-line{display:flex;gap:3px;align-items:stretch;overflow-x:auto;padding:2px 2px 3px}
+.rm-c{flex:1 0 20px;min-width:20px;min-height:168px;border-radius:4px;font-size:12px;line-height:1.08;display:flex;flex-direction:column;align-items:center;overflow:hidden;cursor:pointer;box-sizing:border-box}
+.rm-c:hover{filter:brightness(.97)}
+.rm-t{writing-mode:vertical-rl;text-orientation:upright;letter-spacing:-.5px;white-space:nowrap;padding:5px 0;flex:1}
+.rm-c.rm-done,.rm-lg.rm-done{background:#cfedd2;color:#1f7a34;border:1px solid #bfe3c3}
+.rm-c.rm-active,.rm-lg.rm-active{background:#fbe1a6;color:#8a4b00;border:1.5px solid #e9b450;font-weight:700}
+.rm-c.rm-done.rm-act{border:1.5px solid #e9b450}
+.rm-c.rm-future,.rm-lg.rm-future{background:#fafaf8;color:#555;border:1px solid #e0e0da}
+.rm-c.rm-gap,.rm-lg.rm-gap{background:#fff;color:#555;border:1.5px dashed #a8a8a0}
+.rm-c.rm-skip,.rm-lg.rm-skip{background:repeating-linear-gradient(135deg,#f3f3f0 0 4px,#e2e2dc 4px 6px);color:#b0b0a8;border:1px solid #e0e0da}
+.rm-c.rm-skip .rm-t{text-decoration:line-through}
+.rm-c.rm-picked{outline:2px solid var(--acc);outline-offset:1px}
+.rm-bars{width:100%;display:flex;flex-direction:column;gap:1px;padding:0 3px 4px;box-sizing:border-box}
+.rm-bars i{display:block;height:4px;border-radius:1px}
+.rm-bd{background:#1b6e2a}
+.rm-bl{background:#e9a43a;animation:rmblink 1s ease-in-out infinite}
+@keyframes rmblink{0%,100%{opacity:1}50%{opacity:.15}}
+@media (prefers-reduced-motion:reduce){.rm-bl,.rm-lg.rm-bl-lg{animation-duration:2.5s}}
+.rm-gaps{font-size:.72rem;color:var(--mu);margin-top:.35rem}
+.rm-panel{margin-top:.6rem;border-radius:10px;padding:.6rem .7rem;background:var(--s2);border:1px solid var(--bd)}
+.rm-panel-hd{display:flex;gap:.5rem;align-items:baseline;flex-wrap:wrap;font-size:.84rem;margin-bottom:.45rem}
+.rm-x{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--mu)}
+.rm-panel-btns{display:flex;gap:.3rem;flex-wrap:wrap;align-items:center}
+.rm-panel-btns .btn.bg{background:var(--surface)}
+.rm-panel-btns select{width:auto;max-width:200px;font-size:.72rem;padding:.28rem .35rem}
+.rm-panel-btns .btn:disabled{opacity:.35;cursor:default}
+.rm-sep{width:1px;height:18px;background:var(--bd);margin:0 .15rem}
+.rm-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem}
+@media (max-width:900px){.rm-cols{grid-template-columns:1fr}}
+.rm-col{border:1px solid var(--bd);border-radius:10px;display:flex;flex-direction:column;min-width:0}
+.rm-colhd{display:flex;gap:.4rem;align-items:center;padding:.45rem .6rem;border-bottom:2px solid;font-size:.8rem}
+.rm-steps{max-height:420px;overflow-y:auto;padding:.25rem}
+.rm-add{display:flex;gap:.3rem;padding:.45rem .5rem;border-top:1px solid var(--bd)}
+.rm-mrow{display:flex;gap:.3rem;align-items:center;padding:.15rem .2rem}
+.rm-mrow input{flex:1.2;min-width:0;font-size:.74rem;padding:.25rem .4rem}
+.rm-mrow select{flex:1;min-width:0;font-size:.7rem;padding:.25rem .3rem}
+.rm-mrow select.rm-unl{border-color:var(--amb);color:#b45309}
+.rm-acts{display:flex;gap:2px;flex:none}
+.rm-acts>button{border:1px solid var(--bd);background:var(--surface);border-radius:5px;font-size:.66rem;min-width:1.45rem;height:1.45rem;cursor:pointer;color:var(--mu);padding:0 .2rem}
+.rm-acts>button:disabled{opacity:.3;cursor:default}
+#rm-next-pop{position:fixed;right:18px;bottom:96px;z-index:1200;width:min(380px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--bd);border-top:3px solid var(--amb);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:.6rem .75rem;font-size:.78rem}
+.rm-pop-hd{display:flex;align-items:center;margin-bottom:.35rem}.rm-pop-hd button{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--mu)}
+.rm-pop-row{display:flex;align-items:center;gap:.4rem;justify-content:space-between;padding:.25rem 0;border-top:1px dashed var(--bd)}
+.rm-pop-row a{color:var(--acc);font-weight:700;text-decoration:none}
+@media (max-width:600px){.rm-tbar{width:70px}.rm-legend{display:none}.rm-c{min-height:104px;font-size:11px}}
 </style>
 </head>
 <body>
 
+<div id="rm-next-pop" style="display:none"></div>
 <!-- ★ 어느 탭으로 이동해도 계속 떠있는 메모 위젯 (app 바깥에 둬서 페이지 전환에 영향 안 받음) -->
 <button id="memo-fab" class="memo-fab" onclick="toggleMemoPanel()" title="메모">📝</button>
 <div id="memo-panel" class="memo-panel" style="display:none">
@@ -672,7 +763,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 <nav class="sidebar">
   <div class="logo" style="display:flex;flex-direction:column;align-items:flex-start;gap:.35rem;padding:.4rem .4rem .6rem">
     <img src="data:image/jpeg;base64,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" alt="THE FIRST - For Better Days" style="width:119px;height:auto;flex:0 0 auto;border-radius:3px">
-    <span style="font-weight:500;font-size:.72rem;color:#0a4771;letter-spacing:-.2px">숙제관리 v376</span>
+    <span style="font-weight:500;font-size:.72rem;color:#0a4771;letter-spacing:-.2px">숙제관리 v377</span>
   </div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
@@ -687,6 +778,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
     <button class="nb" data-page="p-history" onclick="goPage('p-history')">📊 숙제 배정 내역</button>
     <button class="nb" data-page="p-mappings" onclick="goPage('p-mappings')">🔗 맵핑 관리</button>
     <button class="nb" data-page="p-today" onclick="goPage('p-today')">🎯 숙제 현황</button>
+    <button class="nb" data-page="p-roadmap" onclick="goPage('p-roadmap')">🗺 학생 로드맵 <span id="rm-nav-badge" class="rm-nav-badge" style="display:none"></span></button>
     <button class="nb" data-page="p-students" onclick="goPage('p-students')">👥 학생 관리</button>
     <button class="nb" data-page="p-books" onclick="goPage('p-books')">📖 교재 관리</button>
     <button class="nb" data-page="p-learn" onclick="goPage('p-learn')">📈 교재 배정이력</button>
@@ -1091,6 +1183,13 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 </div>
 
 <!-- ════ 학생 관리 ════ -->
+<!-- ════ 🗺 학생 로드맵 (v377) ════ -->
+<div class="page" id="p-roadmap">
+  <div class="ph"><h1>🗺 학생 로드맵</h1><p>학원 로드맵을 기준으로 학생마다 개인 로드맵을 관리합니다 · 배부하면 깜박이고, 교재완료를 누르면 초록으로 바뀌어요</p></div>
+  <input type="file" id="rm-xlsx" accept=".xlsx,.xls,.csv" style="display:none" onchange="rmImportExcel(event)">
+  <div id="rm-root"></div>
+</div>
+
 <div class="page" id="p-students">
   <div class="ph" style="display:flex;align-items:center;justify-content:space-between">
     <div><h1>학생 관리</h1><p>학생 등록 및 반 구성</p></div>
@@ -1616,6 +1715,7 @@ const S = {
   ],
   classcardMappings: [], // ★ 클래스카드 "클래스명" → 우리 교재 매핑 (전체 리포트 일괄 업로드용)
   teacherNote: '', // ★ 어디서든 떠있는 메모 위젯 내용
+  roadmapSteps: [], // ★ v377 학원 로드맵(마스터 커리) 단계 { id, track:'home'|'class'|'book', order, name, bookId }
   classPauses: [], // ★ "이 반만" 특정 기간 동안 보카 자동배정을 멈춤 (시험기간 등) — 학원 전체 방학과는 별개
   books: [
     {id:1,name:'천문장입문',mode:'voca',total:20,score:'점수',label:'',rows:[]},
@@ -1781,6 +1881,7 @@ function closeAssignModal() {
   document.body.style.overflow = '';
   _resetAssignModalToCreateMode();
   _resetAssignModalPosition(); // ★ 드래그로 옮긴 위치를 다음에 열 때는 원래(가운데)로 되돌림
+  if ($('p-roadmap')?.classList.contains('active') && typeof renderRoadmapPage === 'function') renderRoadmapPage();
 }
 
 /* ★ 팝업 헤더를 마우스/터치로 눌러 드래그하면 팝업 전체가 화면 위에서 움직이도록 함
@@ -1910,6 +2011,7 @@ function goPage(id) {
   if (id === 'p-report')  { setupReportPage(); }
   if (id === 'p-overview'){ renderOverviewPage(); }
   if (id === 'p-attend')  { renderAttendancePage(); }
+  if (id === 'p-roadmap') { renderRoadmapPage(); }
 }
 
 // ══════════ MODE ══════════
@@ -2172,6 +2274,7 @@ function doRetrieve() {
     //   태그 없이 저장하면 나중에 "몇 차를 완료한 건지" 알 수 없어 태그별 삭제가 안 됨
     if (!Array.isArray(st.completedBooks)) st.completedBooks = [];
     st.completedBooks.push({ bookId: bid, bookName: book.name, cohort, category: _completedCategoryOf(st, bid, cohort), date: today });
+    if (typeof rmQueueCompleted === 'function') rmQueueCompleted(st.id, bid);
     // 다른 태그가 아직 진행 중이면 배부 목록의 교재명은 남겨둠
     if (!_hasOtherCohortAssigns(st.id, bid, cohort)) st.books = (st.books||[]).filter(n => n !== book.name);
     else _pruneBookNameIfInactive(st, book); // ★ 다른 태그가 있어도 전부 완료됐으면 배부 목록에서 뺌
@@ -5656,6 +5759,7 @@ function _completeOneAssignCore(studentId, bookId, cohort, category) {
   const otherCohortRemains = _hasOtherCohortAssigns(studentId, bookId, cohort, cat);
   if (!Array.isArray(st.completedBooks)) st.completedBooks = [];
   st.completedBooks.push({ bookId, bookName: book.name, cohort, category: cat, date: getTodayStr() });
+  if (typeof rmQueueCompleted === 'function') rmQueueCompleted(st.id, bookId);
   // ★ v353 — 완료 처리 시 bookDates/bookEndDates에서 해당 키를 삭제한다.
   //   삭제하지 않으면 나중에 같은 태그로 재배부할 때 "이미 값이 있으면 유지" 조건에 걸려
   //   예전 시작일(7/28 등)이 그대로 붙는 버그가 생긴다.
@@ -5968,6 +6072,7 @@ function completeGroupAll(bid, group, cohort) {
   targets.forEach(st => {
     if (!Array.isArray(st.completedBooks)) st.completedBooks = [];
     st.completedBooks.push({ bookId: bid, bookName: book.name, cohort, category: _completedCategoryOf(st, bid, cohort), date: today });
+    if (typeof rmQueueCompleted === 'function') rmQueueCompleted(st.id, bid);
     // 다른 태그가 아직 진행 중이면 배부 목록의 교재명은 남겨둠
     if (!_hasOtherCohortAssigns(st.id, bid, cohort)) st.books = (st.books||[]).filter(n => n !== book.name);
     else _pruneBookNameIfInactive(st, book); // ★ 다른 태그가 있어도 전부 완료됐으면 배부 목록에서 뺌
@@ -12153,7 +12258,7 @@ function doExport() {
 const STORAGE_KEY = 'sotong_hw_v4';
 
 // 저장할 키 목록 (UI 상태는 제외, 데이터만)
-const PERSIST_KEYS = ['assigns', 'nid', 'groups', 'students', 'books', 'classDays', 'vacations', 'vacationReasons', 'schoolEvents', 'attendance', 'classcardMappings', 'classPauses', 'teacherNote'];
+const PERSIST_KEYS = ['assigns', 'nid', 'groups', 'students', 'books', 'classDays', 'vacations', 'vacationReasons', 'schoolEvents', 'attendance', 'classcardMappings', 'classPauses', 'teacherNote', 'roadmapSteps'];
 
 // ════════════════════════════════════════════════════════════
 // 🔥 Firebase 연동 (sotong-academy 프로젝트)
@@ -12182,7 +12287,7 @@ let _saveDebounceTimer = null;
 let _lastSyncedById = { assigns: {}, books: {}, students: {}, classcardMappings: {}, classPauses: {} };
   // ★ 레코드 단위(충돌 없는) 저장 대상: id를 가진 배열들 — 통째 덮어쓰기 대신 바뀐 것만 개별 기록
   // ★ v187: classPauses도 편입 — 반별 일시정지 설정을 여러 선생님이 동시에 건드려도 서로 안 덮어쓰게
-const RECORD_KEYS = ['assigns', 'books', 'students', 'classcardMappings', 'classPauses'];
+const RECORD_KEYS = ['assigns', 'books', 'students', 'classcardMappings', 'classPauses', 'roadmapSteps'];
 
 /* 경로 안전 검증 — homework_v4로 시작 안 하면 에러 */
 function _validatePath(path) {
@@ -12532,7 +12637,11 @@ function cleanupStaleCompletedBooks() {
                 || S.books.find(b => b.name === c.bookName);
       if (!book) return true;                       // 교재가 삭제됨 — 판단 불가하므로 보존
       if (!(st.books || []).includes(book.name)) return true; // 배부 목록에 없음 — 모순 아님
-      const start = (st.bookDates || {})[_bdKey(book.id, c.cohort || '')];
+      // ★ v377 — 보카형은 카테고리까지 같은 묶음의 배부일과 비교한다.
+      //   (예전엔 카테고리 없이 비교해서, 홈보카 1차 완료 뒤 같은 교재를 수업보카로 배부하면
+      //    홈보카 완료 기록이 새로고침 때 지워졌음)
+      const cCat = book.mode === 'voca' ? (c.category || null) : null;
+      const start = (st.bookDates || {})[_bdKey(book.id, c.cohort || '', cCat)];
       if (!start || !c.date) return true;           // 날짜를 비교할 수 없으면 보존(안전 우선)
       return !(start > c.date);                     // 완료일 이후에 다시 배부됐을 때만 제거
     });
@@ -13297,6 +13406,7 @@ async function pullInitialFromFirebase() {
     else if (val.classcardMappings)           S.classcardMappings = _toArray(val.classcardMappings);
     if (Array.isArray(val.classPauses)) S.classPauses = val.classPauses;
     else if (val.classPauses)           S.classPauses = _toArray(val.classPauses);
+    if (val.roadmapSteps) S.roadmapSteps = _toArray(val.roadmapSteps).filter(x => x && x.id != null);
 
     // ★ 방금 원격에서 읽은 id-배열들(assigns/books/students)을 "동기화 기준점"으로 저장
     //   (다음 저장 시 이걸 기준으로 diff — books/students도 assigns와 동일하게 레코드 단위 보호)
@@ -13552,7 +13662,9 @@ function rerenderAll() {
       if (pid === 'p-books'    && typeof renderBooks    === 'function') renderBooks();
       if (pid === 'p-list'     && typeof renderList     === 'function') { populateListFilters(); renderList(); }
       if (pid === 'p-history'  && typeof renderHistory  === 'function') { setupHistory(); renderHistory(); }
+      if (pid === 'p-roadmap'  && typeof renderRoadmapPage === 'function') renderRoadmapPage();
     }
+    if (typeof rmUpdateNavBadge === 'function') rmUpdateNavBadge();
   } catch(e) { console.warn('[rerender] 오류:', e); }
 }
 
@@ -13641,6 +13753,8 @@ function load() {
       S.classcardMappings = saved.classcardMappings;
     if (Array.isArray(saved.classPauses))
       S.classPauses = saved.classPauses;
+    if (Array.isArray(saved.roadmapSteps))
+      S.roadmapSteps = saved.roadmapSteps.filter(x => x && x.id != null);
 
     // P0 BUG FIX #3: nid 재계산
     // assigns의 최대 id와 students의 최대 id 모두 고려
@@ -13776,6 +13890,663 @@ function clearAllData() {
   location.reload();
 }
 
+// ══════════ 🗺 학생 로드맵 (v377) ══════════
+/* 구조
+   · 마스터 커리 = S.roadmapSteps  { id, track:'home'|'class'|'book', order, name, bookId|null }
+     학원 로드맵 엑셀 그대로. 레코드 단위로 Firebase 동기화.
+   · 학생 개인 커리 (마스터 기준 + 학생별 예외)
+       st.rmPlan    = { home:[stepId...], ... }  ← 그 트랙 순서를 바꾸거나 단계를 넣고/뺐을 때만 생김
+                      (없으면 마스터 순서를 따라감 → 마스터를 고치면 자동 반영)
+       st.rmCustom  = [{ id, track, name, bookId }]  ← 이 학생에게만 넣은 단계
+       st.rmFlags   = { 's<stepId>': { f:'done'|'skip', d } }  ← 건너뜀 / 앱 도입 전 이수(수동 완료)
+       st.rmStartAt = { home: stepId, ... }      ← '여기부터 시작'으로 정한 출발 단계
+     ※ rmFlags 키는 's'+id 문자열(Firebase 배열 변환 방지), 빈 개인 커리는 [-1]로 보관.
+   · 칸 상태 (선생님 '교재완료' 기준)
+       done   = 한 차수라도 교재완료됨(또는 이전 이수)  → 초록
+       active = 배부됐고 아직 교재완료 전               → 주황 + 깜박이는 막대
+       gap    = 가장 멀리 간 칸보다 앞인데 아직 안 함    → 점선 (나중에 할 교재)
+       skip   = 선생님이 건너뛰기 표시                   → 빗금
+       future = 앞으로 할 교재                           → 빈칸
+     칸 아래 막대 = 차수. 완료한 차수는 초록, 지금 하는 차수는 깜박임. */
+
+const RM_TRACKS = [
+  { key:'home',  label:'홈보카',   icon:'🏠', cat:'홈보카',   mode:'voca', color:'#92600f' },
+  { key:'class', label:'수업보카', icon:'🏫', cat:'수업보카', mode:'voca', color:'#3b4a7a' },
+  { key:'book',  label:'교재',     icon:'📘', cat:null,       mode:'book', color:'#047857' },
+];
+const RM_DEFAULT = (() => {
+  const nums = (p, n) => Array.from({ length:n }, (_, i) => `${p} ${i + 1}`);
+  const base = [...nums('파닉스', 6), ...nums('스토리', 6), ...nums('베이직', 12)];
+  const voca = [...base, '초등필수', '5형식', '과거 과거분사', '중등필수', '천문장 입문', '천문장 기본', '천문장 완성', '한끝단어'];
+  return {
+    home: voca, class: voca,
+    book: [...base, '5형식(주어 동사 시제)', '5형식(부사구)', '5형식(준동사)', '5형식(분석)', '5형식(해석)',
+      '3800제 1단계 (해석)', '3800제 2단계 (해석)', '3800제 드릴 1단계', '3800제 드릴 2단계', '3800제 드릴 3단계',
+      '천문장 입문 테스트', '천문장 기본 테스트'],
+  };
+})();
+
+let _rmSelId = null;          // 보고 있는 학생
+let _rmPick = null;           // 선택한 칸 { track, idx }
+let _rmMasterOpen = false;
+let _rmQueue = [], _rmQueueTimer = null, _rmPopItems = [];
+
+const _rmTrack = k => RM_TRACKS.find(t => t.key === k);
+const _rmNorm = s => String(s || '').replace(/\s+/g, '').toLowerCase();
+const _rmFlagKey = id => 's' + id;
+const _rmStu = id => S.students.find(s => s && s.id === Number(id));
+const _rmEsc = s => escHtml(String(s == null ? '' : s));
+const _rmMD = d => d ? `${+d.slice(5, 7)}/${+d.slice(8, 10)}` : '';
+
+function rmMaster(track) {
+  return (S.roadmapSteps || []).filter(x => x && x.track === track)
+    .sort((a, b) => (a.order || 0) - (b.order || 0) || a.id - b.id);
+}
+function rmIsPersonal(st, track) { return !!(st && st.rmPlan && Array.isArray(st.rmPlan[track])); }
+function rmFindStep(st, id) {
+  id = Number(id);
+  return (S.roadmapSteps || []).find(x => x && x.id === id)
+      || ((st && st.rmCustom) || []).find(x => x && x.id === id) || null;
+}
+function rmPlanSteps(st, track) {
+  if (!rmIsPersonal(st, track)) return rmMaster(track);
+  return st.rmPlan[track].map(id => rmFindStep(st, id)).filter(x => x && x.track === track);
+}
+function rmEnsurePersonal(st, track) {
+  if (rmIsPersonal(st, track)) return;
+  if (!st.rmPlan || typeof st.rmPlan !== 'object') st.rmPlan = {};
+  st.rmPlan[track] = rmMaster(track).map(x => x.id);
+}
+function _rmSetPlan(st, track, ids) {
+  if (!st.rmPlan || typeof st.rmPlan !== 'object') st.rmPlan = {};
+  st.rmPlan[track] = ids.length ? ids : [-1];
+}
+
+/* 진행 중 묶음 — bookDates 키를 교재 id로 직접 읽는다
+   (st.books는 교재명만 담아 같은 이름의 보카/교재를 구분 못 하고, 태그 없는 홈보카 키 '2~~홈보카'도 읽어야 함) */
+function _rmActivePairs(st, book) {
+  if (!st || !book || !(st.books || []).includes(book.name)) return [];
+  const id = String(book.id), dft = book.mode === 'voca' ? '수업보카' : null;
+  const out = [];
+  Object.keys(st.bookDates || {}).forEach(k => {
+    const i = k.indexOf('~~');
+    const base = i < 0 ? k : k.slice(0, i);
+    const category = i < 0 ? dft : (k.slice(i + 2) || dft);
+    let cohort;
+    if (base === id) cohort = '';
+    else if (base.startsWith(id + '::')) cohort = base.slice(id.length + 2);
+    else return;
+    if (!out.some(p => p.cohort === cohort && p.category === category))
+      out.push({ cohort, category, since: st.bookDates[k] || '' });
+  });
+  if (!out.length && S.books.filter(b => b && b.name === book.name).length === 1) out.push({ cohort:'', category: dft, since:'' });
+  return out.filter(p => !(st.completedBooks || []).some(x => _isSameCompleted(x, book, p.cohort, p.category)));
+}
+
+/* 칸 하나의 기본 상태 + 차수 막대 */
+function rmStepInfo(st, track, step) {
+  const flag = (st.rmFlags || {})[_rmFlagKey(step.id)];
+  const book = step.bookId != null ? getBook(step.bookId) : null;
+  const rounds = [];   // { k:'d'|'a', cohort, date }
+  if (book) {
+    const t = _rmTrack(track);
+    const cat = book.mode === 'voca' ? t.cat : null;
+    const catOf = c => c || '수업보카';
+    const seen = new Set();
+    (st.completedBooks || []).filter(c => c &&
+      ((c.bookId != null) ? c.bookId === book.id : c.bookName === book.name) &&
+      (cat == null || catOf(c.category) === cat))
+      .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')))
+      .forEach(c => { const k = c.cohort || ''; if (seen.has(k)) return; seen.add(k); rounds.push({ k:'d', cohort:k, date:c.date || '' }); });
+    _rmActivePairs(st, book).filter(p => cat == null || catOf(p.category) === cat)
+      .forEach(p => { if (seen.has(p.cohort)) return; seen.add(p.cohort); rounds.push({ k:'a', cohort:p.cohort, date:p.since }); });
+  }
+  const anyDone = rounds.some(r => r.k === 'd') || (flag && flag.f === 'done');
+  const active = rounds.some(r => r.k === 'a');
+  let kind = anyDone ? 'done' : active ? 'active' : (flag && flag.f === 'skip') ? 'skip' : 'pending';
+  return { step, book, rounds, kind, active, manual: !!(flag && flag.f === 'done' && !rounds.some(r => r.k === 'd')), flag };
+}
+
+/* 트랙 하나 요약 */
+function rmTrackView(st, track) {
+  const rows = rmPlanSteps(st, track).map(step => rmStepInfo(st, track, step));
+  let lastIdx = -1;
+  rows.forEach((r, i) => { if (r.kind === 'done' || r.active) lastIdx = i; });
+  rows.forEach((r, i) => { if (r.kind === 'pending') r.kind = i < lastIdx ? 'gap' : 'future'; });
+  const activeIdx = rows.map((r, i) => r.active ? i : -1).filter(i => i >= 0);
+  const nextIdx = rows.findIndex((r, i) => i > lastIdx && r.kind === 'future');
+  const started = lastIdx >= 0 || !!(st.rmStartAt && st.rmStartAt[track] != null);
+  let status;
+  if (activeIdx.length) status = 'active';
+  else if (!started) status = 'unset';
+  else if (nextIdx >= 0) status = 'waiting';
+  else status = rows.some(r => r.kind === 'gap') ? 'waiting' : 'finished';
+  const counted = rows.filter(r => r.kind !== 'skip');
+  return {
+    rows, lastIdx, activeIdx, nextIdx, status,
+    doneCount: counted.filter(r => r.kind === 'done').length,
+    total: counted.length,
+    gaps: rows.filter(r => r.kind === 'gap'),
+    personal: rmIsPersonal(st, track),
+  };
+}
+
+/* ── 교재 자동 연결 / 마스터 커리 만들기·불러오기 ── */
+function rmGuessBook(track, name) {
+  const t = _rmTrack(track);
+  const pool = S.books.filter(b => b && b.mode === t.mode);
+  const n = _rmNorm(name);
+  if (!n) return null;
+  const exact = pool.filter(b => _rmNorm(b.name) === n);
+  if (exact.length === 1) return exact[0].id;
+  const part = pool.filter(b => { const bn = _rmNorm(b.name); return bn.includes(n) || n.includes(bn); });
+  return part.length === 1 ? part[0].id : null;
+}
+function _rmApplyMaster(lists) {
+  const old = S.roadmapSteps || [];
+  const next = [];
+  let kept = 0, added = 0;
+  RM_TRACKS.forEach(t => {
+    const pool = old.filter(x => x.track === t.key);
+    (lists[t.key] || []).forEach((name, i) => {
+      const idx = pool.findIndex(x => _rmNorm(x.name) === _rmNorm(name));
+      if (idx >= 0) { const s = pool.splice(idx, 1)[0]; next.push({ ...s, name, order: i + 1 }); kept++; }
+      else {
+        const s = { id: S.nid++, track: t.key, order: i + 1, name, bookId: rmGuessBook(t.key, name) };
+        if (s.bookId == null) delete s.bookId;
+        next.push(s); added++;
+      }
+    });
+  });
+  S.roadmapSteps = next;
+  return { kept, added, removed: old.length - kept };
+}
+function rmSeedDefault() {
+  if ((S.roadmapSteps || []).length && !confirm('마스터 커리를 학원 기본 로드맵(엑셀)으로 되돌릴까요?\n이름이 같은 단계는 그대로 유지됩니다.')) return;
+  const r = _rmApplyMaster(RM_DEFAULT);
+  save(); renderRoadmapPage();
+  const linked = S.roadmapSteps.filter(x => x.bookId != null).length;
+  toast(`🗺 마스터 커리 ${S.roadmapSteps.length}단계 · 교재 자동연결 ${linked}개${r.removed ? ` · 삭제 ${r.removed}` : ''}`);
+}
+function rmImportExcel(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!file || typeof XLSX === 'undefined') return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), { type:'array' });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, defval:'' });
+      const head = (rows[0] || []).map(h => _rmNorm(h));
+      const col = { home: head.indexOf('홈보카'), class: head.indexOf('수업보카'), book: head.indexOf('교재') };
+      if (col.home < 0 && col.class < 0 && col.book < 0) { toast('첫 줄에 홈보카 / 수업보카 / 교재 제목이 필요합니다'); return; }
+      const lists = {};
+      RM_TRACKS.forEach(t => {
+        lists[t.key] = col[t.key] < 0 ? rmMaster(t.key).map(x => x.name)
+          : rows.slice(1).map(r => String(r[col[t.key]] || '').replace(/\s+/g, ' ').trim()).filter(Boolean);
+      });
+      const cnt = RM_TRACKS.map(t => `${t.label} ${lists[t.key].length}`).join(' · ');
+      if (!confirm(`엑셀에서 마스터 커리를 불러옵니다.\n${cnt}단계\n\n이름이 같은 단계는 유지되고(학생 기록 보존), 엑셀에 없는 단계는 마스터에서 빠집니다.`)) return;
+      const r = _rmApplyMaster(lists);
+      save(); renderRoadmapPage();
+      toast(`🗺 불러오기 완료 · 유지 ${r.kept} · 새 단계 ${r.added} · 삭제 ${r.removed}`);
+    } catch (err) { console.error(err); toast('엑셀을 읽지 못했습니다'); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+function rmAutoMatchAll() {
+  let n = 0;
+  (S.roadmapSteps || []).forEach(x => { if (x.bookId == null) { const g = rmGuessBook(x.track, x.name); if (g != null) { x.bookId = g; n++; } } });
+  save(); renderRoadmapPage();
+  toast(n ? `🔗 ${n}개 단계를 교재와 자동 연결했습니다` : '자동으로 연결할 수 있는 단계가 없습니다');
+}
+
+/* ── 마스터 커리 편집 ── */
+function _rmRenumber(track) { rmMaster(track).forEach((x, i) => { x.order = i + 1; }); }
+function rmMasterRename(id, val) {
+  const s = (S.roadmapSteps || []).find(x => x.id === id); if (!s) return;
+  val = String(val || '').trim(); if (!val || val === s.name) return;
+  s.name = val; save(); renderRoadmapPage();
+}
+function rmMasterMap(id, val) {
+  const s = (S.roadmapSteps || []).find(x => x.id === id); if (!s) return;
+  if (val) s.bookId = Number(val); else delete s.bookId;
+  save(); renderRoadmapPage();
+}
+function rmMasterMove(id, dir) {
+  const s = (S.roadmapSteps || []).find(x => x.id === id); if (!s) return;
+  const list = rmMaster(s.track); const i = list.indexOf(s), j = i + dir;
+  if (j < 0 || j >= list.length) return;
+  [list[i], list[j]] = [list[j], list[i]];
+  list.forEach((x, k) => { x.order = k + 1; });
+  save(); renderRoadmapPage();
+}
+function rmMasterDelete(id) {
+  const s = (S.roadmapSteps || []).find(x => x.id === id); if (!s) return;
+  const users = S.students.filter(st => rmIsPersonal(st, s.track) && st.rmPlan[s.track].includes(id)).length;
+  if (!confirm(`마스터 커리에서 '${s.name}' 단계를 삭제할까요?` + (users ? `\n(개인 커리에 이 단계를 넣어둔 학생 ${users}명에게서도 빠집니다)` : ''))) return;
+  S.roadmapSteps = S.roadmapSteps.filter(x => x.id !== id);
+  _rmRenumber(s.track); save(); renderRoadmapPage();
+}
+function rmMasterAdd(track) {
+  const name = (prompt(`${_rmTrack(track).label} 마스터 커리 맨 끝에 추가할 단계 이름`) || '').trim();
+  if (!name) return;
+  const s = { id: S.nid++, track, order: rmMaster(track).length + 1, name, bookId: rmGuessBook(track, name) };
+  if (s.bookId == null) delete s.bookId;
+  S.roadmapSteps.push(s);
+  save(); renderRoadmapPage();
+}
+
+/* ── 학생 개인 커리 편집 ── */
+function _rmCommit(msg) { save(); renderRoadmapPage(); if (msg) toast(msg); }
+function _rmFlags(st) { if (!st.rmFlags || typeof st.rmFlags !== 'object') st.rmFlags = {}; return st.rmFlags; }
+function rmToggleSkip(sid, stepId) {
+  const st = _rmStu(sid); if (!st) return;
+  const f = _rmFlags(st), k = _rmFlagKey(stepId);
+  if (f[k] && f[k].f === 'skip') delete f[k]; else f[k] = { f:'skip', d: getTodayStr() };
+  _rmCommit();
+}
+function rmToggleManualDone(sid, stepId) {
+  const st = _rmStu(sid); if (!st) return;
+  const f = _rmFlags(st), k = _rmFlagKey(stepId);
+  if (f[k] && f[k].f === 'done') delete f[k]; else f[k] = { f:'done', d: getTodayStr() };
+  _rmCommit();
+}
+/* 여기부터 시작 — 앞 칸은 '이전 이수'(초록)로, 이 칸 이후의 수동 완료 표시는 지움 */
+function rmStartFrom(sid, track, idx, silent) {
+  const st = _rmStu(sid); if (!st) return;
+  const f = _rmFlags(st);
+  const steps = rmPlanSteps(st, track);
+  steps.forEach((step, i) => {
+    const k = _rmFlagKey(step.id), fl = f[k];
+    if (i < idx) { if (!fl) { const inf = rmStepInfo(st, track, step); if (inf.kind === 'pending') f[k] = { f:'done', d:'' }; } }
+    else if (fl && fl.f === 'done') delete f[k];
+  });
+  if (!st.rmStartAt || typeof st.rmStartAt !== 'object') st.rmStartAt = {};
+  if (steps[idx]) st.rmStartAt[track] = steps[idx].id;
+  if (!silent) _rmCommit(`⇤ ${st.name} · ${_rmTrack(track).label} '${steps[idx]?.name || ''}'부터 시작`);
+}
+function rmMove(sid, track, idx, dir) {
+  const st = _rmStu(sid); if (!st) return;
+  rmEnsurePersonal(st, track);
+  const ids = rmPlanSteps(st, track).map(x => x.id); const j = idx + dir;
+  if (j < 0 || j >= ids.length) return;
+  [ids[idx], ids[j]] = [ids[j], ids[idx]];
+  _rmSetPlan(st, track, ids);
+  _rmPick = { track, idx: j };
+  _rmCommit();
+}
+function rmRemove(sid, track, idx) {
+  const st = _rmStu(sid); if (!st) return;
+  const steps = rmPlanSteps(st, track); const step = steps[idx]; if (!step) return;
+  if (!confirm(`${st.name} 학생의 로드맵에서 '${step.name}'을(를) 뺄까요?\n(마스터 커리와 다른 학생에게는 영향 없음 · 교재 배부/완료 기록은 그대로)`)) return;
+  rmEnsurePersonal(st, track);
+  _rmSetPlan(st, track, steps.filter((_, i) => i !== idx).map(x => x.id));
+  if (st.rmCustom) st.rmCustom = st.rmCustom.filter(x => x.id !== step.id);
+  if (st.rmFlags) delete st.rmFlags[_rmFlagKey(step.id)];
+  _rmPick = null;
+  _rmCommit();
+}
+function rmAddAfter(sid, track, idx) {
+  const st = _rmStu(sid); if (!st) return;
+  const sel = $('rm-add-sel'); const val = sel ? sel.value : '';
+  if (!val) { toast('넣을 교재를 고르세요'); return; }
+  let newId = null;
+  if (val.startsWith('m:')) newId = Number(val.slice(2));
+  else {
+    let name, bookId = null;
+    if (val.startsWith('b:')) { const b = getBook(val.slice(2)); if (!b) return; name = b.name; bookId = b.id; }
+    else { name = (prompt('넣을 단계 이름 (교재 연결 없이 직접 체크하는 단계)') || '').trim(); if (!name) return; }
+    if (!Array.isArray(st.rmCustom)) st.rmCustom = [];
+    const c = { id: S.nid++, track, name };
+    if (bookId != null) c.bookId = bookId;
+    st.rmCustom.push(c); newId = c.id;
+  }
+  rmEnsurePersonal(st, track);
+  const ids = rmPlanSteps(st, track).map(x => x.id);
+  ids.splice(idx + 1, 0, newId);
+  _rmSetPlan(st, track, ids);
+  _rmPick = { track, idx: idx + 1 };
+  _rmCommit(`➕ ${st.name} · ${_rmTrack(track).label}에 추가`);
+}
+function rmResetTrack(sid, track) {
+  const st = _rmStu(sid); if (!st || !rmIsPersonal(st, track)) return;
+  if (!confirm(`${st.name} · ${_rmTrack(track).label}을(를) 마스터 커리 순서로 되돌릴까요?\n이 학생에게만 넣은 단계는 빠집니다. (배부·완료 기록, 건너뛰기 표시는 그대로)`)) return;
+  delete st.rmPlan[track];
+  if (!Object.keys(st.rmPlan).length) delete st.rmPlan;
+  if (st.rmCustom) { st.rmCustom = st.rmCustom.filter(x => x.track !== track); if (!st.rmCustom.length) delete st.rmCustom; }
+  _rmPick = null;
+  _rmCommit('↩ 마스터 커리 순서로 되돌렸습니다');
+}
+function rmBulkStart() {
+  const group = $('rm-group')?.value || '';
+  const track = $('rm-bulk-track')?.value || 'home';
+  const name = $('rm-bulk-step')?.value || '';
+  if (!group) { toast('먼저 반을 선택하세요'); return; }
+  if (!name) { toast('시작 단계를 고르세요'); return; }
+  const targets = S.students.filter(st => st.group === group && rmTrackView(st, track).status === 'unset');
+  if (!targets.length) { toast('시작 위치가 비어 있는 학생이 없습니다'); return; }
+  if (!confirm(`${group} · ${_rmTrack(track).label}\n시작 위치 미설정 ${targets.length}명을 '${name}'부터 시작으로 지정할까요?`)) return;
+  targets.forEach(st => { const idx = rmPlanSteps(st, track).findIndex(x => x.name === name); if (idx >= 0) rmStartFrom(st.id, track, idx, true); });
+  _rmCommit(`✅ ${targets.length}명 시작 위치 지정`);
+}
+
+/* ── 배부 (1차 / n차) ── */
+function _rmNextCohort(info) {
+  const used = new Set(info.rounds.map(r => r.cohort));
+  if (!used.size) return '';
+  let n = info.rounds.length + 1;
+  while (used.has(`${n}차`)) n++;
+  return `${n}차`;
+}
+function rmDistribute(sid, track, stepId) {
+  const st = _rmStu(sid); const step = rmFindStep(st, stepId);
+  if (!st || !step) return;
+  const book = step.bookId != null ? getBook(step.bookId) : null;
+  if (!book) { toast('연결된 교재가 없어요 — ⚙ 마스터 커리에서 교재를 연결하세요'); return; }
+  const t = _rmTrack(track);
+  const info = rmStepInfo(st, track, step);
+  if (info.active) { toast('이미 진행 중입니다'); return; }
+  const cohort = _rmNextCohort(info);
+  const roundTxt = cohort ? ` ${cohort}` : '';
+  if (book.mode === 'voca') {
+    // 보카형은 회차·기간을 정해야 하므로 기존 자동 배정 창을 학생·교재·카테고리·차수가 채워진 상태로 연다
+    openAssignModal();
+    setVocaCategory(t.cat || '수업보카');
+    selClass(st.group);
+    const vb = $('v-book'); if (vb) vb.value = String(book.id);
+    const vc = $('v-cohort'); if (vc) vc.value = cohort;
+    S.selStudents = [st.id];
+    renderStudentChips();
+    if (typeof onVocaFormChange === 'function') onVocaFormChange();
+    toast(`${t.icon} ${st.name} · ${book.name}${roundTxt} (${t.cat}) — 회차·시작일 입력 후 자동 배정`);
+    return;
+  }
+  if (!confirm(`${st.name}에게 '${book.name}'${roundTxt}을(를) 오늘(${getTodayStr()}) 배부할까요?`)) return;
+  if (!Array.isArray(st.books)) st.books = [];
+  if (!st.books.includes(book.name)) st.books.push(book.name);
+  if (Array.isArray(st.completedBooks)) st.completedBooks = st.completedBooks.filter(c => !_isSameCompleted(c, book, cohort));
+  if (!st.bookDates) st.bookDates = {};
+  st.bookDates[_bdKey(book.id, cohort)] = getTodayStr();
+  if (st.bookEndDates) delete st.bookEndDates[_bdKey(book.id, cohort)];
+  save(); updateSidebar(); renderRoadmapPage();
+  if ($('rm-next-pop')?.style.display !== 'none') rmRenderNextPop();
+  toast(`📘 ${st.name} · '${book.name}'${roundTxt} 배부 완료`);
+}
+
+/* ── 교재완료 직후 다음 교재 안내 ── */
+function rmQueueCompleted(sid, bookId) {
+  if (!(S.roadmapSteps || []).length) return;
+  _rmQueue.push({ sid, bookId: Number(bookId) });
+  clearTimeout(_rmQueueTimer);
+  _rmQueueTimer = setTimeout(rmFlushQueue, 700);
+}
+function rmFlushQueue() {
+  const q = _rmQueue; _rmQueue = [];
+  q.forEach(({ sid, bookId }) => {
+    const st = _rmStu(sid); if (!st) return;
+    RM_TRACKS.forEach(t => {
+      const v = rmTrackView(st, t.key);
+      const doneIdx = v.rows.findIndex(r => r.step.bookId === bookId);
+      if (doneIdx < 0 || v.activeIdx.length || v.nextIdx < 0 || v.nextIdx <= doneIdx) return;
+      const key = `${sid}|${t.key}`;
+      _rmPopItems = _rmPopItems.filter(x => `${x.sid}|${x.track}` !== key);
+      _rmPopItems.push({ sid, track: t.key });
+    });
+  });
+  rmUpdateNavBadge();
+  if (_rmPopItems.length) rmRenderNextPop();
+  if ($('p-roadmap')?.classList.contains('active')) renderRoadmapPage();
+}
+function rmRenderNextPop() {
+  const pop = $('rm-next-pop'); if (!pop) return;
+  const items = _rmPopItems.map(it => {
+    const st = _rmStu(it.sid); if (!st) return null;
+    const v = rmTrackView(st, it.track);
+    if (v.activeIdx.length || v.nextIdx < 0) return null;
+    return { st, t: _rmTrack(it.track), r: v.rows[v.nextIdx] };
+  }).filter(Boolean);
+  _rmPopItems = items.map(x => ({ sid: x.st.id, track: x.t.key }));
+  if (!items.length) { pop.style.display = 'none'; return; }
+  pop.innerHTML = `<div class="rm-pop-hd"><b>🗺 다음 교재</b><button onclick="rmClosePop()" title="닫기">✕</button></div>
+    ${items.map(({ st, t, r }) => `<div class="rm-pop-row">
+      <span><a href="#" onclick="event.preventDefault();rmOpenStudent(${st.id})">${_rmEsc(st.name)}</a> <span style="color:${t.color}">${t.icon}${t.label}</span> → <b>${_rmEsc(r.step.name)}</b></span>
+      ${r.book ? `<button class="btn bp bsm" onclick="rmDistribute(${st.id},'${t.key}',${r.step.id})">▶ 배부</button>` : '<span class="rm-mu">교재 미연결</span>'}</div>`).join('')}`;
+  pop.style.display = 'block';
+}
+function rmClosePop() { _rmPopItems = []; const pop = $('rm-next-pop'); if (pop) pop.style.display = 'none'; }
+function rmOpenStudent(id) { _rmSelId = id; _rmPick = null; goPage('p-roadmap'); }
+
+function _rmNeedsAction(st) { return RM_TRACKS.some(t => rmTrackView(st, t.key).status === 'waiting'); }
+function rmUpdateNavBadge() {
+  const el = $('rm-nav-badge'); if (!el) return;
+  if (!(S.roadmapSteps || []).length) { el.style.display = 'none'; return; }
+  const n = S.students.filter(st => st && _rmNeedsAction(st)).length;
+  el.textContent = n; el.style.display = n ? 'inline-block' : 'none';
+  el.title = `진행 중인 교재 없이 다음 배부를 기다리는 학생 ${n}명`;
+}
+
+/* ══ 화면 ══ */
+function _rmListStudents() {
+  const group = $('rm-group')?.value ?? '';
+  const q = ($('rm-search')?.value || '').trim();
+  const onlyWait = !!$('rm-only-wait')?.checked;
+  return S.students.filter(s => s && (!group || s.group === group) && (!q || s.name.includes(q)) && (!onlyWait || _rmNeedsAction(s)))
+    .sort((a, b) => (a.group || '').localeCompare(b.group || '', 'ko') || a.name.localeCompare(b.name, 'ko'));
+}
+function rmStep(dir) {
+  const list = _rmListStudents(); if (!list.length) return;
+  const i = list.findIndex(s => s.id === _rmSelId);
+  const j = i < 0 ? 0 : Math.min(list.length - 1, Math.max(0, i + dir));
+  _rmSelId = list[j].id; _rmPick = null; renderRoadmapPage();
+  document.querySelector(`.rm-stu[data-sid="${_rmSelId}"]`)?.scrollIntoView({ block:'nearest' });
+}
+function rmSelect(id) { _rmSelId = id; _rmPick = null; renderRoadmapPage(); }
+function rmPickCell(track, idx) {
+  _rmPick = (_rmPick && _rmPick.track === track && _rmPick.idx === idx) ? null : { track, idx };
+  renderRoadmapPage();
+}
+document.addEventListener('keydown', e => {
+  if (!$('p-roadmap')?.classList.contains('active')) return;
+  if (/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement?.tagName || '')) return;
+  if ($('assign-modal-overlay')?.style.display === 'flex') return;
+  if (e.key === 'ArrowDown') { e.preventDefault(); rmStep(1); }
+  if (e.key === 'ArrowUp')   { e.preventDefault(); rmStep(-1); }
+  if (e.key === 'Escape' && _rmPick) { _rmPick = null; renderRoadmapPage(); }
+});
+
+function _rmShort(name, g) {
+  let n = String(name || '');
+  if (!g) return n.replace(/\s+/g, '');
+  if (g === '5형식 교재') n = n.replace(/^5형식\s*/, '').replace(/[()]/g, '');
+  else if (g === '테스트') n = n.replace(/^천문장\s*/, '').replace(/\s*테스트$/, '');
+  else n = n.replace(g, '');
+  n = n.replace(/\s+/g, '');
+  return n || String(name).replace(/\s+/g, '');
+}
+function _rmCellHtml(st, t, r, i, picked, g) {
+  const bars = (r.rounds.length > 1 || r.active)
+    ? `<div class="rm-bars">${r.rounds.map(x => `<i class="${x.k === 'd' ? 'rm-bd' : 'rm-bl'}"></i>`).join('')}</div>` : '';
+  const tip = [r.step.name, r.book ? '' : '(교재 미연결)',
+    ...r.rounds.map((x, n) => `${x.cohort || (n + 1) + '차'} ${x.k === 'd' ? '완료' : '진행 중'}${x.date ? ' ' + _rmMD(x.date) : ''}`),
+    r.manual ? '이전 이수' : '', r.kind === 'skip' ? '건너뜀' : '', r.kind === 'gap' ? '나중에 할 교재' : ''].filter(Boolean).join(' · ');
+  return `<div class="rm-c rm-${r.kind}${r.kind !== 'done' && r.active ? ' rm-act' : ''}${picked ? ' rm-picked' : ''}${r.book ? '' : ' rm-nob'}"
+    title="${_rmEsc(tip)}" onclick="rmPickCell('${t.key}',${i})"><div class="rm-t">${_rmEsc(r.step.name.replace(/\s+/g, ''))}</div>${bars}</div>`;
+}
+
+function _rmPanelHtml(st, t, v, idx) {
+  const r = v.rows[idx]; if (!r) return '';
+  const n = v.rows.length;
+  const roundsTxt = r.rounds.length
+    ? r.rounds.map((x, k) => `${_rmEsc(x.cohort || (k + 1) + '차')} ${x.k === 'd' ? '완료' : '<b style="color:#b45309">진행 중</b>'}${x.date ? ' (' + _rmMD(x.date) + ')' : ''}`).join(' · ')
+    : ({ gap:'나중에 할 교재 (앞쪽인데 아직 안 함)', skip:'건너뜀', future:'앞으로 할 교재', done: r.manual ? '이전 이수 (앱 도입 전)' : '완료' }[r.kind] || '');
+  const btn = [];
+  if (r.book && !r.active) btn.push(`<button class="btn bp bsm" onclick="rmDistribute(${st.id},'${t.key}',${r.step.id})">▶ ${r.rounds.length ? _rmNextCohort(r) + ' 배부' : '배부'}</button>`);
+  if (r.kind === 'gap' || r.kind === 'future' || r.kind === 'skip')
+    btn.push(`<button class="btn bg bsm" onclick="rmToggleSkip(${st.id},${r.step.id})">${r.kind === 'skip' ? '↩ 건너뛰기 취소' : '⤼ 건너뛰기'}</button>`);
+  if (!r.book && !r.rounds.length && r.kind !== 'skip')
+    btn.push(`<button class="btn bg bsm" onclick="rmToggleManualDone(${st.id},${r.step.id})">${r.manual ? '완료 체크 취소' : '✓ 완료 체크'}</button>`);
+  else if (r.manual) btn.push(`<button class="btn bg bsm" onclick="rmToggleManualDone(${st.id},${r.step.id})">이전 이수 취소</button>`);
+  if (r.kind !== 'skip' && !r.manual) {
+    const before = v.rows.slice(0, idx).some(x => x.kind === 'gap' || x.kind === 'future');
+    if (!r.rounds.length) btn.push(`<button class="btn bg bsm" onclick="rmStartFrom(${st.id},'${t.key}',${idx})" title="앞 칸은 '이전 이수'로 표시">⇤ 여기부터 시작</button>`);
+    else if (before) btn.push(`<button class="btn bg bsm" onclick="rmStartFrom(${st.id},'${t.key}',${idx})" title="앱 도입 전에 끝낸 교재들">⇤ 앞 칸 모두 이전 이수</button>`);
+  }
+  const inPlan = new Set(v.rows.map(x => x.step.id));
+  const masterLeft = rmMaster(t.key).filter(x => !inPlan.has(x.id));
+  const books = S.books.filter(b => b && b.mode === t.mode).sort((a, b) => a.name.localeCompare(b.name, 'ko', { numeric:true }));
+  return `<div class="rm-panel" style="border-color:${t.color}">
+    <div class="rm-panel-hd"><b>${_rmEsc(r.step.name)}</b>
+      <span class="rm-mu">${r.book ? (_rmNorm(r.book.name) !== _rmNorm(r.step.name) ? '📎 ' + _rmEsc(r.book.name) : '') : '<span style="color:var(--amb)">교재 미연결</span>'}</span>
+      <span class="rm-mu">${roundsTxt}</span>
+      <button class="rm-x" onclick="rmPickCell('${t.key}',${idx})" title="닫기">✕</button></div>
+    <div class="rm-panel-btns">${btn.join('')}
+      <span class="rm-sep"></span>
+      <button class="btn bg bsm" ${idx === 0 ? 'disabled' : ''} onclick="rmMove(${st.id},'${t.key}',${idx},-1)" title="앞으로">◀</button>
+      <button class="btn bg bsm" ${idx === n - 1 ? 'disabled' : ''} onclick="rmMove(${st.id},'${t.key}',${idx},1)" title="뒤로">▶</button>
+      <button class="btn bg bsm" onclick="rmRemove(${st.id},'${t.key}',${idx})">✕ 이 학생 로드맵에서 빼기</button>
+      <span class="rm-sep"></span>
+      <select id="rm-add-sel"><option value="">이 칸 뒤에 교재 넣기…</option>
+        ${masterLeft.length ? `<optgroup label="로드맵에서 뺀 단계">${masterLeft.map(x => `<option value="m:${x.id}">${_rmEsc(x.name)}</option>`).join('')}</optgroup>` : ''}
+        <optgroup label="${t.mode === 'voca' ? '보카' : '교재'} 목록">${books.map(b => `<option value="b:${b.id}">${_rmEsc(b.name)}</option>`).join('')}</optgroup>
+        <option value="txt">✏ 직접 입력</option></select>
+      <button class="btn bg bsm" onclick="rmAddAfter(${st.id},'${t.key}',${idx})">넣기</button>
+    </div></div>`;
+}
+
+/* 시리즈 묶음 — 파닉스/스토리/베이직/5형식/3800제처럼 이름 앞부분이 같은 칸을 한 덩어리로 묶어 보여줌 */
+function _rmGroupKey(name) {
+  const n = String(name || '').trim();
+  let m = n.match(/^(파닉스|스토리|베이직)\s*\d+$/); if (m) return m[1];
+  if (/^5형식\s*\(/.test(n)) return '5형식 교재';
+  if (/^3800제/.test(n)) return '3800제';
+  if (/^천문장.*테스트$/.test(n)) return '테스트';
+  if (/^천문장/.test(n)) return '천문장';
+  return '';
+}
+function _rmTrackHtml(st, t) {
+  const v = rmTrackView(st, t.key);
+  const act = v.activeIdx.map(i => { const r = v.rows[i]; return `${r.step.name} (${r.rounds.length}차)`; });
+  let nowTxt;
+  if (act.length) nowTxt = `지금 <b class="rm-now">${_rmEsc(act.join(', '))}</b>`;
+  else if (v.status === 'unset') nowTxt = `<span class="rm-unset">시작 위치 미설정 — 칸을 눌러 ⇤ 여기부터 시작</span>`;
+  else if (v.status === 'finished') nowTxt = '<b style="color:#2e7d32">🎉 전 단계 완료</b>';
+  else nowTxt = '<b style="color:#c2410c">배부 대기</b>';
+  const next = v.nextIdx >= 0 ? v.rows[v.nextIdx] : null;
+  const pick = _rmPick && _rmPick.track === t.key ? _rmPick.idx : -1;
+  return `<section class="rm-track">
+    <div class="rm-th"><span class="rm-ticon">${t.icon}</span><b class="rm-tname">${t.label}</b>
+      <span class="rm-tsum">${v.doneCount}/${v.total} 완료 · ${nowTxt}${next ? ` · 다음 ${_rmEsc(next.step.name)}` : ''}</span>
+      ${!act.length && next && next.book ? `<button class="rm-go" onclick="rmDistribute(${st.id},'${t.key}',${next.step.id})">▶ 배부</button>` : ''}
+      <span style="flex:1"></span>
+      ${v.personal ? `<span class="rm-own">개인 순서</span><button class="rm-link" onclick="rmResetTrack(${st.id},'${t.key}')">마스터 순서로</button>` : ''}
+    </div>
+    <div class="rm-line">${v.rows.map((r, i) => _rmCellHtml(st, t, r, i, i === pick)).join('') || '<span class="rm-mu">단계 없음</span>'}</div>
+    ${v.gaps.length ? `<div class="rm-gaps">나중에 할 앞쪽 교재: ${v.gaps.map(r => _rmEsc(r.step.name)).join(', ')}</div>` : ''}
+    ${pick >= 0 ? _rmPanelHtml(st, t, v, pick) : ''}
+  </section>`;
+}
+
+function _rmDots(st) {
+  return RM_TRACKS.map(t => {
+    const s = rmTrackView(st, t.key).status;
+    return `<i class="rm-dot rm-dot-${s}" title="${t.label}: ${{ active:'진행 중', waiting:'배부 대기', unset:'시작 위치 미설정', finished:'전 단계 완료' }[s]}"></i>`;
+  }).join('');
+}
+
+function renderRoadmapPage() {
+  const root = $('rm-root'); if (!root) return;
+  rmUpdateNavBadge();
+  if (!(S.roadmapSteps || []).length) {
+    root.innerHTML = `<div class="card" style="max-width:560px">
+      <div class="ct">학원 로드맵(마스터 커리)이 아직 없습니다</div>
+      <p style="font-size:.8rem;color:var(--mu);line-height:1.6;margin-bottom:.8rem">학원 로드맵 엑셀(홈보카 · 수업보카 · 교재) 그대로 마스터 커리를 만듭니다.
+      이름이 같은 교재는 자동으로 연결되고, 학생마다 이 커리를 기준으로 건너뛰기·순서 바꾸기·교재 넣기를 할 수 있어요.</p>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <button class="btn bp" onclick="rmSeedDefault()">🗺 학원 로드맵으로 만들기</button>
+        <button class="btn bg" onclick="$('rm-xlsx').click()">📤 엑셀 파일에서 불러오기</button>
+      </div></div>`;
+    return;
+  }
+  const prevGroup = $('rm-group')?.value;
+  const group = prevGroup ?? '';
+  const q = $('rm-search')?.value || '';
+  const onlyWait = !!$('rm-only-wait')?.checked;
+  const bulkTrack = $('rm-bulk-track')?.value || 'home';
+  const groups = [...S.groups].sort((a, b) => a.localeCompare(b, 'ko'));
+  const list = _rmListStudents();
+  if (_rmSelId == null || !_rmStu(_rmSelId)) _rmSelId = list[0]?.id ?? null;
+  const st = _rmSelId != null ? _rmStu(_rmSelId) : null;
+  const waitN = S.students.filter(s => s && (!group || s.group === group) && _rmNeedsAction(s)).length;
+  const pos = st ? list.findIndex(s => s.id === st.id) : -1;
+
+  let lastG = null;
+  const listHtml = list.map(s => {
+    const gh = s.group !== lastG ? `<div class="rm-gh">${_rmEsc(s.group || '반 없음')}</div>` : '';
+    lastG = s.group;
+    return `${gh}<div class="rm-stu ${st && st.id === s.id ? 'on' : ''}" data-sid="${s.id}" onclick="rmSelect(${s.id})"><span>${_rmEsc(s.name)}</span><span class="rm-dots">${_rmDots(s)}</span></div>`;
+  }).join('') || '<div class="rm-mu" style="padding:.6rem">해당 학생 없음</div>';
+
+  root.innerHTML = `
+  <div class="rm-toolbar">
+    <select id="rm-group" onchange="_rmSelId=null;renderRoadmapPage()"><option value="">전체 반</option>
+      ${groups.map(g => `<option ${g === group ? 'selected' : ''}>${_rmEsc(g)}</option>`).join('')}</select>
+    <input id="rm-search" placeholder="이름 검색" value="${_rmEsc(q)}" oninput="clearTimeout(window._rmT);window._rmT=setTimeout(()=>{renderRoadmapPage();const e=$('rm-search');e.focus();e.setSelectionRange(e.value.length,e.value.length)},250)">
+    <label class="rm-chk"><input type="checkbox" id="rm-only-wait" ${onlyWait ? 'checked' : ''} onchange="renderRoadmapPage()"> 배부 대기만 <b style="color:var(--amb)">${waitN}</b></label>
+    <span style="flex:1"></span>
+    <button class="btn bg bsm" onclick="_rmMasterOpen=!_rmMasterOpen;renderRoadmapPage()">⚙ 마스터 커리 ${_rmMasterOpen ? '닫기' : '편집'}</button>
+  </div>
+  ${_rmMasterOpen ? _rmMasterHtml() : ''}
+  <div class="rm-layout">
+    <div class="card rm-side">
+      <div class="rm-list">${listHtml}</div>
+      ${group ? `<div class="rm-bulk"><div class="rm-mu" style="margin-bottom:.3rem">${_rmEsc(group)} 시작 위치 일괄 지정 (미설정 학생만)</div>
+        <select id="rm-bulk-track" onchange="renderRoadmapPage()">${RM_TRACKS.map(t => `<option value="${t.key}" ${t.key === bulkTrack ? 'selected' : ''}>${t.icon} ${t.label}</option>`).join('')}</select>
+        <select id="rm-bulk-step"><option value="">시작 교재…</option>${rmMaster(bulkTrack).map(x => `<option>${_rmEsc(x.name)}</option>`).join('')}</select>
+        <button class="btn bg bsm" onclick="rmBulkStart()">적용</button></div>` : ''}
+    </div>
+    <div class="card rm-main">${st ? `
+      <div class="rm-head">
+        <div class="rm-avatar">${_rmEsc((st.name || '?').slice(-2))}</div>
+        <div class="rm-who"><span class="rm-sname">${_rmEsc(st.name)}</span><span class="rm-mu">${_rmEsc(st.group || '')}${pos >= 0 ? ` · ${pos + 1} / ${list.length}` : ''}</span></div>
+        <div class="rm-nav"><button onclick="rmStep(-1)" ${pos <= 0 ? 'disabled' : ''} title="이전 학생 (↑)">‹</button><button onclick="rmStep(1)" ${pos < 0 || pos >= list.length - 1 ? 'disabled' : ''} title="다음 학생 (↓)">›</button></div>
+        <span style="flex:1"></span>
+        <span class="rm-legend"><span><i class="rm-lg rm-done"></i>교재완료 누름</span><span><i class="rm-lg rm-active"></i>처음 하는 중</span><span><i class="rm-lg rm-future"></i>앞으로</span><span><i class="rm-lg rm-bl-lg"></i>지금 하는 차수 (항상 깜박임)</span><span><i class="rm-lg rm-gap"></i>나중에 할 교재</span><span><i class="rm-lg rm-skip"></i>건너뜀</span></span>
+      </div>
+      ${RM_TRACKS.map(t => _rmTrackHtml(st, t)).join('')}
+      <div class="rm-mu" style="margin-top:.4rem">💡 칸을 누르면 배부 · 건너뛰기 · 여기부터 시작 · 순서 바꾸기 · 빼기 · 교재 넣기를 할 수 있어요. ↑↓ 키로 학생을 넘겨 볼 수 있어요.</div>`
+      : '<div class="rm-mu" style="padding:1rem">학생을 선택하세요</div>'}
+    </div>
+  </div>`;
+}
+
+function _rmMasterHtml() {
+  const unlinked = (S.roadmapSteps || []).filter(x => x.bookId == null).length;
+  const cols = RM_TRACKS.map(t => {
+    const list = rmMaster(t.key);
+    const books = S.books.filter(b => b && b.mode === t.mode).sort((a, b) => a.name.localeCompare(b.name, 'ko', { numeric:true }));
+    return `<div class="rm-col"><div class="rm-colhd" style="border-color:${t.color}"><b style="color:${t.color}">${t.icon} ${t.label}</b><span class="rm-mu">${list.length}단계</span></div>
+      <div class="rm-steps">${list.map((x, i) => `<div class="rm-mrow">
+        <span class="rm-mu" style="width:1.4rem;text-align:right">${i + 1}</span>
+        <input value="${_rmEsc(x.name)}" onchange="rmMasterRename(${x.id},this.value)">
+        <select onchange="rmMasterMap(${x.id},this.value)" class="${x.bookId == null ? 'rm-unl' : ''}"><option value="">(교재 미연결)</option>
+          ${books.map(b => `<option value="${b.id}" ${b.id === x.bookId ? 'selected' : ''}>${_rmEsc(b.name)}</option>`).join('')}</select>
+        <span class="rm-acts"><button ${i === 0 ? 'disabled' : ''} onclick="rmMasterMove(${x.id},-1)">↑</button><button ${i === list.length - 1 ? 'disabled' : ''} onclick="rmMasterMove(${x.id},1)">↓</button><button onclick="rmMasterDelete(${x.id})">✕</button></span>
+      </div>`).join('')}</div>
+      <div class="rm-add"><button class="btn bg bsm" onclick="rmMasterAdd('${t.key}')">+ 단계 추가</button></div></div>`;
+  }).join('');
+  return `<div class="card" style="margin-bottom:.9rem">
+    <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.6rem">
+      <b>⚙ 마스터 커리 (학원 공통 로드맵)</b>
+      <span class="rm-mu">순서를 따로 바꾸지 않은 학생에게는 바로 반영돼요 · 교재가 연결된 칸만 배부/교재완료로 자동 표시돼요</span>
+      <span style="flex:1"></span>
+      ${unlinked ? `<button class="btn bg bsm" onclick="rmAutoMatchAll()">🔗 이름으로 자동 연결 (미연결 ${unlinked})</button>` : ''}
+      <button class="btn bg bsm" onclick="$('rm-xlsx').click()">📤 엑셀에서 다시 불러오기</button>
+      <button class="btn bg bsm" onclick="rmSeedDefault()">기본 로드맵으로</button>
+    </div><div class="rm-cols">${cols}</div></div>`;
+}
+
+
 // ══════════ INIT ══════════
 load();
 populateBookSelects();
@@ -13787,6 +14558,7 @@ renderStudentChips();
 renderAllGroupUIs();
 renderAssignGroupBtns();
 updateSidebar();
+rmUpdateNavBadge();
 
 // Firebase 초기화 (로컬 데이터 로드 후에 실행 — 원격이 있으면 원격이 우선)
 initFirebase();
