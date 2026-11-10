@@ -254,6 +254,44 @@ details.pl-card summary .hint{font-weight:400;color:var(--mu);font-size:12px;mar
 .tr-info{font-size:13px;margin-top:5px;color:var(--mu)}
 .tr-info b{color:var(--tx)}
 @media (max-width:640px){.rt-n{width:120px}.rt-tot{margin-left:0;width:100%}}
+.tg-legend{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px;font-size:12px}
+.tg-legend span[class^=b-]{border-radius:6px;padding:2px 8px;font-weight:700}
+.tg{display:grid;gap:0 4px}
+.tg-dh{height:44px;text-align:center;font-weight:800;font-size:14px}
+.tg-col.today .tg-dh{color:var(--acc)}
+.tg-rooms{display:flex;font-size:10px;color:var(--mu);font-weight:400;margin-top:3px}
+.tg-rooms span{flex:1;border-bottom:1px solid var(--bd)}
+.tg-times span{position:absolute;right:4px;transform:translateY(-50%);font-size:10px;color:var(--mu);font-variant-numeric:tabular-nums}
+.tg-body{position:relative;border-radius:8px;background-color:#fbfaf8;background-image:linear-gradient(to bottom,#e9e7e2 1px,transparent 1px);cursor:copy}
+.tg-col.today .tg-body{background-color:#f3f4fe}
+.tg-body::after{content:'';position:absolute;top:0;bottom:0;left:50%;border-left:1px dashed #e2e0da;pointer-events:none}
+.tg-now{position:absolute;left:-3px;right:-3px;height:2px;background:var(--red);z-index:3;pointer-events:none}
+.blk{position:absolute;border:none;border-radius:7px;padding:3px 4px;text-align:left;overflow:hidden;display:flex;flex-direction:column;gap:0;cursor:pointer;z-index:1;border-left:3px solid;line-height:1.2}
+.blk.l1{left:2px;width:calc(50% - 4px)}.blk.l2{left:calc(50% + 2px);width:calc(50% - 4px)}.blk.lall{left:2px;width:calc(100% - 4px)}
+.blk b{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.blk small{font-size:10px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.blk.short{flex-direction:row;align-items:center;gap:5px;padding-top:0;padding-bottom:0}
+.savebar{z-index:7}
+.blk.narrow{padding:2px 2px 2px 3px}.blk.narrow b{font-size:11px}
+.blk.bad{outline:2px solid var(--red);outline-offset:-2px}
+.blk.sel{box-shadow:0 0 0 3px var(--tx);z-index:2}
+.b-el{background:#fce7f3;color:#9d174d;border-color:#db2777 !important}
+.b-mid{background:#e0e7ff;color:#3730a3;border-color:#4f46e5 !important}
+.b-rv{background:#d1fae5;color:#065f46;border-color:#059669 !important}
+.b-word{background:#fef3c7;color:#92400e;border-color:#d97706 !important}
+.tg-daytabs{display:none;gap:4px;margin-bottom:8px}
+.tg-daytabs button{flex:1;border:1px solid var(--bd);background:var(--surface);border-radius:8px;padding:6px 0;font-weight:700}
+.tg-daytabs button.on{background:var(--tx);color:#fff;border-color:var(--tx)}
+.tt-sheet{position:sticky;bottom:70px;z-index:8;background:var(--surface);border:2px solid var(--tx);border-radius:14px;padding:10px 14px;margin-top:10px;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+.tt-sheet-h{display:flex;align-items:center;gap:8px}
+.tt-sheet-h .icon-btn{margin-left:auto}
+.tt-sheet .tt-row{border-top:none}
+@media (max-width:760px){
+  .tg-daytabs{display:flex}
+  .tg{grid-template-columns:38px 1fr !important}
+  .tg-col:not(.pick){display:none}
+  .blk b{font-size:13px}.blk small{font-size:11px}
+}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1f2937;color:#fff;padding:8px 14px;border-radius:99px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
 .toast.show{opacity:1}
 
@@ -361,6 +399,8 @@ const SEED_TT = [
 let TTL = null;          // 저장된 시간표 (없으면 종이 시간표를 옮겨 온 것)
 let ttSaved = false;     // Firebase에 시간표가 저장돼 있는지
 let ttEdit = null;       // 시간표 탭에서 고치는 중인 것
+let ttSel = null;        // 시간표 그림에서 고르고 있는 칸
+let ttDay = 1;           // 휴대폰에서 보이는 요일
 let TT = {};             // 요일별로 펼친 시간표 (화면용)
 function normTT(x, i) {
   return { id: x.id || 'tt' + Date.now().toString(36) + i, days: toArr(x.days).map(Number).filter(d => d >= 1 && d <= 6).sort(),
@@ -1269,13 +1309,57 @@ function ttView() {
     <div class="tt-f"><input class="lb" value="${esc(x.label)}" data-tf="${x.id}:label" placeholder="표기 (예: P4)"></div>
     <button class="tt-del" data-tdel2="${x.id}" title="이 시간 빼기">✕</button>
   </div>`;
-  const sec = (t, xs) => xs.length ? `<div class="sec">${t} <span>${xs.length}칸</span></div>${xs.map(row).join('')}` : '';
+
+  // ── 한 주 시간표 그림: 요일마다 1강 | 2강 두 줄, 위→아래가 시간
+  const PX = 1.25, mins = list.flatMap(x => [x.t, x.e]).filter(okTime).map(minutesOf);
+  const T0 = Math.floor(Math.min(14 * 60, ...mins) / 30) * 30, T1 = Math.ceil(Math.max(21 * 60, ...mins) / 30) * 30;
+  const days = list.some(x => x.days.includes(6)) ? [1,2,3,4,5,6] : [1,2,3,4,5];
+  const today = new Date().getDay(), nowM = new Date().getHours() * 60 + new Date().getMinutes();
+  if (!days.includes(ttDay)) ttDay = days.includes(today) ? today : 1;
+  const hm = m => { const h = Math.floor(m / 60), mm = String(m % 60).padStart(2, '0'); return `${h > 12 ? h - 12 : h}:${mm}`; };
+  const ticks = []; for (let m = T0; m <= T1; m += 30) ticks.push(m);
+  const lane = r => r === '1강' ? 'l1' : r === '2강' ? 'l2' : 'lall';
+  const cls = x => x.kind === 'class' ? (isElRow(x) ? 'b-el' : 'b-mid') : x.kind === 'rv' ? 'b-rv' : 'b-word';
+  const kindTxt = x => x.kind === 'class' ? '수업' : x.kind === 'rv' ? 'RV' : '단어';
+  // 같은 강의실에서 시간이 겹치면 칸을 나란히 나눈다
+  const place = d => {
+    const xs = list.filter(x => x.days.includes(d) && okTime(x.t) && okTime(x.e)), pos = {};
+    ['l1', 'l2', 'lall'].forEach(ln => {
+      const ys = xs.filter(x => lane(x.room) === ln).sort((a, b) => minutesOf(a.t) - minutesOf(b.t) || minutesOf(b.e) - minutesOf(a.e));
+      let cluster = [], end = -1;
+      const flush = () => { const cols = []; cluster.forEach(x => { let c = cols.findIndex(e => e <= minutesOf(x.t)); if (c < 0) { c = cols.length; cols.push(0); } cols[c] = minutesOf(x.e); pos[x.id] = { c }; }); cluster.forEach(x => pos[x.id].n = cols.length); cluster = []; };
+      ys.forEach(x => { if (minutesOf(x.t) >= end) { flush(); end = -1; } cluster.push(x); end = Math.max(end, minutesOf(x.e)); });
+      flush();
+      const base = ln === 'l2' ? 50 : 0, w = ln === 'lall' ? 100 : 50;
+      ys.forEach(x => { const p = pos[x.id], cw = w / p.n; p.style = `left:calc(${base + p.c * cw}% + 2px);width:calc(${cw}% - 4px)`; });
+    });
+    return { xs, pos };
+  };
+  const blocks = d => { const { xs, pos } = place(d); return xs.map(x => {
+    const top = (minutesOf(x.t) - T0) * PX, h = Math.max(18, (minutesOf(x.e) - minutesOf(x.t)) * PX - 2);
+    const bad = !x.g.length || x.g.some(g => !lms.includes(g));
+    const sc = x.school ? String(x.school).replace(/중학교|중$/, '') : '';
+    return `<button class="blk ${cls(x)} ${bad ? 'bad' : ''} ${ttSel === x.id ? 'sel' : ''} ${pos[x.id].n > 1 ? 'narrow' : ''} ${minutesOf(x.e) - minutesOf(x.t) < 30 ? 'short' : ''}" style="top:${top}px;height:${h}px;${pos[x.id].style}" data-tsel="${x.id}" title="${esc(x.t)}~${esc(x.e)} ${esc(x.room)}">
+      <b>${esc(x.g.join('·') || '반 없음')}${x.label ? ' ' + esc(x.label) : ''}</b><small>${kindTxt(x)}${sc ? ' ' + esc(sc) : x.kind !== 'class' ? ' 전체' : ''}</small></button>`;
+  }).join(''); };
+  const col = d => `<div class="tg-col ${d === ttDay ? 'pick' : ''} ${d === today ? 'today' : ''}">
+    <div class="tg-dh">${DN[d]}${d === today ? ' · 오늘' : ''}<div class="tg-rooms"><span>1강</span><span>2강</span></div></div>
+    <div class="tg-body" style="height:${(T1 - T0) * PX}px;background-size:100% ${30 * PX}px" data-lane="${d}">
+      ${blocks(d)}${d === today && nowM > T0 && nowM < T1 ? `<i class="tg-now" style="top:${(nowM - T0) * PX}px"></i>` : ''}</div></div>`;
+  const grid = `<div class="tg-daytabs">${days.map(d => `<button class="${d === ttDay ? 'on' : ''}" data-tdaytab="${d}">${DN[d]}</button>`).join('')}</div>
+    <div class="tg" style="grid-template-columns:38px repeat(${days.length}, minmax(0,1fr))">
+      <div class="tg-times"><div class="tg-dh"></div><div style="position:relative;height:${(T1 - T0) * PX}px">${ticks.map(m => `<span style="top:${(m - T0) * PX}px">${hm(m)}</span>`).join('')}</div></div>
+      ${days.map(col).join('')}</div>`;
+  const legend = `<div class="tg-legend"><span class="b-el">초등 수업</span><span class="b-mid">중등 수업</span><span class="b-rv">RV</span><span class="b-word">단어</span><span class="muted">칸을 누르면 고칠 수 있어요 · 빈 곳을 누르면 그 시간에 새로 넣어요</span></div>`;
+  const selX = ttSel && list.find(x => x.id === ttSel);
+  const sheet = selX ? `<div class="tt-sheet"><div class="tt-sheet-h"><b>${esc(selX.g.join('·') || '새 시간')}</b> <span class="muted">${esc(selX.t || '')}${selX.e ? '~' + esc(selX.e) : ''} · ${esc(selX.room)}</span><button class="icon-btn" id="tt-close">닫기</button></div>${row(selX)}</div>` : '';
   return `
-  <div class="pl-head"><h2>시간표</h2><p>반은 숙제관리 앱의 반 목록에서만 골라요. 그래서 반 이름이 항상 숙제관리 앱과 같아요. 시간은 오후 기준 h:mm (예: 3:25). 같은 시간에 매일 하면 요일을 모두 켜 두세요.</p></div>
+  <div class="pl-head"><h2>시간표</h2><p>반은 숙제관리 앱의 반 목록에서만 골라서, 이름이 항상 숙제관리 앱과 같아요.</p></div>
   ${!ttSaved ? '<div class="warn">종이 시간표에서 옮겨 온 처음 시간표예요. 확인하고 <b>저장</b>하면 이 시간표가 기준이 돼요.</div>' : ''}
-  ${missAll.length ? `<div class="warn">숙제관리 앱에 없는 반 ${[...new Set(missAll)].map(esc).join(', ')} — 빨간 칸에서 ✕로 빼고 맞는 반을 다시 골라 주세요.</div>` : ''}
-  <div class="pl-card tt-card">${sec('초등', sorted.filter(isElRow))}${sec('중등', sorted.filter(x => !isElRow(x)))}
+  ${missAll.length ? `<div class="warn">숙제관리 앱에 없는 반 ${[...new Set(missAll)].map(esc).join(', ')} — 빨간 테두리 칸을 눌러 맞는 반을 다시 골라 주세요.</div>` : ''}
+  <div class="pl-card">${legend}${grid}
     <button class="icon-btn" id="tt-add" style="margin-top:10px">+ 시간 추가</button></div>
+  ${sheet}
   ${ttDirty() || !ttSaved ? `<div class="savebar"><span>${ttSaved ? '시간표 바뀜 · 저장 안 됨' : '처음 시간표 · 아직 저장 안 됨'}</span>${ttEdit ? '<button class="rs" id="tt-reset">되돌리기</button>' : ''}<button class="sv" id="tt-save">저장</button></div>` : ''}`;
 }
 function editTT(fn) { if (!ttEdit) ttEdit = JSON.parse(JSON.stringify(TTL || [])); fn(ttEdit); render(); }
@@ -1286,8 +1370,20 @@ function bindTT() {
   v.querySelectorAll('[data-tf]').forEach(el => el.onchange = () => { const [id, f] = el.dataset.tf.split(':'); editTT(L => { ttFind(L, id)[f] = el.value.trim(); }); });
   v.querySelectorAll('[data-gadd]').forEach(el => el.onchange = () => { if (!el.value) return; editTT(L => { const x = ttFind(L, el.dataset.gadd); if (!x.g.includes(el.value)) x.g.push(el.value); }); });
   v.querySelectorAll('[data-gdel]').forEach(b => b.onclick = () => { const i = b.dataset.gdel.indexOf(':'); const id = b.dataset.gdel.slice(0, i), g = b.dataset.gdel.slice(i + 1); editTT(L => { const x = ttFind(L, id); x.g = x.g.filter(y => y !== g); }); });
-  v.querySelectorAll('[data-tdel2]').forEach(b => b.onclick = () => editTT(L => { const i = L.findIndex(x => x.id === b.dataset.tdel2); if (i >= 0) L.splice(i, 1); }));
-  const add = $('tt-add'); if (add) add.onclick = () => editTT(L => { L.push({ id:'tt' + Date.now().toString(36), days:[], t:'', e:'', room:'1강', kind:'class', g:[], school:'', label:'' }); });
+  v.querySelectorAll('[data-tdel2]').forEach(b => b.onclick = () => editTT(L => { ttSel = null; const i = L.findIndex(x => x.id === b.dataset.tdel2); if (i >= 0) L.splice(i, 1); }));
+  const add = $('tt-add'); if (add) add.onclick = () => { const id = 'tt' + Date.now().toString(36); ttSel = id; editTT(L => { L.push({ id, days:[ttDay], t:'', e:'', room:'1강', kind:'class', g:[], school:'', label:'' }); }); };
+  v.querySelectorAll('[data-tsel]').forEach(b => b.onclick = e => { e.stopPropagation(); ttSel = ttSel === b.dataset.tsel ? null : b.dataset.tsel; render(); });
+  v.querySelectorAll('[data-tdaytab]').forEach(b => b.onclick = () => { ttDay = +b.dataset.tdaytab; render(); });
+  v.querySelectorAll('[data-lane]').forEach(el => el.onclick = e => {
+    if (e.target !== el) return;
+    const r = el.getBoundingClientRect(), y = e.clientY - r.top, half = (e.clientX - r.left) < r.width / 2;
+    const list = ttNow(), mins = list.flatMap(x => [x.t, x.e]).filter(okTime).map(minutesOf);
+    const T0 = Math.floor(Math.min(14 * 60, ...mins) / 30) * 30;
+    const m = T0 + Math.round(y / 1.25 / 5) * 5, hm = n => { const h = Math.floor(n / 60); return `${h > 12 ? h - 12 : h}:${String(n % 60).padStart(2, '0')}`; };
+    const id = 'tt' + Date.now().toString(36); ttSel = id;
+    editTT(L => { L.push({ id, days:[+el.dataset.lane], t: hm(m), e: hm(m + 45), room: half ? '1강' : '2강', kind:'class', g:[], school:'', label:'' }); });
+  });
+  const cl = $('tt-close'); if (cl) cl.onclick = () => { ttSel = null; render(); };
   const rs = $('tt-reset'); if (rs) rs.onclick = () => { ttEdit = null; render(); };
   const sv = $('tt-save'); if (sv) sv.onclick = saveTT;
 }
