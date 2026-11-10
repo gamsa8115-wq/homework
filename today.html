@@ -221,6 +221,39 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
 details.pl-card summary{cursor:pointer;list-style:none}
 details.pl-card summary .hint{font-weight:400;color:var(--mu);font-size:12px;margin-left:6px}
 @media (max-width:640px){.rq{grid-template-columns:1fr}}
+.rt{border-top:1px solid var(--bd);padding:12px 0}
+.rt:first-of-type{border-top:none;padding-top:4px}
+.rt-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rt-h input[type=color]{width:28px;height:28px;border:none;padding:0;background:none}
+.rt-used{font-size:12px;color:var(--mu)}
+.rt-tot{margin-left:auto;font-size:12px;font-weight:700;color:var(--mu)}
+.rt-tot.ok{color:var(--grn)}.rt-tot.over{color:var(--red)}.rt-tot.under{color:var(--amb)}
+.rt-bar{display:flex;gap:2px;margin:8px 0;height:40px;border-radius:9px;overflow:hidden}
+.rt-bar div{display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;min-width:0;padding:0 2px}
+.rt-bar div small{font-weight:400;opacity:.8;font-size:10px}
+.rt-bar .rest{background:repeating-linear-gradient(45deg,#f1f0ed,#f1f0ed 6px,#e7e5e0 6px,#e7e5e0 12px);color:var(--mu);font-weight:400}
+.rt-list{display:grid;gap:4px}
+.rt-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rt-no{width:22px;height:22px;border-radius:50%;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.rt-n{border:1px solid var(--bd);border-radius:8px;padding:5px 8px;width:150px;font-size:13px}
+.rt-m{display:inline-flex;align-items:center;gap:3px;font-size:13px}
+.rt-m button{border:none;background:var(--s2);border-radius:50%;width:24px;height:24px;font-weight:800}
+.rt-m input{width:44px;text-align:center;border:1px solid var(--bd);border-radius:8px;padding:4px 2px;font-size:13px}
+.rt-act{display:inline-flex;gap:3px}
+.rt-act button{border:1px solid var(--bd);background:var(--surface);border-radius:7px;width:26px;height:26px;color:var(--mu);font-size:12px}
+.rt-act button:disabled{opacity:.3;cursor:default}
+.rt-add{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:8px}
+.rt-add button{border:1px dashed #c9c8c4;background:var(--surface);border-radius:99px;padding:3px 10px;font-size:12px;color:var(--tx)}
+.today-rt{background:var(--surface);border:1px solid var(--bd);border-radius:12px;padding:8px 10px;margin-bottom:8px}
+.tr-bar{position:relative;display:flex;gap:2px;height:30px;border-radius:8px;overflow:hidden}
+.tr-bar div{display:flex;align-items:center;justify-content:center;font-size:11px;white-space:nowrap;overflow:hidden;min-width:0;background:color-mix(in srgb,var(--c) 14%,#fff);color:var(--c);font-weight:700;padding:0 2px}
+.tr-bar div.done{background:#ecebe7;color:#a8a6a0;font-weight:400}
+.tr-bar div.cur{background:var(--c);color:#fff}
+.tr-bar div.rest{background:#f1f0ed}
+.tr-bar i{position:absolute;top:0;bottom:0;width:2px;background:var(--tx)}
+.tr-info{font-size:13px;margin-top:5px;color:var(--mu)}
+.tr-info b{color:var(--tx)}
+@media (max-width:640px){.rt-n{width:120px}.rt-tot{margin-left:0;width:100%}}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1f2937;color:#fff;padding:8px 14px;border-radius:99px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
 .toast.show{opacity:1}
 
@@ -371,17 +404,27 @@ const DEFAULT_TYPES = {
   phonics: { name:'파닉스', lv:'el', color:'#db2777', steps:[] },
   basic:   { name:'베이직', lv:'el', color:'#059669', steps:[] },
   t3800:   { name:'3800제 해석', lv:'el', color:'#d97706', steps:[] },
+  // RV · 단어 시간
+  rv3800:  { name:'3800 연습', lv:'mid', kind:'rv', color:'#059669', steps:[{n:'밀린 홈보카',m:10},{n:'3800 풀기·질문',m:30},{n:'반복 확인',m:5}] },
+  rvhw:    { name:'숙제·재시험', lv:'mid', kind:'rv', color:'#b45309', steps:[{n:'밀린 홈보카',m:20},{n:'수업보카 재시험',m:10},{n:'천문장 고치기',m:15}] },
+  wvoca:   { name:'단어장 시험', lv:'mid', kind:'word', color:'#d97706', steps:[{n:'홈보카 범위 단어장 시험',m:20},{n:'틀린 단어 다시',m:10}] },
+  ewvoca:  { name:'단어장 시험', lv:'el', kind:'word', color:'#d97706', steps:[] },
 };
+const KIND_NAME = { class:'수업', rv:'RV', word:'단어 시간' };
 let TYPES = JSON.parse(JSON.stringify(DEFAULT_TYPES));
 let typesDraft = null;
 const typesNow = () => typesDraft || TYPES;
-const typeList = lv => Object.keys(typesNow()).filter(id => typesNow()[id] && typesNow()[id].lv === lv).map(id => ({ id, ...typesNow()[id] }));
+const typeList = (lv, kind = 'class') => Object.keys(typesNow()).filter(id => typesNow()[id] && typesNow()[id].lv === lv && (typesNow()[id].kind || 'class') === kind).map(id => ({ id, ...typesNow()[id] }));
 const typesDirty = () => !!typesDraft && JSON.stringify(typesDraft) !== JSON.stringify(TYPES);
 function normTypes(raw) {
   const o = {};
   Object.keys(raw || {}).forEach(id => { const t = raw[id]; if (!t || !t.name) return;
-    o[id] = { name: String(t.name), lv: t.lv === 'el' ? 'el' : 'mid', color: t.color || '#6b7280', steps: toArr(t.steps).map(x => ({ n: String(x.n || ''), m: +x.m || 0 })) }; });
-  return Object.keys(o).length ? o : JSON.parse(JSON.stringify(DEFAULT_TYPES));
+    o[id] = { name: String(t.name), lv: t.lv === 'el' ? 'el' : 'mid', kind: t.kind || 'class', color: t.color || '#6b7280', steps: toArr(t.steps).map(x => ({ n: String(x.n || ''), m: +x.m || 0 })) }; });
+  if (!Object.keys(o).length) return JSON.parse(JSON.stringify(DEFAULT_TYPES));
+  // 예전에 저장한 목록에 RV·단어 종류가 없으면 기본값을 넣어 준다
+  Object.keys(DEFAULT_TYPES).forEach(id => { const t = DEFAULT_TYPES[id], kd = t.kind || 'class';
+    if (kd !== 'class' && !o[id] && !Object.values(o).some(x => x.lv === t.lv && x.kind === kd)) o[id] = JSON.parse(JSON.stringify(t)); });
+  return o;
 }
 
 let PAT = {};                 // Firebase에 저장된 패턴
@@ -389,6 +432,7 @@ let draft = {};               // 화면에서 고치는 중인 패턴
 let mode = 'today';           // 'today' | 'plan' | 'tt'
 let planGroup = '중1';
 let planLv = 'mid';
+let planKind = 'class';       // 'class' 수업 | 'rv' RV | 'word' 단어 시간
 let planOpt = { avoid90: true, align: true };
 let planCounts = {};          // { 반: { 수업종류: 일수 } } — 추천 받기에서 정하는 것
 
@@ -622,7 +666,7 @@ function render() {
     return `<button class="slot ${s.i === curSlot ? 'on' : ''} ${past ? 'past' : ''}" data-i="${s.i}">
       <div class="t">${s.t}~${s.e} · ${s.room}</div>
       <div class="n">${esc(slotName(s))}</div>
-      ${(s.kind === 'main' || s.kind === 'el') && typeOf(keyOf(s), dow) ? typeBadge(typeOf(keyOf(s), dow), s.kind) : `<span class="k ${KIND[s.kind].cls}">${KIND[s.kind].label}</span>`}
+      ${typeOf(unitKey(s), dow) ? typeBadge(typeOf(unitKey(s), dow), s.kind) : `<span class="k ${KIND[s.kind].cls}">${KIND[s.kind].label}</span>`}
     </button>`;
   }).join('');
   $('slots').querySelectorAll('.slot').forEach(b => b.onclick = () => { curSlot = +b.dataset.i; render(); });
@@ -634,7 +678,7 @@ function render() {
   if (!slots.length) { v.innerHTML = `<div class="empty-day" style="margin-top:14px">${dn}요일에는 ${level === 'el' ? '초등' : '중등'} 영어 수업이 없어요.</div>`; return; }
   if (!D) { v.innerHTML = ''; return; }
   const s = slots.find(x => x.i === curSlot);
-  s.dayType = (s.kind === 'main' || s.kind === 'el') ? typeOf(keyOf(s), dow) : null;
+  s.dayType = typeOf(unitKey(s), dow) || null;
   v.innerHTML = slotView(s);
   v.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { mode = b.dataset.go; render(); });
 }
@@ -691,10 +735,10 @@ function slotView(s) {
       + (lvCount('in') && lvCount('ba') ? '' : ' 오늘은 한 레벨만 있어 대표문장 10분.');
     if (nExam) guide += ` <b>시험대비 ${nExam}명</b>은 천문장 대신 시험대비 교재.`;
   } else if (s.kind === 'rv') {
-    guide = `<b>RV 순서</b> · 밀린 홈보카 먼저(차량 학생 20분, 그 밖 10분) → 3800. 못 끝내면 차량은 다음 회차, 그 밖은 하원 전 15분.`;
+    guide = (s.dayType ? `<b>${esc(tName(s.dayType))}</b> · ${stepsLine(s.dayType) || '진행 순서는 수업 패턴 → RV → 종류 관리에서 채워요.'}<br>` : '') + `<b>밀린 숙제</b> · 밀린 홈보카 먼저(차량 학생 20분, 그 밖 10분). 못 끝내면 차량은 다음 회차, 그 밖은 하원 전 15분.`;
     if (nExam) guide += ` <b>시험대비 ${nExam}명</b>은 3800 대신 시험 대비.`;
   } else {
-    guide = `<b>단어 시간</b> · 홈보카 범위를 단어장으로 시험. 클래스카드를 안 한 학생은 그 자리에서 홈보카 먼저.`;
+    guide = (s.dayType ? `<b>${esc(tName(s.dayType))}</b> · ${stepsLine(s.dayType) || '진행 순서는 수업 패턴 → 단어 시간 → 종류 관리에서 채워요.'}<br>` : '') + `클래스카드를 안 한 학생은 그 자리에서 홈보카 먼저.`;
     if (nExam) guide += ` <b>시험대비 ${nExam}명</b>은 시험범위 단어.`;
   }
 
@@ -711,12 +755,25 @@ function slotView(s) {
   return `
     <div class="head"><h2>${esc(title)} ${KIND[s.kind].label}${s.dayType ? ' · ' + esc(tName(s.dayType)) : ''}</h2>
       <span class="sub">${s.t}~${s.e} · ${s.room} · ${rows.length}명${daysNote ? ' · ' + daysNote : ''}</span></div>
+    ${routineBar(s)}
     <div class="guide">${guide}</div>
     ${warn}
     <div class="stats">${stats.map(([v, l, c]) => `<div class="stat ${c || ''}"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('')}</div>
     ${rows.length ? listHtml(rows, s) : `<div class="nostu">이 시간 명단이 비어 있어요.${s.school ? ' 숙제관리 앱 👥 학생 관리에서 학교를 넣어 주세요.' : ''}</div>`}`;
 }
 
+/* 오늘 수업: 루틴 진행 막대 (지금 진행 중이면 현재 단계와 남은 시간) */
+function routineBar(s) {
+  const t = s.dayType && TYPES[s.dayType]; if (!t || !t.steps || !t.steps.length) return '';
+  const tot = t.steps.reduce((a, x) => a + (+x.m || 0), 0), L = Math.max(slotLen(s), tot);
+  const now = new Date(), nm = now.getHours() * 60 + now.getMinutes(), el = nm - minutesOf(s.t);
+  const live = curDate === todayStr() && el >= 0 && el < slotLen(s);
+  let acc = 0, cur = null;
+  const segs = t.steps.map(x => { const a = acc; acc += +x.m || 0; const st = live ? (el >= acc ? 'done' : el >= a ? 'cur' : '') : ''; if (st === 'cur') cur = { x, left: acc - el }; return `<div class="${st}" style="flex:${Math.max(+x.m || 0, 1)}">${esc(x.n)}</div>`; }).join('');
+  const rest = L > tot ? `<div class="rest" style="flex:${L - tot}"></div>` : '';
+  const info = live ? (cur ? `지금 <b>${esc(cur.x.n)}</b> · ${cur.left}분 남음 · ${el}분째` : `루틴 끝 · 수업 ${slotLen(s) - el}분 남음`) : `${esc(t.name)} 루틴 · ${t.steps.length}단계 · ${tot}분`;
+  return `<div class="today-rt" style="--c:${t.color}"><div class="tr-bar">${segs}${rest}${live ? `<i style="left:${Math.min(el / L, 1) * 100}%"></i>` : ''}</div><div class="tr-info">${info}</div></div>`;
+}
 /* 본수업은 하는 일이 다른 묶음별로 나눠 보여 준다 (5형식 → 입문 → 기본 → 시험 기간) */
 function listHtml(rows, s) {
   if (s.kind !== 'main') return `<div class="list">${rows.map(r => card(r, s)).join('')}</div>`;
@@ -790,8 +847,13 @@ function card(r, s) {
 const DN = '일월화수목금토';
 const isClassSlot = x => x.kind === 'main' || x.kind === 'el';
 const keyOf = x => [...ttList(x)].sort((a, b) => a.localeCompare(b, 'ko', { numeric:true })).join('+');
-const keyName = k => k.split('+').join('·');
-const lvOfKey = k => k.split('+').every(isEl) ? 'el' : 'mid';
+const slotKind = x => isClassSlot(x) ? 'class' : x.kind;
+const unitKey = x => isClassSlot(x) ? keyOf(x) : `${x.kind}:${keyOf(x)}${x.school ? '@' + x.school : ''}`;
+const kindOfKey = k => /^(rv|word):/.test(k) ? k.split(':')[0] : 'class';
+const groupsOfKey = k => k.replace(/^(rv|word):/, '').split('@')[0].split('+');
+const schoolOfKey = k => k.includes('@') ? k.slice(k.indexOf('@') + 1) : '';
+const keyName = k => groupsOfKey(k).join('·') + (kindOfKey(k) === 'class' ? '' : schoolOfKey(k) ? `(${schoolOfKey(k)})` : '(전체)');
+const lvOfKey = k => groupsOfKey(k).every(isEl) ? 'el' : 'mid';
 const tName = id => (typesNow()[id] || {}).name || '미정';
 const tColor = id => (typesNow()[id] || {}).color || '#9ca3af';
 function typeBadge(id, kind) {
@@ -803,18 +865,23 @@ function stepsLine(id) {
   let m = 0;
   return t.steps.map(x => { const a = m; m += +x.m || 0; return `${a}~${m}분 ${esc(x.n)}`; }).join(' → ');
 }
-function planKeys(lv) {
-  const ks = new Set(); Object.values(TT).flat().filter(isClassSlot).forEach(x => ks.add(keyOf(x)));
-  const first = k => Math.min(...Object.values(TT).flat().filter(x => isClassSlot(x) && keyOf(x) === k).map(x => minutesOf(x.t)));
+function planKeys(lv, kind) {
+  const all = Object.values(TT).flat();
+  const ks = new Set(all.filter(x => !kind || slotKind(x) === kind).map(unitKey));
+  const first = k => Math.min(...all.filter(x => unitKey(x) === k).map(x => minutesOf(x.t)));
   return [...ks].filter(k => !lv || lvOfKey(k) === lv).sort((a, b) => (first(a) - first(b)) || a.localeCompare(b, 'ko', { numeric:true }));
 }
-const defType = k => lvOfKey(k) === 'mid' ? 'chun' : '';
+function defType(k) {
+  const kd = kindOfKey(k), lv = lvOfKey(k);
+  if (kd === 'class') return lv === 'mid' ? 'chun' : '';
+  const t = typeList(lv, kd)[0]; return t ? t.id : '';
+}
 function patOf(k) { return draft[k] || PAT[k] || DEFAULT_PAT[k] || {}; }
 const effType = (k, p, d) => { const v = p['d' + d]; return v && typesNow()[v] ? v : defType(k); };
 function typeOf(k, dow) { const v = (PAT[k] || DEFAULT_PAT[k] || {})['d' + dow]; return v && TYPES[v] ? v : defType(k); }   // 오늘 수업은 저장된 것만
-function mainDays(k) { return [1,2,3,4,5,6].filter(d => (TT[d] || []).some(x => isClassSlot(x) && keyOf(x) === k)); }
-function mainSlot(k, d) { return (TT[d] || []).find(x => isClassSlot(x) && keyOf(x) === k); }
-function otherSlots(k, d, kind) { const gs = k.split('+'); return (TT[d] || []).filter(x => x.kind === kind && ttList(x).some(g => gs.includes(g))); }
+function mainDays(k) { return [1,2,3,4,5,6].filter(d => (TT[d] || []).some(x => unitKey(x) === k)); }
+function mainSlot(k, d) { return (TT[d] || []).find(x => unitKey(x) === k); }
+function otherSlots(k, d, kind) { const gs = groupsOfKey(k); return (TT[d] || []).filter(x => x.kind === kind && ttList(x).some(g => gs.includes(g))); }
 function normPat(k, p) { const o = {}; mainDays(k).forEach(d => { o['d' + d] = effType(k, p || {}, d); }); return o; }
 function dirty(k) { return !!draft[k] && JSON.stringify(normPat(k, draft[k])) !== JSON.stringify(normPat(k, PAT[k] || DEFAULT_PAT[k] || {})); }
 function gaps(days) {   // 한 주를 돌아가며 수업 사이에 비는 날 수 (주말 포함)
@@ -827,7 +894,7 @@ const josa = w => { const c = w.charCodeAt(w.length - 1); return (c >= 0xAC00 &&
 
 /* 패턴 하나를 평가: 벌점이 낮을수록 좋음 + 이유 목록 */
 function evalPattern(k, pat, opt) {
-  const days = mainDays(k), notes = [], lv = lvOfKey(k);
+  const days = mainDays(k), notes = [], lv = lvOfKey(k), kd = kindOfKey(k);
   let pen = 0;
   const und = days.filter(d => !effType(k, pat, d));
   if (und.length) { pen += 5 * und.length; notes.push(['warn', `${und.map(d => DN[d]).join('·')}요일 수업 종류가 정해지지 않았어요`]); }
@@ -838,7 +905,9 @@ function evalPattern(k, pat, opt) {
   // 1) 수업 종류별 간격
   ids.forEach(t => {
     const ds = byType[t], nm = tName(t);
-    if (t === major) {
+    if (t === major && kd !== 'class') {
+      notes.push(['info', `주로 ${nm} (${ds.map(d => DN[d]).join('·')})`]);
+    } else if (t === major) {
       const gp = gaps(ds), mx = gp.reduce((a, b) => b.n > a.n ? b : a);
       pen += mx.n * 3 + gp.reduce((a, b) => a + b.n * b.n, 0) * 0.5;
       const pair = `${DN[mx.from]}→${DN[mx.to]}`;
@@ -851,12 +920,13 @@ function evalPattern(k, pat, opt) {
     }
     if (t === 'chun') notes.push(['info', `천문장 주 ${ds.length}번 → 88p 한 권 약 ${Math.ceil(88 / ds.length)}주`]);
   });
-  if (lv === 'mid' && !byType.chun) { pen += 30; notes.push(['warn', '천문장 수업이 하루도 없어요. 테스트북 진도가 멈춰요.']); }
+  if (kd === 'class' && lv === 'mid' && !byType.chun) { pen += 30; notes.push(['warn', '천문장 수업이 하루도 없어요. 테스트북 진도가 멈춰요.']); }
 
   // 2) 중등 3800: RV와의 관계
   const t38 = byType['3800'] || [];
-  if (lv === 'mid') {
-    const rvDays = [1,2,3,4,5].filter(d => otherSlots(k, d, 'rv').length);
+  const isDrillRV = (x, d) => /3800/.test(tName(effType(unitKey(x), (peerPat && peerPat[unitKey(x)]) || patOf(unitKey(x)), d)));
+  if (kd === 'class' && lv === 'mid') {
+    const rvDays = [1,2,3,4,5].filter(d => otherSlots(k, d, 'rv').some(x => isDrillRV(x, d)));
     const touch = [...new Set([...t38, ...rvDays])].sort((a, b) => a - b);
     if (touch.length) {
       const gp = gaps(touch), mx = gp.reduce((a, b) => b.n > a.n ? b : a);
@@ -864,6 +934,7 @@ function evalPattern(k, pat, opt) {
       notes.push([mx.n <= 2 ? 'good' : 'info', `3800 만나는 날 ${touch.map(d => DN[d] + (t38.includes(d) ? '(수업)' : '(RV)')).join('·')} — 가장 긴 공백 ${mx.n}일`]);
     }
     if (!t38.length) notes.push(['info', '3800은 RV에서만 해요']);
+    if (t38.length && !rvDays.length) { pen += 2; notes.push(['warn', 'RV에 3800 연습이 하나도 없어요 — 수업에서 배운 3800을 연습할 시간이 없어요']); }
     t38.forEach(d => {
       const m = mainSlot(k, d);
       otherSlots(k, d, 'rv').forEach(rv => {
@@ -872,7 +943,7 @@ function evalPattern(k, pat, opt) {
           notes.push(['warn', `${DN[d]} ${m.t} 3800 수업과 ${rv.t} RV가 이어져 ${rv.school ? rv.school + ' 학생은 ' : ''}3800만 90분 연속`]);
         }
       });
-      const nx = otherSlots(k, d + 1, 'rv');
+      const nx = otherSlots(k, d + 1, 'rv').filter(x => isDrillRV(x, d + 1));
       if (nx.length) {
         const full = nx.some(x => !x.school);
         pen -= full ? 2 : 1;
@@ -881,6 +952,13 @@ function evalPattern(k, pat, opt) {
     });
   }
 
+  // RV: 3800 연습이 그 학년 3800 수업 당일·다음 날이면 연결
+  if (kd === 'rv') {
+    days.forEach(d => { const t = effType(k, pat, d); if (!/3800/.test(tName(t))) return;
+      const cls = groupsOfKey(k).map(g => g).filter(g => [d, d - 1].some(dd => { const m = mainSlot(g, dd); return m && effType(g, (peerPat && peerPat[g]) || patOf(g), dd) === '3800' && (dd < d || minutesOf(m.t) < minutesOf(mainSlot(k, d).t)); }));
+      if (cls.length) { pen -= 1; notes.push(['good', `${DN[d]} RV 3800 연습 — 바로 앞 3800 수업에서 배운 걸 연습`]); }
+    });
+  }
   // 3) 주 수업이 아닌 종류: 다른 반과 같은 요일이면 준비 한 번 / 너무 몰리면 경고
   ids.filter(t => t !== major).forEach(t => byType[t].forEach(d => {
     const others = planKeys().filter(x => x !== k && mainSlot(x, d) && effType(x, (peerPat && peerPat[x]) || patOf(x), d) === t);
@@ -923,7 +1001,8 @@ const reqDirty = k => !!reqDraft[k] && JSON.stringify(reqDraft[k]) !== JSON.stri
 
 /* 이 반이 주로 하는 수업 추측: 저장된 패턴 → 학생 교재(Phonics/Basic) → 첫 종류 */
 function guessMain(k) {
-  const lv = lvOfKey(k), types = typeList(lv).map(t => t.id);
+  const lv = lvOfKey(k), kd = kindOfKey(k), types = typeList(lv, kd).map(t => t.id);
+  if (kd !== 'class') { const saved0 = PAT[k]; if (saved0) { const c = {}; mainDays(k).forEach(d => { const t = effType(k, saved0, d); if (t) c[t] = (c[t] || 0) + 1; }); const top = Object.keys(c).sort((a, b) => c[b] - c[a])[0]; if (top) return top; } return defType(k); }
   const saved = PAT[k] || DEFAULT_PAT[k];
   if (saved) { const c = {}; mainDays(k).forEach(d => { const t = effType(k, saved, d); if (t) c[t] = (c[t] || 0) + 1; }); const top = Object.keys(c).sort((a, b) => c[b] - c[a])[0]; if (top) return top; }
   if (lv === 'mid') return 'chun';
@@ -949,8 +1028,8 @@ function countsFromReq(k) {
 }
 
 /* 모든 반을 함께 계산: 다른 반의 선택을 보면서 두 번 돌려 요일을 맞춘다 */
-function recommendAll(lv) {
-  const keys = planKeys(lv), picks = {};
+function recommendAll(lv, kind = planKind) {
+  const keys = planKeys(lv, kind), picks = {};
   peerPat = {};
   for (let pass = 0; pass < 2; pass++) {
     keys.forEach(k => {
@@ -961,14 +1040,15 @@ function recommendAll(lv) {
     });
   }
   peerPat = null;
-  recs[lv] = { picks };
+  recs[lv + '|' + kind] = { picks };
 }
 
 function planView() {
-  const lv = planLv, keys = planKeys(lv), types = typeList(lv);
+  const lv = planLv, kind = planKind, keys = planKeys(lv, kind), types = typeList(lv, kind), RK = lv + '|' + kind, KN = KIND_NAME[kind];
   const head = `<div class="pl-head"><h2>수업 패턴 추천</h2><p><b>①</b> 반마다 필요한 수업을 적고 → <b>②</b> 추천 받기를 누르면 → <b>③</b> 요일별 시간표를 계산해서 보여 줘요. 마음에 들면 저장하세요.</p></div>`;
-  const lvTabs = `<div class="pl-groups">${[['mid','중등'],['el','초등']].map(([l, n]) => `<button class="${lv === l ? 'on' : ''}" data-plv="${l}">${n}</button>`).join('')}</div>`;
-  if (!keys.length) return head + lvTabs + `<div class="pl-card">시간표에 ${lv === 'el' ? '초등' : '중등'} 수업이 없어요. <button class="icon-btn" data-go="tt">시간표 열기</button></div>`;
+  const lvTabs = `<div class="pl-groups">${[['mid','중등'],['el','초등']].map(([l, n]) => `<button class="${lv === l ? 'on' : ''}" data-plv="${l}">${n}</button>`).join('')}
+    <span style="width:10px"></span>${['class','rv','word'].map(x => `<button class="${kind === x ? 'on' : ''}" data-pkind="${x}">${KIND_NAME[x]}${Object.keys(recs).includes(lv + '|' + x) ? ' •' : ''}</button>`).join('')}</div>`;
+  if (!keys.length) return head + lvTabs + `<div class="pl-card">시간표에 ${lv === 'el' ? '초등' : '중등'} ${KN}이 없어요. <button class="icon-btn" data-go="tt">시간표 열기</button></div>` + routineCard();
 
   // ① 필요사항
   const reqRows = keys.map(k => {
@@ -980,13 +1060,14 @@ function planView() {
       <div class="rq-f"><span class="rq-l">주로</span><select data-rmain="${esc(k)}" class="icon-btn">${lv === 'el' && !r.main ? '<option value="">고르세요</option>' : ''}${types.map(t => `<option value="${esc(t.id)}" ${t.id === r.main ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select>
         ${r.main ? `<span class="rq-auto" style="color:${tColor(r.main)}">${Math.max(0, n - used)}번</span>` : ''}</div>
       <div class="rq-f">${others.length ? `<span class="rq-l">그 밖에</span>` : ''}${others.map(t => { const v = (r.extra || {})[t.id] || 0;
-        return `<span class="step" style="${v ? `border-color:${t.color};color:${t.color}` : ''}">${esc(t.name)} <button data-rx="${esc(k)}|${esc(t.id)}|-1" ${v ? '' : 'disabled'}>−</button><b>${v}</b><button data-rx="${esc(k)}|${esc(t.id)}|1" ${used >= n - 1 ? 'disabled' : ''}>+</button></span>`; }).join('')}</div>
+        return `<span class="step" style="${v ? `border-color:${t.color};color:${t.color}` : ''}">${esc(t.name)} <button data-rx="${esc(k)}|${esc(t.id)}|-1" ${v ? '' : 'disabled'}>−</button><b>${v}</b><button data-rx="${esc(k)}|${esc(t.id)}|1" ${used >= n - 1 ? 'disabled' : ''}>+</button></span>`; }).join('')}
+        ${addSelect(k)}</div>
       ${!c ? `<div class="rq-warn">${r.main ? '횟수가 주 수업 수보다 많아요' : '주로 하는 수업을 골라 주세요'}</div>` : ''}
     </div>`;
   }).join('');
 
   // ③ 결과 (추천 또는 지금 저장된 것)
-  const rec = recs[lv], showRec = !!rec;
+  const rec = recs[RK], showRec = !!rec;
   const patFor = k => showRec && rec.picks[k] ? rec.picks[k].cands[rec.picks[k].i].pat : patOf(k);
   const cell = (k, d) => {
     const m = mainSlot(k, d); if (!m) return '<td class="rc-x"></td>';
@@ -1007,10 +1088,10 @@ function planView() {
       <tr class="why"><td></td><td colspan="5">${why(k)}</td></tr>`;
   }).join('');
   const changed = showRec ? keys.filter(k => rec.picks[k] && !samePat(k, patFor(k), PAT[k] || DEFAULT_PAT[k] || {})) : keys.filter(dirty);
-  const anyReq = Object.keys(reqDraft).some(reqDirty) || Object.keys(recs).some(l => l !== lv);
+  const anyReq = Object.keys(reqDraft).some(reqDirty) || Object.keys(recs).some(l => l !== RK);
 
   return head + lvTabs + `
-  <div class="pl-card"><h3><span class="num">1</span> 반마다 필요한 수업 <span class="hint">"주로"는 남는 날을 모두 채워요. 그 밖의 수업만 횟수를 정하세요.</span></h3>
+  <div class="pl-card"><h3><span class="num">1</span> 반마다 ${kind === 'class' ? '필요한 수업' : KN + '에 할 일'} <span class="hint">"주로"는 남는 날을 모두 채워요. 그 밖의 것만 횟수를 정하세요. 없는 수업은 <b>+ 추가</b>로 바로 만들 수 있어요.</span></h3>
     ${reqRows}
     <div class="opts" style="margin:10px 0 0">
       ${lv === 'mid' ? `<label><input type="checkbox" id="po-90" ${planOpt.avoid90 ? 'checked' : ''}> 3800 수업이 RV와 붙어 90분이 되지 않게</label>` : ''}
@@ -1019,29 +1100,83 @@ function planView() {
     <button class="big-btn" id="do-rec"><span class="num">2</span> 추천 받기</button>
   </div>
 
-  <div class="pl-card"><h3><span class="num">3</span> ${showRec ? '추천 시간표' : '지금 시간표'} <span class="hint">${showRec ? '점선 칸이 지금과 달라지는 곳이에요. 칸을 눌러 직접 바꿀 수도 있어요.' : '추천 받기를 누르면 여기에 계산 결과가 나와요.'}</span></h3>
+  <div class="pl-card"><h3><span class="num">3</span> ${showRec ? '추천' : '지금'} ${kind === 'class' ? '시간표' : KN + ' 계획'} <span class="hint">${showRec ? '점선 칸이 지금과 달라지는 곳이에요. 칸을 눌러 직접 바꿀 수도 있어요.' : '추천 받기를 누르면 여기에 계산 결과가 나와요.'}</span></h3>
     <div class="rc-wrap"><table class="rc-tb"><thead><tr><th></th>${[1,2,3,4,5].map(d => `<th>${DN[d]}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
-    ${changed.length || anyReq || typesDirty() ? `<div class="savebar"><span>${changed.length ? esc(changed.map(keyName).join('·')) + ' 바뀜' : '필요사항 바뀜'} · 저장 안 됨</span><button class="rs" id="pl-reset">되돌리기</button><button class="sv" id="pl-save">이대로 저장</button></div>` : ''}
+    ${changed.length || anyReq || typesDirty() ? `<div class="savebar"><span>${changed.length ? esc(changed.map(keyName).join('·')) + ' 바뀜' : '바뀐 내용 있음'} · 저장 안 됨</span><button class="rs" id="pl-reset">되돌리기</button><button class="sv" id="pl-save">이대로 저장</button></div>` : ''}
   </div>
 
-  <details class="pl-card" ${typesDirty() ? 'open' : ''}><summary><b>수업 종류 관리</b> <span class="hint">이름·색·진행 순서 — 오늘 수업 안내에 나와요</span></summary>${typesCard(true)}</details>`;
+  ${routineCard()}`;
 }
 
-/* 수업 종류 편집 */
-function typesCard(inner) {
-  const types = typeList(planLv);
-  const used = id => Object.keys(PAT).some(k => Object.values(PAT[k] || {}).includes(id)) || Object.keys(draft).some(k => Object.values(draft[k] || {}).includes(id));
-  const body = `${types.map(t => { const tot = t.steps.reduce((a, x) => a + (+x.m || 0), 0); return `<div class="ty">
-      <div class="ty-h"><input type="color" value="${esc(t.color)}" data-tc="${esc(t.id)}"><input class="ty-n" value="${esc(t.name)}" data-tn="${esc(t.id)}">
-        <span class="muted" style="font-size:12px">${tot ? `합계 ${tot}분` : '진행 순서 없음'}</span>
-        ${t.id === 'chun' || t.id === '3800' ? '' : used(t.id) ? '<span class="muted" style="font-size:11px">쓰는 중</span>' : `<button class="icon-btn" data-tdel="${esc(t.id)}">삭제</button>`}</div>
-      <div class="ty-steps">${t.steps.map((x, i) => `<span class="st-chip"><input value="${esc(x.n)}" data-sn="${esc(t.id)}:${i}" placeholder="단계"><input type="number" min="0" max="90" value="${x.m || ''}" data-sm="${esc(t.id)}:${i}" placeholder="분">분<button data-sdel="${esc(t.id)}:${i}" title="빼기">✕</button></span>`).join('')}
-        <button class="icon-btn" data-sadd="${esc(t.id)}">+ 단계</button></div></div>`; }).join('')}
-    <button class="icon-btn" data-tadd="1" style="margin-top:6px">+ 수업 종류 추가</button>`;
-  return inner ? `<div style="margin-top:10px">${body}</div>` : `<div class="pl-card">${body}</div>`;
+/* 없는 수업 바로 만들기: 숙제관리 앱 교재 이름에서 고르거나 직접 입력 */
+function addSelect(k) {
+  const have = new Set(Object.values(typesNow()).map(t => t.name));
+  const books = [...new Set(D.books.filter(b => b.mode !== 'voca' && !b.extra).map(b => String(b.name).replace(/\s*\d+\s*$/, '').replace(/\s*\(.*?\)\s*$/, '').trim()))]
+    .filter(n => n && !have.has(n)).sort((a, b) => a.localeCompare(b, 'ko'));
+  return `<select class="icon-btn add-sel" data-radd="${esc(k)}"><option value="">+ 추가</option><option value="__new">직접 입력…</option>${books.length ? `<optgroup label="숙제관리 앱 교재">${books.map(n => `<option>${esc(n)}</option>`).join('')}</optgroup>` : ''}</select>`;
 }
+const PALETTE = ['#0891b2', '#0f766e', '#9333ea', '#c2410c', '#be123c', '#4d7c0f', '#1d4ed8', '#a16207'];
+function addType(k, name) {
+  const lv = lvOfKey(k), kd = kindOfKey(k), id = 't' + Date.now().toString(36);
+  const n = Object.keys(typesNow()).length;
+  if (!typesDraft) typesDraft = JSON.parse(JSON.stringify(TYPES));
+  typesDraft[id] = { name, lv, kind: kd, color: PALETTE[n % PALETTE.length], steps: [] };
+  const r = JSON.parse(JSON.stringify(reqOf(k))); r.extra = r.extra || {};
+  if (!r.main) r.main = id; else if (mainDays(k).length - Object.values(r.extra).reduce((a, b) => a + b, 0) > 1) r.extra[id] = 1;
+  reqDraft[k] = r; delete recs[lv + '|' + kd];
+  toast(`'${name}' 추가했어요 — 진행 순서는 아래 종류 관리에서 채워요`);
+  render();
+}
+
+/* ── 수업 루틴: 수업 종류마다 하루 진행 순서 (블록을 눌러 쌓고, 분을 맞춘다) ── */
+const BLOCKS = {
+  'mid|class': ['수업보카', '천문장 테스트', '채점', '대표문장', '오답 첨삭', '본수업', '3800 설명', '3800 풀기', '질문·확인', '숙제 안내'],
+  'el|class':  ['수업보카', '단어 테스트', '본수업', '워크북', '리딩', '말하기', '게임', '숙제 안내'],
+  'mid|rv':    ['밀린 홈보카', '수업보카 재시험', '3800 풀기', '질문·초기화', '천문장 고치기', '자습'],
+  'el|rv':     ['밀린 홈보카', '재시험', '자습'],
+  'mid|word':  ['단어장 시험', '틀린 단어 다시', '홈보카 확인'],
+  'el|word':   ['단어장 시험', '틀린 단어 다시', '홈보카 확인'],
+};
+const BLOCK_MIN = { '천문장 테스트':10, '대표문장':10, '오답 첨삭':14, '본수업':25, '3800 설명':10, '3800 풀기':20, '질문·확인':7, '채점':3, '숙제 안내':3, '워크북':10, '리딩':10,
+  '밀린 홈보카':10, '단어장 시험':15, '자습':20, '천문장 고치기':10, '질문·초기화':10 };
+const slotLen = x => minutesOf(x.e) - minutesOf(x.t);
+function classLen(lv, kind) {
+  const c = {}; Object.values(TT).flat().filter(x => slotKind(x) === kind && lvOfKey(unitKey(x)) === lv).forEach(x => { const m = slotLen(x); c[m] = (c[m] || 0) + 1; });
+  const top = Object.keys(c).sort((a, b) => c[b] - c[a])[0];
+  return top ? +top : 45;
+}
+function routineCard() {
+  const lv = planLv, kind = planKind, L = classLen(lv, kind);
+  const keys = planKeys(lv, kind);
+  const usedBy = id => keys.filter(k => { const r = reqOf(k); return r.main === id || ((r.extra || {})[id] || 0) > 0; });
+  const types = typeList(lv, kind).sort((a, b) => usedBy(b.id).length - usedBy(a.id).length);
+  const blocks = BLOCKS[lv + '|' + kind] || [];
+  const one = t => {
+    const tot = t.steps.reduce((a, x) => a + (+x.m || 0), 0), ub = usedBy(t.id);
+    const state = !t.steps.length ? ['', '아직 루틴이 없어요'] : tot === L ? ['ok', `${tot}분 / ${L}분 딱 맞아요`] : tot > L ? ['over', `${tot}분 — ${tot - L}분 넘쳐요`] : ['under', `${tot}분 — ${L - tot}분 남아요`];
+    const bar = t.steps.length ? `<div class="rt-bar">${t.steps.map(x => `<div style="flex:${Math.max(+x.m || 0, 1)};background:${t.color}${'1f'};color:${t.color}">${esc(x.n || '?')}<small>${+x.m || 0}분</small></div>`).join('')}${tot < L ? `<div class="rest" style="flex:${L - tot}">남는 ${L - tot}분</div>` : ''}</div>` : '';
+    return `<div class="rt">
+      <div class="rt-h"><input type="color" value="${esc(t.color)}" data-tc="${esc(t.id)}"><input class="ty-n" value="${esc(t.name)}" data-tn="${esc(t.id)}">
+        <span class="rt-used">${ub.length ? esc(ub.map(keyName).join('·')) + '에서 씀' : '쓰는 반 없음'}</span>
+        <span class="rt-tot ${state[0]}">${state[1]}</span>
+        ${t.id === 'chun' || t.id === '3800' || ub.length ? '' : `<button class="icon-btn" data-tdel="${esc(t.id)}">삭제</button>`}</div>
+      ${bar}
+      <div class="rt-list">${t.steps.map((x, i) => `<div class="rt-row">
+        <span class="rt-no" style="background:${t.color}">${i + 1}</span>
+        <input class="rt-n" value="${esc(x.n)}" data-sn="${esc(t.id)}:${i}" placeholder="이름">
+        <span class="rt-m"><button data-sm2="${esc(t.id)}:${i}:-1">−</button><input type="number" min="0" max="120" value="${+x.m || 0}" data-sm="${esc(t.id)}:${i}"><button data-sm2="${esc(t.id)}:${i}:1">+</button>분</span>
+        <span class="rt-act"><button data-smv="${esc(t.id)}:${i}:-1" ${i ? '' : 'disabled'} title="위로">↑</button><button data-smv="${esc(t.id)}:${i}:1" ${i < t.steps.length - 1 ? '' : 'disabled'} title="아래로">↓</button><button data-sdel="${esc(t.id)}:${i}" title="빼기">✕</button></span>
+      </div>`).join('')}</div>
+      <div class="rt-add"><span class="muted" style="font-size:12px">눌러서 넣기</span>${blocks.map(b => `<button data-bk="${esc(t.id)}|${esc(b)}">+ ${esc(b)}</button>`).join('')}<button data-bk="${esc(t.id)}|">+ 직접 입력</button></div>
+    </div>`;
+  };
+  return `<div class="pl-card"><h3><span class="num">4</span> ${kind === 'class' ? '수업' : KIND_NAME[kind]} 루틴 <span class="hint">하루에 한 가지 수업 · 그 수업을 어떤 순서로 몇 분씩 할지 정해요 (${KIND_NAME[kind]} ${L}분 기준). 오늘 수업 화면에 진행 막대로 나와요.</span></h3>
+    ${types.map(one).join('')}
+    <button class="icon-btn" data-tadd="1" style="margin-top:8px">+ 새 ${kind === 'class' ? '수업' : KIND_NAME[kind]} 종류</button></div>`;
+}
+function typesCard(inner) { return routineCard(); }
 function editTypes(fn) { if (!typesDraft) typesDraft = JSON.parse(JSON.stringify(TYPES)); fn(typesDraft); render(); }
-function setReq(k, fn) { const r = JSON.parse(JSON.stringify(reqOf(k))); r.extra = r.extra || {}; fn(r); reqDraft[k] = r; delete recs[lvOfKey(k)]; render(); }
+function setReq(k, fn) { const r = JSON.parse(JSON.stringify(reqOf(k))); r.extra = r.extra || {}; fn(r); reqDraft[k] = r; delete recs[lvOfKey(k) + '|' + kindOfKey(k)]; render(); }
 function bindPlan() {
   const v = $('view');
   v.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { mode = b.dataset.go; render(); });
@@ -1049,27 +1184,37 @@ function bindPlan() {
   v.querySelectorAll('[data-rmain]').forEach(sl => sl.onchange = () => setReq(sl.dataset.rmain, r => { r.main = sl.value; delete r.extra[sl.value]; }));
   v.querySelectorAll('[data-rx]').forEach(b => b.onclick = () => { const [k, t, dlt] = b.dataset.rx.split('|'); setReq(k, r => { r.extra[t] = Math.max(0, (r.extra[t] || 0) + +dlt); if (!r.extra[t]) delete r.extra[t]; }); });
   const doRec = $('do-rec'); if (doRec) doRec.onclick = () => { recommendAll(planLv); render(); setTimeout(() => { const t = v.querySelector('.rc-tb'); if (t) t.scrollIntoView({ behavior:'smooth', block:'center' }); }, 50); };
-  v.querySelectorAll('[data-alt]').forEach(b => b.onclick = () => { const pk = recs[planLv].picks[b.dataset.alt]; pk.i = (pk.i + 1) % pk.cands.length; render(); });
+  v.querySelectorAll('[data-alt]').forEach(b => b.onclick = () => { const pk = recs[planLv + '|' + planKind].picks[b.dataset.alt]; pk.i = (pk.i + 1) % pk.cands.length; render(); });
   v.querySelectorAll('[data-cell]').forEach(sl => sl.onchange = () => {
     const [k, d] = sl.dataset.cell.split('|');
-    const rec = recs[planLv];
+    const rec = recs[planLv + '|' + planKind];
     const base = rec && rec.picks[k] ? { ...rec.picks[k].cands[rec.picks[k].i].pat } : { ...patOf(k) };
     base['d' + d] = sl.value;
     if (rec && rec.picks[k]) { const ev = evalPattern(k, base, planOpt); rec.picks[k].cands.splice(rec.picks[k].i, 1, { pat: base, ...ev }); }
     else draft[k] = base;
     render();
   });
-  const a = $('po-90'); if (a) a.onchange = e => { planOpt.avoid90 = e.target.checked; if (recs[planLv]) recommendAll(planLv); render(); };
-  const l = $('po-al'); if (l) l.onchange = e => { planOpt.align = e.target.checked; if (recs[planLv]) recommendAll(planLv); render(); };
+  const a = $('po-90'); if (a) a.onchange = e => { planOpt.avoid90 = e.target.checked; if (recs[planLv + '|' + planKind]) recommendAll(planLv); render(); };
+  const l = $('po-al'); if (l) l.onchange = e => { planOpt.align = e.target.checked; if (recs[planLv + '|' + planKind]) recommendAll(planLv); render(); };
   // 수업 종류 편집
   v.querySelectorAll('[data-tn]').forEach(x => x.onchange = () => editTypes(T => { T[x.dataset.tn].name = x.value.trim() || T[x.dataset.tn].name; }));
   v.querySelectorAll('[data-tc]').forEach(x => x.onchange = () => editTypes(T => { T[x.dataset.tc].color = x.value; }));
   v.querySelectorAll('[data-sn]').forEach(x => x.onchange = () => { const [id, i] = x.dataset.sn.split(':'); editTypes(T => { T[id].steps[+i].n = x.value; }); });
   v.querySelectorAll('[data-sm]').forEach(x => x.onchange = () => { const [id, i] = x.dataset.sm.split(':'); editTypes(T => { T[id].steps[+i].m = +x.value || 0; }); });
   v.querySelectorAll('[data-sdel]').forEach(x => x.onclick = () => { const [id, i] = x.dataset.sdel.split(':'); editTypes(T => { T[id].steps.splice(+i, 1); }); });
-  v.querySelectorAll('[data-sadd]').forEach(x => x.onclick = () => editTypes(T => { T[x.dataset.sadd].steps.push({ n:'', m:5 }); }));
+  v.querySelectorAll('[data-sm2]').forEach(x => x.onclick = () => { const [id, i, d] = x.dataset.sm2.split(':'); editTypes(T => { const st = T[id].steps[+i]; st.m = Math.max(0, (+st.m || 0) + +d); }); });
+  v.querySelectorAll('[data-smv]').forEach(x => x.onclick = () => { const [id, i, d] = x.dataset.smv.split(':'); editTypes(T => { const a = T[id].steps, j = +i + +d; if (j < 0 || j >= a.length) return; [a[+i], a[j]] = [a[j], a[+i]]; }); });
+  v.querySelectorAll('[data-bk]').forEach(x => x.onclick = () => { const p = x.dataset.bk.indexOf('|'), id = x.dataset.bk.slice(0, p); let n = x.dataset.bk.slice(p + 1);
+    if (!n) { n = (prompt('단계 이름') || '').trim(); if (!n) return; }
+    editTypes(T => { T[id].steps.push({ n, m: BLOCK_MIN[n] || 5 }); }); });
   v.querySelectorAll('[data-tdel]').forEach(x => x.onclick = () => editTypes(T => { delete T[x.dataset.tdel]; }));
-  v.querySelectorAll('[data-tadd]').forEach(x => x.onclick = () => editTypes(T => { T['t' + Date.now().toString(36)] = { name:'새 수업', lv: planLv, color: planLv === 'el' ? '#0891b2' : '#0f766e', steps:[] }; }));
+  v.querySelectorAll('[data-tadd]').forEach(x => x.onclick = () => editTypes(T => { T['t' + Date.now().toString(36)] = { name:'새 ' + KIND_NAME[planKind], lv: planLv, kind: planKind, color: PALETTE[Object.keys(T).length % PALETTE.length], steps:[] }; }));
+  v.querySelectorAll('[data-pkind]').forEach(b => b.onclick = () => { planKind = b.dataset.pkind; render(); });
+  v.querySelectorAll('[data-radd]').forEach(sl => sl.onchange = () => {
+    let name = sl.value; if (!name) return;
+    if (name === '__new') { name = (prompt('새 수업 이름') || '').trim(); if (!name) { sl.value = ''; return; } }
+    addType(sl.dataset.radd, name);
+  });
   const rs = $('pl-reset'); if (rs) rs.onclick = () => { recs = {}; draft = {}; reqDraft = {}; typesDraft = null; render(); };
   const sv = $('pl-save'); if (sv) sv.onclick = savePatterns;
 }
@@ -1200,7 +1345,8 @@ $('btn-set').onclick = () => openDlg();
 $('dlg-close').onclick = () => $('dlg').close();
 $('dlg-group').onchange = e => { dlgGroup = e.target.value; renderDlg(); };
 document.addEventListener('visibilitychange', () => { if (!document.hidden && D) load(); });
-setInterval(() => { if (!document.hidden) load(); }, 3 * 60 * 1000);   // 3분마다 LMS 다시 읽기
+setInterval(() => { if (!document.hidden) load(); }, 3 * 60 * 1000);
+setInterval(() => { if (!document.hidden && mode === 'today' && D) render(); }, 60 * 1000);   // 진행 막대 1분마다   // 3분마다 LMS 다시 읽기
 
 { const h = new Date().getHours(); level = h < 17 ? 'el' : 'mid'; }   // 5시 전에는 초등, 그 뒤에는 중등부터
 render();
