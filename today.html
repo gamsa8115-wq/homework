@@ -191,6 +191,36 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
 .gchip.miss{background:var(--red);color:#fff}
 .gchip button{border:none;background:none;color:inherit;opacity:.7;padding:0 3px}
 .tt-del{margin-left:auto;border:1px solid var(--bd);background:var(--surface);border-radius:8px;width:28px;height:28px;color:var(--mu)}
+.pl-head p b{color:var(--acc)}
+.num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--acc);color:#fff;font-size:12px;font-weight:800}
+.rq{display:grid;grid-template-columns:150px auto 1fr;gap:6px 14px;align-items:center;padding:10px 0;border-top:1px solid var(--bd)}
+.rq:first-of-type{border-top:none}
+.rq-n b{font-size:15px;display:block}.rq-n small{color:var(--mu);font-size:12px}
+.rq-f{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.rq-l{font-size:12px;color:var(--mu)}
+.rq-auto{font-weight:800;font-size:13px}
+.rq-warn{grid-column:1 / -1;color:var(--red);font-size:12px}
+.step{display:inline-flex;align-items:center;gap:4px;border:1.5px solid var(--bd);border-radius:99px;padding:2px 4px 2px 10px;font-size:13px;font-weight:700;color:var(--mu)}
+.step button{border:none;background:var(--s2);border-radius:50%;width:24px;height:24px;font-weight:800;color:var(--tx)}
+.step button:disabled{opacity:.3;cursor:default}
+.step b{min-width:12px;text-align:center}
+.big-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;border:none;border-radius:12px;background:var(--acc);color:#fff;font-size:16px;font-weight:800;padding:13px}
+.big-btn .num{background:#fff;color:var(--acc)}
+.rc-wrap{overflow-x:auto}
+.rc-tb{width:100%;border-collapse:separate;border-spacing:4px;min-width:560px}
+.rc-tb thead th{font-size:12px;color:var(--mu);font-weight:700}
+.rc-tb tbody th{text-align:left;font-size:14px;white-space:nowrap;vertical-align:middle;padding-right:4px}
+.rc-tb .alt{display:block;margin-top:3px;border:1px solid var(--bd);background:var(--surface);border-radius:99px;font-size:11px;padding:1px 8px;color:var(--mu);font-weight:400}
+.rc{border:1.5px solid;border-radius:9px;text-align:center;padding:3px 2px;min-height:42px;display:flex;flex-direction:column;justify-content:center}
+.rc.chg{border-style:dashed;border-width:2px}
+.rc select{border:none;background:transparent;font-weight:800;font-size:13px;width:100%;text-align:center;text-align-last:center;-webkit-appearance:none;appearance:none;cursor:pointer}
+.rc small{font-size:11px;opacity:.75}
+.rc-tb tr.why td{font-size:12px;padding:0 0 8px}
+.rc-tb tr.why span{margin-right:12px;display:inline-block}
+.w-good{color:var(--grn)}.w-warn{color:#b45309}.w-info{color:var(--mu)}
+details.pl-card summary{cursor:pointer;list-style:none}
+details.pl-card summary .hint{font-weight:400;color:var(--mu);font-size:12px;margin-left:6px}
+@media (max-width:640px){.rq{grid-template-columns:1fr}}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1f2937;color:#fff;padding:8px 14px;border-radius:99px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
 .toast.show{opacity:1}
 
@@ -396,11 +426,12 @@ async function getJSON(path) {
 async function load() {
   setSync('load', 'LMS 불러오는 중…');
   try {
-    const vals = await Promise.all([...READ_KEYS.map(k => getJSON(`${FB_PATH}/${k}`)), getJSON(VIEW_PATH), getJSON(PAT_PATH), getJSON(MAP_PATH), getJSON(TT_PATH), getJSON(TYPES_PATH)]);
+    const vals = await Promise.all([...READ_KEYS.map(k => getJSON(`${FB_PATH}/${k}`)), getJSON(VIEW_PATH), getJSON(PAT_PATH), getJSON(MAP_PATH), getJSON(TT_PATH), getJSON(TYPES_PATH), getJSON(REQ_PATH)]);
     const n = READ_KEYS.length;
     PAT = vals[n + 1] || {};
     GMAP = vals[n + 2] || {};
     const ttRaw = vals[n + 3], typesRaw = vals[n + 4];
+    REQ = vals[n + 5] || {};
     if (!typesDirty()) TYPES = normTypes(typesRaw);
     const raw = {}; READ_KEYS.forEach((k, i) => raw[k] = vals[i]);
     const tomb = new Set(Object.keys((raw._tomb && raw._tomb.students) || {}).map(String));
@@ -774,7 +805,8 @@ function stepsLine(id) {
 }
 function planKeys(lv) {
   const ks = new Set(); Object.values(TT).flat().filter(isClassSlot).forEach(x => ks.add(keyOf(x)));
-  return [...ks].filter(k => !lv || lvOfKey(k) === lv).sort((a, b) => a.localeCompare(b, 'ko', { numeric:true }));
+  const first = k => Math.min(...Object.values(TT).flat().filter(x => isClassSlot(x) && keyOf(x) === k).map(x => minutesOf(x.t)));
+  return [...ks].filter(k => !lv || lvOfKey(k) === lv).sort((a, b) => (first(a) - first(b)) || a.localeCompare(b, 'ko', { numeric:true }));
 }
 const defType = k => lvOfKey(k) === 'mid' ? 'chun' : '';
 function patOf(k) { return draft[k] || PAT[k] || DEFAULT_PAT[k] || {}; }
@@ -851,7 +883,7 @@ function evalPattern(k, pat, opt) {
 
   // 3) 주 수업이 아닌 종류: 다른 반과 같은 요일이면 준비 한 번 / 너무 몰리면 경고
   ids.filter(t => t !== major).forEach(t => byType[t].forEach(d => {
-    const others = planKeys().filter(x => x !== k && mainSlot(x, d) && effType(x, patOf(x), d) === t);
+    const others = planKeys().filter(x => x !== k && mainSlot(x, d) && effType(x, (peerPat && peerPat[x]) || patOf(x), d) === t);
     if (others.length) { if (opt.align) pen -= 1; notes.push(['good', `${others.map(keyName).join('·')}과 같은 ${DN[d]}요일 ${tName(t)} — 준비 한 번으로 이어서`]); }
     const load = 1 + others.length;
     if (load >= 3) { pen += 1; notes.push(['warn', `${DN[d]}요일 ${tName(t)} 수업 ${load}반 연속`]); }
@@ -880,113 +912,155 @@ function candidates(k, opt) {
 }
 const samePat = (k, a, b) => JSON.stringify(normPat(k, a)) === JSON.stringify(normPat(k, b));
 
+/* ══ 수업 패턴 추천 — 필요사항 입력 → 계산 → 추천 시간표 ══
+   필요사항: homework_v4/todayView/planReq/<반> = { main: 주로 하는 수업, extra: { 수업종류: 주 몇 번 } } */
+const REQ_PATH = FB_PATH + '/todayView/planReq';
+let REQ = {};            // 저장된 필요사항
+let reqDraft = {};       // 고치는 중
+let recs = {};           // 추천 결과 { mid|el: { picks: { 반: { cands, i } } } }
+let peerPat = null;      // 추천 계산 중 다른 반의 (임시) 패턴
+const reqDirty = k => !!reqDraft[k] && JSON.stringify(reqDraft[k]) !== JSON.stringify(REQ[k] || null);
+
+/* 이 반이 주로 하는 수업 추측: 저장된 패턴 → 학생 교재(Phonics/Basic) → 첫 종류 */
+function guessMain(k) {
+  const lv = lvOfKey(k), types = typeList(lv).map(t => t.id);
+  const saved = PAT[k] || DEFAULT_PAT[k];
+  if (saved) { const c = {}; mainDays(k).forEach(d => { const t = effType(k, saved, d); if (t) c[t] = (c[t] || 0) + 1; }); const top = Object.keys(c).sort((a, b) => c[b] - c[a])[0]; if (top) return top; }
+  if (lv === 'mid') return 'chun';
+  const gs = k.split('+'), cnt = { phonics:0, basic:0 };
+  D.students.filter(s => gs.includes(s.group)).forEach(s => { const m = (bookInfo(s).elMain || '').toLowerCase(); if (/^(phonics|alphabet)/.test(m)) cnt.phonics++; else if (/^(basic|story)/.test(m)) cnt.basic++; });
+  const g = cnt.phonics || cnt.basic ? (cnt.phonics >= cnt.basic ? 'phonics' : 'basic') : '';
+  return types.includes(g) ? g : (types[0] || '');
+}
+function reqOf(k) {
+  if (reqDraft[k]) return reqDraft[k];
+  if (REQ[k]) return REQ[k];
+  const main = guessMain(k), extra = {};
+  const saved = PAT[k] || DEFAULT_PAT[k];
+  if (saved) mainDays(k).forEach(d => { const t = effType(k, saved, d); if (t && t !== main) extra[t] = (extra[t] || 0) + 1; });
+  return { main, extra };
+}
+function countsFromReq(k) {
+  const r = reqOf(k), n = mainDays(k).length, c = {};
+  let used = 0;
+  Object.keys(r.extra || {}).forEach(t => { if (t !== r.main && typesNow()[t] && r.extra[t] > 0) { c[t] = r.extra[t]; used += r.extra[t]; } });
+  if (r.main && n - used > 0) c[r.main] = n - used;
+  return used <= n && r.main ? c : null;
+}
+
+/* 모든 반을 함께 계산: 다른 반의 선택을 보면서 두 번 돌려 요일을 맞춘다 */
+function recommendAll(lv) {
+  const keys = planKeys(lv), picks = {};
+  peerPat = {};
+  for (let pass = 0; pass < 2; pass++) {
+    keys.forEach(k => {
+      const counts = countsFromReq(k); if (!counts) { picks[k] = null; return; }
+      const cands = assignments(mainDays(k), counts).map(pat => ({ pat, ...evalPattern(k, pat, planOpt) })).sort((a, b) => a.pen - b.pen).slice(0, 3);
+      picks[k] = { cands, i: 0 };
+      peerPat[k] = cands[0] ? cands[0].pat : {};
+    });
+  }
+  peerPat = null;
+  recs[lv] = { picks };
+}
+
 function planView() {
-  let keys = planKeys(planLv);
-  if (!keys.includes(planGroup)) planGroup = keys[0] || '';
-  const k = planGroup;
-  const lvTabs = `<div class="pl-groups">${[['mid','중등'],['el','초등']].map(([l, n]) => `<button class="${planLv === l ? 'on' : ''}" data-plv="${l}">${n}</button>`).join('')}</div>`;
-  const head = `<div class="pl-head"><h2>수업 패턴 설계</h2><p>반마다 요일별로 어떤 수업을 할지 정해요. 칸을 바꾸면 바로 평가가 나오고, 저장하면 오늘 수업 화면이 그 요일에 맞게 바뀌어요.</p></div>`;
-  if (!k) return head + lvTabs + `<div class="pl-card">시간표에 ${planLv === 'el' ? '초등' : '중등'} 수업이 없어요. <button class="icon-btn" data-go="tt">시간표 열기</button></div>` + typesCard() + saveBar();
+  const lv = planLv, keys = planKeys(lv), types = typeList(lv);
+  const head = `<div class="pl-head"><h2>수업 패턴 추천</h2><p><b>①</b> 반마다 필요한 수업을 적고 → <b>②</b> 추천 받기를 누르면 → <b>③</b> 요일별 시간표를 계산해서 보여 줘요. 마음에 들면 저장하세요.</p></div>`;
+  const lvTabs = `<div class="pl-groups">${[['mid','중등'],['el','초등']].map(([l, n]) => `<button class="${lv === l ? 'on' : ''}" data-plv="${l}">${n}</button>`).join('')}</div>`;
+  if (!keys.length) return head + lvTabs + `<div class="pl-card">시간표에 ${lv === 'el' ? '초등' : '중등'} 수업이 없어요. <button class="icon-btn" data-go="tt">시간표 열기</button></div>`;
 
-  const pat = patOf(k), days = mainDays(k), types = typeList(planLv);
-  const cur = evalPattern(k, pat, planOpt);
-  const cands = candidates(k, planOpt);
-  const curRank = cands ? cands.findIndex(c => samePat(k, c.pat, pat)) : -1;
-  const undecided = days.some(d => !effType(k, pat, d));
-  const rankTxt = undecided ? ['r3', '아직 다 정하지 않았어요'] : curRank === 0 ? ['r1', '가장 좋은 틀'] : curRank > 0 && curRank <= 2 ? ['r2', `${curRank + 1}번째로 좋은 틀`] : curRank > 2 ? ['r3', '더 나은 틀이 있어요'] : ['r2', '아래 추천과 일수가 달라요'];
-
-  const cell = (d, row) => {
-    if (row === 'main') {
-      const m = mainSlot(k, d); if (!m) return '<div class="c none">—</div>';
-      const t = effType(k, pat, d), c = t ? tColor(t) : '#9ca3af';
-      return `<div class="c sel" style="background:${c}1f;border-color:${c}66"><select data-day="${d}" style="color:${c}">${planLv === 'el' ? `<option value="" ${t ? '' : 'selected'}>미정</option>` : ''}${types.map(x => `<option value="${esc(x.id)}" ${x.id === t ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select><small>${m.t}</small></div>`;
-    }
-    const xs = otherSlots(k, d, row);
-    return xs.length ? `<div class="c ${row}">${xs.map(x => `${x.t}${x.school ? ' ' + esc(x.school) : row === 'word' && ttList(x).length > 1 ? ' 함께' : ' 전체'}`).join('<br>')}</div>` : '<div class="c none">—</div>';
-  };
-  const grid = `<div class="wk"><div></div>${[1,2,3,4,5].map(d => `<div class="h">${DN[d]}</div>`).join('')}
-    <div class="rl">수업</div>${[1,2,3,4,5].map(d => cell(d, 'main')).join('')}
-    <div class="rl">RV</div>${[1,2,3,4,5].map(d => cell(d, 'rv')).join('')}
-    <div class="rl">단어</div>${[1,2,3,4,5].map(d => cell(d, 'word')).join('')}</div>`;
-
-  const noteHtml = ns => `<ul class="notes">${ns.map(([t, x]) => `<li class="n-${t}"><i>${t === 'good' ? '✓' : t === 'warn' ? '!' : '·'}</i><span>${esc(x)}</span></li>`).join('')}</ul>`;
-  const strip = p => `<div class="strip">${[1,2,3,4,5].map(d => { const has = days.includes(d); const t = has ? effType(k, p, d) : ''; const c = t ? tColor(t) : '';
-    return `<span title="${has && t ? esc(tName(t)) : ''}" style="${has && t ? `background:${c}1f;color:${c};font-weight:700` : ''}">${DN[d]}${has && t ? ' ' + esc(tName(t)) : ''}</span>`; }).join('')}</div>`;
-
-  const counts = countsOf(k), sum = Object.values(counts).reduce((a, b) => a + b, 0);
-  const countSel = types.map(x => `<label>${esc(x.name)} <select class="icon-btn" data-cnt="${esc(x.id)}">${Array.from({ length: days.length + 1 }, (_, n) => `<option value="${n}" ${(counts[x.id] || 0) === n ? 'selected' : ''}>${n}일</option>`).join('')}</select></label>`).join('');
-  const candHtml = !cands ? `<p class="muted" style="margin:6px 0 0">일수를 합쳐서 ${days.length}일이 되게 골라 주세요 (지금 ${sum}일).</p>`
-    : cands.slice(0, 3).map((c, i) => {
-      const isCur = samePat(k, c.pat, pat);
-      const top = c.notes.filter(n => n[0] !== 'info').slice(0, 3).map(n => (n[0] === 'good' ? '✓ ' : '! ') + n[1]).join(' · ');
-      return `<div class="cand"><span class="no ${i === 0 ? 'best' : ''}">${i === 0 ? '추천' : (i + 1) + '번째'}</span>${strip(c.pat)}
-        <span class="act">${isCur ? '<span class="cur">지금 틀</span>' : `<button class="icon-btn" data-use="${i}">이걸로</button>`}</span>
-        <div class="why">${esc(top)}</div></div>`;
-    }).join('');
-
-  // 요일별 수업 (같은 단계 반 모두)
-  const loadRows = [1,2,3,4,5].map(d => {
-    const ms = (TT[d] || []).filter(x => isClassSlot(x) && lvOfKey(keyOf(x)) === planLv);
-    return `<tr><th>${DN[d]}</th><td>${ms.map(m => { const kk = keyOf(m), t = effType(kk, patOf(kk), d), c = t ? tColor(t) : '#9ca3af';
-      return `<span class="tag" style="background:${c}1f;color:${c}">${m.t} ${esc(keyName(kk))} ${esc(t ? tName(t) : '미정')}</span>`; }).join('') || '—'}</td></tr>`;
+  // ① 필요사항
+  const reqRows = keys.map(k => {
+    const r = reqOf(k), days = mainDays(k), n = days.length, c = countsFromReq(k);
+    const used = Object.keys(r.extra || {}).filter(t => t !== r.main && typesNow()[t]).reduce((a, t) => a + (r.extra[t] || 0), 0);
+    const others = types.filter(t => t.id !== r.main);
+    return `<div class="rq">
+      <div class="rq-n"><b>${esc(keyName(k))}</b><small>주 ${n}회 · ${days.map(d => DN[d]).join('')}</small></div>
+      <div class="rq-f"><span class="rq-l">주로</span><select data-rmain="${esc(k)}" class="icon-btn">${lv === 'el' && !r.main ? '<option value="">고르세요</option>' : ''}${types.map(t => `<option value="${esc(t.id)}" ${t.id === r.main ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select>
+        ${r.main ? `<span class="rq-auto" style="color:${tColor(r.main)}">${Math.max(0, n - used)}번</span>` : ''}</div>
+      <div class="rq-f">${others.length ? `<span class="rq-l">그 밖에</span>` : ''}${others.map(t => { const v = (r.extra || {})[t.id] || 0;
+        return `<span class="step" style="${v ? `border-color:${t.color};color:${t.color}` : ''}">${esc(t.name)} <button data-rx="${esc(k)}|${esc(t.id)}|-1" ${v ? '' : 'disabled'}>−</button><b>${v}</b><button data-rx="${esc(k)}|${esc(t.id)}|1" ${used >= n - 1 ? 'disabled' : ''}>+</button></span>`; }).join('')}</div>
+      ${!c ? `<div class="rq-warn">${r.main ? '횟수가 주 수업 수보다 많아요' : '주로 하는 수업을 골라 주세요'}</div>` : ''}
+    </div>`;
   }).join('');
 
+  // ③ 결과 (추천 또는 지금 저장된 것)
+  const rec = recs[lv], showRec = !!rec;
+  const patFor = k => showRec && rec.picks[k] ? rec.picks[k].cands[rec.picks[k].i].pat : patOf(k);
+  const cell = (k, d) => {
+    const m = mainSlot(k, d); if (!m) return '<td class="rc-x"></td>';
+    const t = effType(k, patFor(k), d), saved = effType(k, PAT[k] || DEFAULT_PAT[k] || {}, d), c = t ? tColor(t) : '#9ca3af';
+    return `<td><div class="rc ${showRec && t !== saved ? 'chg' : ''}" style="background:${c}1a;border-color:${c}55;color:${c}">
+      <select data-cell="${esc(k)}|${d}" style="color:${c}">${lv === 'el' && !t ? '<option value="">미정</option>' : ''}${types.map(x => `<option value="${esc(x.id)}" ${x.id === t ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>
+      <small>${m.t}</small></div></td>`;
+  };
+  const why = k => {
+    const pk = showRec && rec.picks[k];
+    const ev = pk ? pk.cands[pk.i] : evalPattern(k, patFor(k), planOpt);
+    const ns = ev.notes.filter(n => n[0] !== 'info').slice(0, 2).concat(ev.notes.filter(n => n[0] === 'info' && /88p/.test(n[1])));
+    return ns.map(([t, x]) => `<span class="w-${t}">${t === 'good' ? '✓' : t === 'warn' ? '!' : '·'} ${esc(x)}</span>`).join('');
+  };
+  const rows = keys.map(k => {
+    const pk = showRec && rec.picks[k];
+    return `<tr><th>${esc(keyName(k))}${pk && pk.cands.length > 1 ? `<button class="alt" data-alt="${esc(k)}">다른 안 ${pk.i + 1}/${pk.cands.length}</button>` : ''}</th>${[1,2,3,4,5].map(d => cell(k, d)).join('')}</tr>
+      <tr class="why"><td></td><td colspan="5">${why(k)}</td></tr>`;
+  }).join('');
+  const changed = showRec ? keys.filter(k => rec.picks[k] && !samePat(k, patFor(k), PAT[k] || DEFAULT_PAT[k] || {})) : keys.filter(dirty);
+  const anyReq = Object.keys(reqDraft).some(reqDirty) || Object.keys(recs).some(l => l !== lv);
+
   return head + lvTabs + `
-  <div class="pl-groups">${keys.map(x => `<button class="${x === k ? 'on' : ''}" data-g="${esc(x)}">${esc(keyName(x))}<small>주 ${mainDays(x).length}회${dirty(x) ? ' · 수정 중' : ''}</small></button>`).join('')}</div>
-
-  <div class="pl-card"><h3>${esc(keyName(k))} 이번 주 틀 <span class="hint">수업 칸에서 수업 종류를 고르세요</span></h3>${grid}</div>
-
-  <div class="pl-card"><h3>이 틀 평가</h3>
-    <div class="verdict"><span class="rank ${rankTxt[0]}">${rankTxt[1]}</span>${cands && curRank >= 0 ? `<span class="muted" style="font-size:12px">같은 일수로 가능한 틀 ${cands.length}개 중 ${curRank + 1}위</span>` : ''}</div>
-    ${noteHtml(cur.notes)}</div>
-
-  <div class="pl-card"><h3>추천 받기 <span class="hint">주 ${days.length}회를 어떻게 나눌지 정하면, 가능한 배치를 모두 비교해요</span></h3>
-    <div class="opts">${countSel}</div>
-    <div class="opts">
-      ${planLv === 'mid' ? `<label><input type="checkbox" id="po-90" ${planOpt.avoid90 ? 'checked' : ''}> 3800 90분 연속 피하기</label>` : ''}
-      <label><input type="checkbox" id="po-al" ${planOpt.align ? 'checked' : ''}> 다른 반과 같은 요일 맞추기</label>
+  <div class="pl-card"><h3><span class="num">1</span> 반마다 필요한 수업 <span class="hint">"주로"는 남는 날을 모두 채워요. 그 밖의 수업만 횟수를 정하세요.</span></h3>
+    ${reqRows}
+    <div class="opts" style="margin:10px 0 0">
+      ${lv === 'mid' ? `<label><input type="checkbox" id="po-90" ${planOpt.avoid90 ? 'checked' : ''}> 3800 수업이 RV와 붙어 90분이 되지 않게</label>` : ''}
+      <label><input type="checkbox" id="po-al" ${planOpt.align ? 'checked' : ''}> 같은 수업은 다른 반과 같은 요일로 (준비 한 번)</label>
     </div>
-    ${candHtml}</div>
+    <button class="big-btn" id="do-rec"><span class="num">2</span> 추천 받기</button>
+  </div>
 
-  <div class="pl-card"><h3>요일별 ${planLv === 'el' ? '초등' : '중등'} 수업 <span class="hint">저장 전 수정 내용 포함</span></h3>
-    <table class="load-tb"><tbody>${loadRows}</tbody></table></div>
-  ${typesCard()}
-  ${saveBar()}`;
+  <div class="pl-card"><h3><span class="num">3</span> ${showRec ? '추천 시간표' : '지금 시간표'} <span class="hint">${showRec ? '점선 칸이 지금과 달라지는 곳이에요. 칸을 눌러 직접 바꿀 수도 있어요.' : '추천 받기를 누르면 여기에 계산 결과가 나와요.'}</span></h3>
+    <div class="rc-wrap"><table class="rc-tb"><thead><tr><th></th>${[1,2,3,4,5].map(d => `<th>${DN[d]}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
+    ${changed.length || anyReq || typesDirty() ? `<div class="savebar"><span>${changed.length ? esc(changed.map(keyName).join('·')) + ' 바뀜' : '필요사항 바뀜'} · 저장 안 됨</span><button class="rs" id="pl-reset">되돌리기</button><button class="sv" id="pl-save">이대로 저장</button></div>` : ''}
+  </div>
+
+  <details class="pl-card" ${typesDirty() ? 'open' : ''}><summary><b>수업 종류 관리</b> <span class="hint">이름·색·진행 순서 — 오늘 수업 안내에 나와요</span></summary>${typesCard(true)}</details>`;
 }
 
 /* 수업 종류 편집 */
-function typesCard() {
+function typesCard(inner) {
   const types = typeList(planLv);
   const used = id => Object.keys(PAT).some(k => Object.values(PAT[k] || {}).includes(id)) || Object.keys(draft).some(k => Object.values(draft[k] || {}).includes(id));
-  return `<div class="pl-card"><h3>${planLv === 'el' ? '초등' : '중등'} 수업 종류 <span class="hint">이름과 진행 순서를 정하면 오늘 수업 안내에 그대로 나와요</span></h3>
-    ${types.map(t => { const tot = t.steps.reduce((a, x) => a + (+x.m || 0), 0); return `<div class="ty">
+  const body = `${types.map(t => { const tot = t.steps.reduce((a, x) => a + (+x.m || 0), 0); return `<div class="ty">
       <div class="ty-h"><input type="color" value="${esc(t.color)}" data-tc="${esc(t.id)}"><input class="ty-n" value="${esc(t.name)}" data-tn="${esc(t.id)}">
         <span class="muted" style="font-size:12px">${tot ? `합계 ${tot}분` : '진행 순서 없음'}</span>
-        ${t.id === 'chun' || t.id === '3800' ? '<span class="muted" style="font-size:11px">평가 규칙 있음</span>' : used(t.id) ? '<span class="muted" style="font-size:11px">쓰는 중</span>' : `<button class="icon-btn" data-tdel="${esc(t.id)}">삭제</button>`}</div>
+        ${t.id === 'chun' || t.id === '3800' ? '' : used(t.id) ? '<span class="muted" style="font-size:11px">쓰는 중</span>' : `<button class="icon-btn" data-tdel="${esc(t.id)}">삭제</button>`}</div>
       <div class="ty-steps">${t.steps.map((x, i) => `<span class="st-chip"><input value="${esc(x.n)}" data-sn="${esc(t.id)}:${i}" placeholder="단계"><input type="number" min="0" max="90" value="${x.m || ''}" data-sm="${esc(t.id)}:${i}" placeholder="분">분<button data-sdel="${esc(t.id)}:${i}" title="빼기">✕</button></span>`).join('')}
         <button class="icon-btn" data-sadd="${esc(t.id)}">+ 단계</button></div></div>`; }).join('')}
-    <button class="icon-btn" data-tadd="1" style="margin-top:6px">+ 수업 종류 추가</button></div>`;
-}
-function saveBar() {
-  const ds = planKeys().filter(dirty).map(keyName);
-  const parts = [...ds, ...(typesDirty() ? ['수업 종류'] : [])];
-  return parts.length ? `<div class="savebar"><span>${esc(parts.join('·'))} 저장 안 됨</span><button class="rs" id="pl-reset">되돌리기</button><button class="sv" id="pl-save">저장</button></div>` : '';
+    <button class="icon-btn" data-tadd="1" style="margin-top:6px">+ 수업 종류 추가</button>`;
+  return inner ? `<div style="margin-top:10px">${body}</div>` : `<div class="pl-card">${body}</div>`;
 }
 function editTypes(fn) { if (!typesDraft) typesDraft = JSON.parse(JSON.stringify(TYPES)); fn(typesDraft); render(); }
+function setReq(k, fn) { const r = JSON.parse(JSON.stringify(reqOf(k))); r.extra = r.extra || {}; fn(r); reqDraft[k] = r; delete recs[lvOfKey(k)]; render(); }
 function bindPlan() {
   const v = $('view');
   v.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { mode = b.dataset.go; render(); });
   v.querySelectorAll('[data-plv]').forEach(b => b.onclick = () => { planLv = b.dataset.plv; render(); });
-  v.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { planGroup = b.dataset.g; render(); });
-  v.querySelectorAll('[data-day]').forEach(sl => sl.onchange = () => {
-    const k = planGroup, p = { ...patOf(k) }; p['d' + sl.dataset.day] = sl.value; draft[k] = p; delete planCounts[k]; render();
+  v.querySelectorAll('[data-rmain]').forEach(sl => sl.onchange = () => setReq(sl.dataset.rmain, r => { r.main = sl.value; delete r.extra[sl.value]; }));
+  v.querySelectorAll('[data-rx]').forEach(b => b.onclick = () => { const [k, t, dlt] = b.dataset.rx.split('|'); setReq(k, r => { r.extra[t] = Math.max(0, (r.extra[t] || 0) + +dlt); if (!r.extra[t]) delete r.extra[t]; }); });
+  const doRec = $('do-rec'); if (doRec) doRec.onclick = () => { recommendAll(planLv); render(); setTimeout(() => { const t = v.querySelector('.rc-tb'); if (t) t.scrollIntoView({ behavior:'smooth', block:'center' }); }, 50); };
+  v.querySelectorAll('[data-alt]').forEach(b => b.onclick = () => { const pk = recs[planLv].picks[b.dataset.alt]; pk.i = (pk.i + 1) % pk.cands.length; render(); });
+  v.querySelectorAll('[data-cell]').forEach(sl => sl.onchange = () => {
+    const [k, d] = sl.dataset.cell.split('|');
+    const rec = recs[planLv];
+    const base = rec && rec.picks[k] ? { ...rec.picks[k].cands[rec.picks[k].i].pat } : { ...patOf(k) };
+    base['d' + d] = sl.value;
+    if (rec && rec.picks[k]) { const ev = evalPattern(k, base, planOpt); rec.picks[k].cands.splice(rec.picks[k].i, 1, { pat: base, ...ev }); }
+    else draft[k] = base;
+    render();
   });
-  v.querySelectorAll('[data-cnt]').forEach(sl => sl.onchange = () => {
-    const k = planGroup, c = { ...countsOf(k) }; c[sl.dataset.cnt] = +sl.value; if (!c[sl.dataset.cnt]) delete c[sl.dataset.cnt]; planCounts[k] = c; render();
-  });
-  v.querySelectorAll('[data-use]').forEach(b => b.onclick = () => { draft[planGroup] = { ...candidates(planGroup, planOpt)[+b.dataset.use].pat }; render(); });
-  const a = $('po-90'); if (a) a.onchange = e => { planOpt.avoid90 = e.target.checked; render(); };
-  const l = $('po-al'); if (l) l.onchange = e => { planOpt.align = e.target.checked; render(); };
+  const a = $('po-90'); if (a) a.onchange = e => { planOpt.avoid90 = e.target.checked; if (recs[planLv]) recommendAll(planLv); render(); };
+  const l = $('po-al'); if (l) l.onchange = e => { planOpt.align = e.target.checked; if (recs[planLv]) recommendAll(planLv); render(); };
   // 수업 종류 편집
   v.querySelectorAll('[data-tn]').forEach(x => x.onchange = () => editTypes(T => { T[x.dataset.tn].name = x.value.trim() || T[x.dataset.tn].name; }));
   v.querySelectorAll('[data-tc]').forEach(x => x.onchange = () => editTypes(T => { T[x.dataset.tc].color = x.value; }));
@@ -996,11 +1070,13 @@ function bindPlan() {
   v.querySelectorAll('[data-sadd]').forEach(x => x.onclick = () => editTypes(T => { T[x.dataset.sadd].steps.push({ n:'', m:5 }); }));
   v.querySelectorAll('[data-tdel]').forEach(x => x.onclick = () => editTypes(T => { delete T[x.dataset.tdel]; }));
   v.querySelectorAll('[data-tadd]').forEach(x => x.onclick = () => editTypes(T => { T['t' + Date.now().toString(36)] = { name:'새 수업', lv: planLv, color: planLv === 'el' ? '#0891b2' : '#0f766e', steps:[] }; }));
-  const rs = $('pl-reset'); if (rs) rs.onclick = () => { planKeys().forEach(k => { if (dirty(k)) delete draft[k]; }); typesDraft = null; planCounts = {}; render(); };
+  const rs = $('pl-reset'); if (rs) rs.onclick = () => { recs = {}; draft = {}; reqDraft = {}; typesDraft = null; render(); };
   const sv = $('pl-save'); if (sv) sv.onclick = savePatterns;
 }
 async function savePatterns() {
-  const ks = planKeys().filter(dirty);
+  // 추천을 보고 있으면 그 안을 패턴으로 옮긴다
+  Object.values(recs).forEach(rec => Object.keys(rec.picks).forEach(k => { const pk = rec.picks[k]; if (pk) draft[k] = { ...pk.cands[pk.i].pat }; }));
+  const ks = planKeys().filter(dirty), rq = Object.keys(reqDraft).filter(reqDirty);
   try {
     if (typesDirty()) {
       const r = await fetch(`${DB_URL}/${TYPES_PATH}.json`, { method:'PUT', body: JSON.stringify(typesDraft) });
@@ -1014,7 +1090,13 @@ async function savePatterns() {
       if (!r.ok) throw new Error(r.status);
       PAT[k] = body; draft[k] = { ...body };
     }
-    toast('저장했어요');
+    for (const k of rq) {
+      const r = await fetch(`${DB_URL}/${REQ_PATH}/${encodeURIComponent(k)}.json`, { method:'PUT', body: JSON.stringify(reqDraft[k]) });
+      if (!r.ok) throw new Error(r.status);
+      REQ[k] = JSON.parse(JSON.stringify(reqDraft[k])); delete reqDraft[k];
+    }
+    recs = {};
+    toast('저장했어요 — 오늘 수업 화면에 반영돼요');
   } catch (e) { toast('저장하지 못했어요 — 다시 눌러 주세요'); }
   render();
 }
