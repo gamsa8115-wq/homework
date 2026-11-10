@@ -254,11 +254,14 @@ details.pl-card summary .hint{font-weight:400;color:var(--mu);font-size:12px;mar
 .tr-bar{position:relative;display:flex;gap:2px;height:30px;border-radius:8px;overflow:hidden}
 .tr-bar div{display:flex;align-items:center;justify-content:center;font-size:11px;white-space:nowrap;overflow:hidden;min-width:0;background:color-mix(in srgb,var(--c) 14%,#fff);color:var(--c);font-weight:700;padding:0 2px}
 .tr-bar div.done{background:#ecebe7;color:#a8a6a0;font-weight:400}
-.tr-bar div.cur{background:var(--c);color:#fff}
+.tr-bar div.cur{background:linear-gradient(to right,#cfcdc7 var(--p),var(--c) var(--p));color:#fff;gap:5px}
+.tr-bar div.cur em{font-style:normal;font-size:10px;background:rgba(0,0,0,.25);border-radius:99px;padding:0 5px}
 .tr-bar div.rest{background:#f1f0ed}
 .tr-bar i{position:absolute;top:0;bottom:0;width:2px;background:var(--tx)}
 .tr-info{font-size:13px;margin-top:5px;color:var(--mu)}
 .tr-info b{color:var(--tx)}
+.tr-live{color:var(--red);animation:trp 1.4s infinite}
+@keyframes trp{50%{opacity:.25}}
 @media (max-width:640px){.rt-n{width:120px}.rt-tot{margin-left:0;width:100%}}
 .tg-legend{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px;font-size:12px}
 .tg-legend span[class^=b-]{border-radius:6px;padding:2px 8px;font-weight:700}
@@ -813,11 +816,17 @@ function routineBar(s) {
   const t = s.dayType && TYPES[s.dayType]; if (!t || !t.steps || !t.steps.length) return '';
   const tot = t.steps.reduce((a, x) => a + (+x.m || 0), 0), L = Math.max(slotLen(s), tot);
   const now = new Date(), nm = now.getHours() * 60 + now.getMinutes(), el = nm - minutesOf(s.t);
-  const live = curDate === todayStr() && el >= 0 && el < slotLen(s);
+  const isToday = curDate === todayStr(), live = isToday && el >= 0 && el < slotLen(s), over = isToday && el >= slotLen(s);
   let acc = 0, cur = null;
-  const segs = t.steps.map(x => { const a = acc; acc += +x.m || 0; const st = live ? (el >= acc ? 'done' : el >= a ? 'cur' : '') : ''; if (st === 'cur') cur = { x, left: acc - el }; return `<div class="${st}" style="flex:${Math.max(+x.m || 0, 1)}">${esc(x.n)}</div>`; }).join('');
+  const segs = t.steps.map(x => { const a = acc; acc += +x.m || 0; const st = over ? 'done' : live ? (el >= acc ? 'done' : el >= a ? 'cur' : '') : ''; if (st === 'cur') cur = { x, left: acc - el };
+    const pct = st === 'cur' ? Math.round((el - a) / Math.max(+x.m || 1, 1) * 100) : 0;
+    return `<div class="${st}" style="flex:${Math.max(+x.m || 0, 1)};${st === 'cur' ? `--p:${pct}%` : ''}">${esc(x.n)}${st === 'cur' ? `<em>${acc - el}분</em>` : ''}</div>`; }).join('');
   const rest = L > tot ? `<div class="rest" style="flex:${L - tot}"></div>` : '';
-  const info = live ? (cur ? `지금 <b>${esc(cur.x.n)}</b> · ${cur.left}분 남음 · ${el}분째` : `루틴 끝 · 수업 ${slotLen(s) - el}분 남음`) : `${esc(t.name)} 루틴 · ${t.steps.length}단계 · ${tot}분`;
+  const plan = `${esc(t.name)} 루틴 · ${t.steps.length}단계 · ${tot}분`;
+  const info = live ? (cur ? `<span class="tr-live">●</span> 지금 <b>${esc(cur.x.n)}</b> · ${cur.left}분 남음 · ${el}분째` : `루틴 끝 · 수업 ${slotLen(s) - el}분 남음`)
+    : over ? `수업 끝 (${s.t}~${s.e}) · ${plan}`
+    : isToday ? `<b>${-el}분 후 시작</b> (${s.t}) · 시작하면 막대가 시간에 맞춰 지나가요 · ${plan}`
+    : `${plan} · 수업 날 그 시간에 막대가 시간에 맞춰 지나가요`;
   return `<div class="today-rt" style="--c:${t.color}"><div class="tr-bar">${segs}${rest}${live ? `<i style="left:${Math.min(el / L, 1) * 100}%"></i>` : ''}</div><div class="tr-info">${info}</div></div>`;
 }
 /* 본수업은 하는 일이 다른 묶음별로 나눠 보여 준다 (5형식 → 입문 → 기본 → 시험 기간) */
