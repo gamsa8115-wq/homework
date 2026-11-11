@@ -15,6 +15,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="나의 숙제">
 <title>내 숙제</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css');
 :root {
@@ -24,7 +25,7 @@
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
-  font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+  font-family: 'Pretendard Variable',Pretendard,'Noto Sans KR',sans-serif;
   background: #f5f5f7;
   color: #1a1a18;
   -webkit-font-smoothing: antialiased;
@@ -407,6 +408,23 @@ body {
 .s-footer-logo { color: var(--brand); font-weight: 700; }
 /* ★ 어느 버전이 떠 있는지 확인용 — 캐시 때문에 옛 파일이 보이는지 구분하려면 필요하다 */
 .s-version { margin-top: .5rem; font-size: .62rem; color: #b9b6b0; letter-spacing: .04em; }
+
+/* ★ v356 필수 테스트 */
+.s-rq { display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:.45rem; }
+.s-rq-i { border-radius:12px; padding:.55rem .5rem; text-align:center; border:1px solid #e8eaed; background:#f6f7f8; }
+.s-rq-n { font-size:.78rem; font-weight:700; color:#333; }
+.s-rq-s { font-size:.74rem; font-weight:800; margin-top:.2rem; }
+.s-rq-d { font-size:.66rem; color:#8a9099; margin-top:.1rem; }
+.s-rq-pass { background:#e7f6ec; border-color:#bfe5cb; } .s-rq-pass .s-rq-s { color:#1a7f3c; }
+.s-rq-retry { background:#fff3dc; border-color:#f5d39a; } .s-rq-retry .s-rq-s { color:#a15c00; }
+.s-rq-none .s-rq-s { color:#9aa0a6; }
+.s-rq-g { grid-column:1/-1; border-radius:12px; border:1px solid #e8eaed; background:#f6f7f8; }
+.s-rq-g summary { list-style:none; cursor:pointer; padding:.55rem .5rem; text-align:center; }
+.s-rq-g summary::-webkit-details-marker { display:none; }
+.s-rq-g[open] summary .s-rq-d { display:none; }
+.s-rq-g.s-rq-pass { background:#e7f6ec; border-color:#bfe5cb; } .s-rq-g.s-rq-pass .s-rq-s { color:#1a7f3c; }
+.s-rq-g.s-rq-retry { background:#fff3dc; border-color:#f5d39a; } .s-rq-g.s-rq-retry .s-rq-s { color:#a15c00; }
+.s-rq-in { padding:0 .5rem .55rem; }
 
 /* ── 오늘 자동 스크롤 앵커 ── */
 #today-anchor { scroll-margin-top: 20px; }
@@ -807,7 +825,54 @@ function getResultClass(r) {
   return 'score';
 }
 
-function renderMainView(student, assigns, vacations, books) {
+/* ★ v356 필수 테스트 — 선생님 앱(📋 필수 테스트)과 같은 판정: 마지막 기록이 통과 점수 이상(또는 이전 통과)이면 통과 */
+function renderReqTests(student, reqTests) {
+  const tests = (reqTests || []).filter(t => t && t.id != null).sort((a, b) => (a.order || 0) - (b.order || 0) || a.id - b.id);
+  if (!tests.length) return '';
+  const st = t => {
+    const l = ((student.reqTest || {})['t' + t.id] || []).filter(Boolean);
+    if (!l.length) return { k: 'none' };
+    const last = [...l].sort((a, b) => (a.d || '').localeCompare(b.d || ''))[l.length - 1];
+    const pass = t.pass != null && t.pass !== '' ? Number(t.pass) : 90;
+    return { k: last.pre || Number(last.s) >= pass ? 'pass' : 'retry', s: last.pre ? null : Number(last.s), d: last.d, pre: !!last.pre, n: l.length };
+  };
+  const rs = tests.map(t => ({ t, r: st(t) }));
+  const passN = rs.filter(x => x.r.k === 'pass').length;
+  const label = { pass: '통과', retry: '재시험', none: '미응시' };
+  return `<div class="s-section">
+    <div class="s-section-title"><div class="s-section-title-left"><span>📋 필수 테스트</span></div>
+      <span class="s-section-count">${passN}/${tests.length} 통과</span></div>
+    ${rs.some(x => x.r.k !== 'pass') ? '<div class="s-sec-hint">재시험·미응시 테스트를 통과하면 모두 초록색이 돼요</div>' : ''}
+    <div class="s-rq">${(() => {
+      // ★ v357 06-1, 06-2처럼 같은 번호 테스트는 한 칸으로 묶음 (모두 통과해야 통과) — 누르면 세부 점수
+      const gno = n => { const m = String(n).match(/^\s*(\d+)\s*-\s*\d+/); return m ? m[1] : null; };
+      const strip = n => String(n).replace(/^\s*\d+(\s*-\s*\d+)?\s*[.)]?\s*/, '');
+      const units = [], byNo = new Map();
+      rs.forEach(x => { const no = gno(x.t.name);
+        if (no == null) { units.push({ items: [x] }); return; }
+        if (!byNo.has(no)) { const u = { no, items: [] }; byNo.set(no, u); units.push(u); }
+        byNo.get(no).items.push(x); });
+      const tile = ({ t, r }, nm) => `<div class="s-rq-i s-rq-${r.k}">
+        <div class="s-rq-n">${escHtml(nm || t.name)}</div>
+        <div class="s-rq-s">${label[r.k]}${r.k !== 'none' && !r.pre ? ` <b>${r.s}점</b>` : ''}</div>
+        ${r.d ? `<div class="s-rq-d">${fmtDateShort(r.d)}${r.n > 1 ? ` · ${r.n}회` : ''}</div>` : ''}</div>`;
+      return units.map(u => {
+        if (u.items.length === 1) return tile(u.items[0]);
+        const rest = u.items.map(x => strip(x.t.name));
+        let c = rest[0]; rest.forEach(r => { let i = 0; while (i < c.length && i < r.length && c[i] === r[i]) i++; c = c.slice(0, i); });
+        c = c.replace(/[\s(:,\-–·]+$/, '').trim();
+        const given = u.items.find(x => x.t.gName)?.t.gName;
+        const p = u.items.filter(x => x.r.k === 'pass').length, n = u.items.length;
+        const k = p === n ? 'pass' : u.items.some(x => x.r.k !== 'none') ? 'retry' : 'none';
+        return `<details class="s-rq-g s-rq-${k}"><summary><div class="s-rq-n">${escHtml(given || c || strip(u.items[0].t.name))}</div>
+          <div class="s-rq-s">${p}/${n} 통과${p === n ? ' ✓' : ''}</div><div class="s-rq-d">눌러서 자세히</div></summary>
+          <div class="s-rq s-rq-in">${u.items.map(x => { const r = strip(x.t.name); return tile(x, (String(x.t.name).match(/^\s*\d+\s*-\s*\d+/) || [''])[0].replace(/\s+/g, '') + ' ' + (c && r.startsWith(c) ? r.slice(c.length).replace(/^[\s:,\-–·]+/, '') || r : r)); }).join('')}</div></details>`;
+      }).join('');
+    })()}</div>
+  </div>`;
+}
+
+function renderMainView(student, assigns, vacations, books, reqTests) {
   const today = todayStr();
 
   // 이 학생의 배정 전체
@@ -1060,6 +1125,8 @@ function renderMainView(student, assigns, vacations, books) {
     </div>
     ` : ''}
 
+    ${renderReqTests(student, reqTests)}
+
     ${recentDone.length > 0 ? `
       <div class="s-section">
         <div class="s-section-title">
@@ -1093,7 +1160,7 @@ function renderMainView(student, assigns, vacations, books) {
 // 초기화 + Firebase 데이터 로드
 // ══════════════════════════════════════════════════════════
 // ★ 새 버전을 올릴 때 이 값을 함께 올린다 — 화면 맨 아래에 표시된다
-const APP_VERSION = 'v355';
+const APP_VERSION = 'v358';
 
 async function main() {
   const key = getAccessKey();
@@ -1133,7 +1200,8 @@ async function main() {
     }
 
     // 메인 뷰 렌더링
-    renderMainView(me, assigns, vacations, books);
+    const reqTests = Array.isArray(val.reqTests) ? val.reqTests : _toArray(val.reqTests); // ★ v356 필수 테스트
+    renderMainView(me, assigns, vacations, books, reqTests);
 
   } catch (err) {
     console.error(err);
