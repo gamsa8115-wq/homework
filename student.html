@@ -889,7 +889,9 @@ function renderMainView(student, assigns, vacations, books, reqTests) {
     return completedList.some(c => c
       && ((c.bookId != null) ? c.bookId === a.bookId
                              : (book ? c.bookName === book.name : c.bookName === a.bookName))
-      && (c.cohort || '') === (a.cohort || ''));
+      && (c.cohort || '') === (a.cohort || '')
+      // ★ v359 보카는 홈보카·수업보카를 따로 본다 (같은 교재를 둘 다 할 때 한쪽 완료가 다른 쪽까지 완료로 보이던 문제)
+      && (!book || book.mode !== 'voca' || !c.category || (c.category === (a.category || '수업보카'))));
   };
   const reasonOf = (a) => isCohortDone(a)
     ? null
@@ -1160,7 +1162,7 @@ function renderMainView(student, assigns, vacations, books, reqTests) {
 // 초기화 + Firebase 데이터 로드
 // ══════════════════════════════════════════════════════════
 // ★ 새 버전을 올릴 때 이 값을 함께 올린다 — 화면 맨 아래에 표시된다
-const APP_VERSION = 'v358';
+const APP_VERSION = 'v359';
 
 async function main() {
   const key = getAccessKey();
