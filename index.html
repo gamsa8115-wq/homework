@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="더퍼스트 숙제관리">
-<title>숙제 관리 v500</title>
+<title>숙제 관리 v504</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
 <style>
@@ -280,6 +280,22 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 .ev-pb{display:flex;gap:.35rem;flex-wrap:wrap}
 .ev-wrap{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:1rem}
 @media(max-width:900px){.ev-wrap{grid-template-columns:1fr}}
+/* v501 학원 일정 — 숙제에 영향을 주는지 표시 */
+.ev-eff{font-size:.66rem;font-weight:600;color:var(--mu);background:var(--s2,#f1f3f5);border-radius:5px;padding:.05rem .4rem;margin-left:.3rem;vertical-align:middle}
+.ev-eff.on{color:#b45309;background:#fff3e6}
+.ev-note{font-size:.74rem;color:var(--mu);background:#f6f8fb;border-radius:8px;padding:.4rem .6rem;margin:.2rem 0 .5rem}
+.sp-blank{margin-top:.6rem;border:1px solid #f5c48a;background:#fffaf3;border-radius:8px;padding:.45rem .6rem}
+.sp-blank summary{cursor:pointer;font-size:.78rem;color:#b45309}
+.sp-blank-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.35rem .6rem;margin-top:.5rem}
+.sp-blank-g label{display:flex;align-items:center;gap:.4rem;margin:0;font-size:.78rem;font-weight:600}
+.sp-blank-g label span{flex:0 0 92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-blank-g small{color:var(--mu);font-weight:500}
+.sp-blank-g input{flex:1;min-width:0;padding:.25rem .45rem;font-size:.76rem}
+/* v503 퇴원생 */
+.st-left summary{cursor:pointer;font-size:.85rem}
+.st-left-t{width:100%;margin-top:.6rem;border-collapse:collapse;font-size:.8rem}
+.st-left-t th{text-align:left;font-size:.7rem;color:var(--mu);font-weight:600;padding:.3rem .4rem;border-bottom:1px solid var(--bd)}
+.st-left-t td{padding:.35rem .4rem;border-bottom:1px solid var(--bd);color:var(--mu)}
 .ev-cal{display:flex;flex-direction:column;gap:2px}
 .ev-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));column-gap:2px;row-gap:2px;padding-bottom:4px;position:relative;min-height:68px}
 .ev-day{border:1px solid var(--bd);border-radius:6px;padding:.2rem .35rem;min-height:64px;background:#fff}
@@ -1303,7 +1319,7 @@ button.rq-pn.on{border-color:currentColor}
 <nav class="sidebar">
   <div class="logo" style="display:flex;flex-direction:column;align-items:flex-start;gap:.35rem;padding:.4rem .4rem .6rem">
     <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCADAAeADASIAAhEBAxEB/8QAHQABAAMAAgMBAAAAAAAAAAAAAAYHCAUJAQIEA//EAFgQAAECBAMBCAkPCgQEBwEAAAECAwAEBQYHERIhCBMWMUFRUpEiU1ZhcpSVs9MUFRcYMjM1NjdCcXN1gbEjVGJ0kqGytNHSJDRV4WOClsElJkNEV4STov/EABoBAQACAwEAAAAAAAAAAAAAAAAEBQIDBgH/xAA0EQABAwEEBwcEAwEBAQAAAAABAAIDEQQhUeEFEhMxcZGhMjNBUmGBwRQ0sfAVItEjQvH/2gAMAwEAAhEDEQA/AKPJAGZIAj11o6aeuJJh4oNV2amN7ZcXL0qeeaDrSXEhaJdZSrSoFJIIB2iPPDa4e203yRJ+ijry41oAuMDW0qSo1rR009cNaOmnriS8Nrh7bTfJEn6KPHDa4e3U3yRJ+ihV+HXJKMxPLNRvWjpp64a0dNPXEk4bXD26m+SJP0UeeG1w9tpvkiT9FCr8BzySjMTyzUa1o6aeuGtHTT1xJOG1w9upvkiT9FDhtcPbqb5Ik/RQq/DrklGYnlmo3rR009cNaOmnriS8Nrh7bTfJEn6KPHDa4e3U3yRJ+ihV+HXJKMxPLNRvWjpp64a0dNPXEk4bXD26m+SJP0UOG1w9upvkiT9FCr8BzySjMTyzUb1o6aeuGtHTT1xJOG1w9upvkiT9FHnhtcPbab5Ik/RQq/Ac8kozE8s1GtaOmnrhrR009cSThtcPbqb5Ik/RQ4bXD26m+SJP0UKvwHPJKMxPLNRvWjpp64a0dNPXEl4bXD22m+SJP0UeOG1w9upvkiT9FCr8OuSUZieWajetHTT1w1o6aeuJJw2uHt1N8kSfoocNrh7dTfJEn6KFX4DnklGYnlmo3rR009cNaOmnriScNrh7dTfJEn6KPPDa4e203yRJ+ihV+HXJKMxPLNRrWjpp64a0dNPXEk4bXD26m+SJP0UOG1w9upvkiT9FCr8OuSUZieWajetHTT1w1o6aeuJLw2uHttN8kSfoo8cNrh7dTfJEn6KFX4dckozE8s1G9aOmnrhrR009cSThtcPbqb5Ik/RR54bXD22m+SJP0UKvw65JRmJ5ZqNa0dNPXDWjpp64knDa4e3U3yRJ+ijzw2uHttN8kSfooVfh1ySjMTyzUa1o6aeuGtHTT1xJOG1w9upvkiT9FDhtcPbqb5Ik/RQq/Ac8kozE8s1G9aOmnrhrR009cSThtcPbqb5Ik/RQ4bXD26m+SJP0UKvw65JRmJ5ZqN60dNPXDWjpp64kvDa4e203yRJ+ihw2uHttN8kSfooVfgOeSUZieWajWtHTT1w1o6aeuJJw2uHt1N8kSfoo88Nrh7bTfJEn6KFX4dckozE8s1GtaOmnrhrR009cSXhtcPbab5Ik/RR44bXD26m+SJP0UKvw65JRmJ5ZqN60dNPXDWjpp64knDa4e3U3yRJ+ihw2uHt1N8kSfooVfgOeSUZieWajetHTT1w1o6aeuJLw2uHttN8kSfoocNrh7bTfJEn6KFX4dckozE8s1GtaOmnrhrR009cSThtcPbqb5Ik/RQ4bXD26m+SJP0UKvw65JRmJ5ZqN60dNPXDWjpp64kvDa4e203yRJ+ihw2uHttN8kSfooVfh1ySjMTyzUa1o6aeuGtHTT1xJOG1w9upvkiT9FDhtcPbqb5Ik/RQq/Ac8kozE8s1G9aOmnrhrR009cSThtcPbqb5Ik/RR54bXD22m+SJP0UKvw65JRmJ5ZqNa0dNPXDWjpp64kvDa4e203yRJ+ijxw2uHt1N8kSfooVfh1ySjMTyzUb1o6aeuGtHTT1xJeG1w9tpvkiT9FDhtcPbab5Ik/RQq/DrklGYnlmo1rR009cNaOmnriScNrh7dTfJEn6KHDa4e3U3yRJ+ihV+A55JRmJ5ZqN60dNPXHsNozG2JC5e1xBtZD1NzCSfgiT5vqo9sS222r7qqWWmmUb42oIabCEglpBOSQABtJOQgHGtCELRq1BXrYXwpUfsSo/yq4j0SGwvhSo/YlR/lVxHoDtFD2B+4JCEIzWCQhCCJCEIIkIQgiQhCCJCEIIkIRzlk2lcF51tFIt2nuTkwci4ribZT03FcSU/jyAmMXODRUr1rS40G9cGSAMyQB34Rt7CDAu2bLk/VNWZl67WnWyl199oKaaBGSkNoVsA5Co7T3hsiuca9zktrfq5h40Vo2repBVtHOWFHj8A/ceSITNIwufq9VPfoyZsev0WZ4R7vtOsPOMPtLadbUULbWkpUhQ4wQdoI5jHpE5V6QhCPUSEIQRIQhBEhCEESEIQRIQiUDDnEAgEWRcZB2g+tzn9IxLmt3letY524KLwiU+xxiD3D3H5Oc/pD2OMQe4e4/Jzn9Ix2rMQstk/ylRaESn2OMQe4e4/Jzn9I42vWvclAZaerlAqlLbdUUNrm5VTQWoDMgFQ2nKPRI0mgK8MbwKkLiIRy9vWxclxJfVQKDUqqJcpDxlJdTm9lWeWrLizyPVH0VqybxolPXUKxa1Zp8mghKn5mUWhCSTkASRynZDXbWlb01HEVpcuAhCPrpFMqNYqLVOpMjMz849nvbEu2VuLyBJyA2nIAn7oyJpvWIFbgvkhErXhriGhBWux7iSlIzJMgvIDqiKR41zXbjVeuY5u8USEc/SrJvKq09qoUu1K3PSbwJafl5Ja21gEg5KAyO0EfdH1exxiD3D3H5Oc/pHhkYPELIRvPgVFoRKfY4xB7h7j8nOf0h7HGIPcPcfk5z+kebVmITZP8pUWhH2Vil1OjT6pCr0+ap82hIUpiZaLawCMwSDt2x8cZg1vCwIIuKQhCPUSEIQRIQhBEhCEESEIQRervvK/BP4RJ8T/j7VfCa8y3EYd95X4J/CJPif8AH2q+E15luMD2xwPwtg7s8R8r87C+FKj9iVH+VXEeiQ2F8KVH7EqP8quI9Adorw9gfuCQhCM1gkIQgiQhCCJCEIIkIQgiQj96dJTlRnmJCnyr03NvrCGWGUFa3FHkAHHGpcE9zrLU/eK7f7bU3NjJbVKBCmWjyF08S1fojsRy6ojz2lkDauKkWezSTuo0Kq8F8Ea/fy2qnP75SLeJz9VLR+UmBzMpPGP0zs5s+KNi2TadAs2iN0i3qe3JyydqyNq3Vcq1qO1Sjzn7shHNtoQ2hKEJCUpACQBkAOYR7Rz9ptb5zfcMF0dlscdnF15xSEIRFUtVhjLgzbuITC51ATS68lGTc+0jY5lxJdT88d/3Q5DyRja/rLuKx60qlXFIKl3DmWXU9ky+npNr4iO9xjlAjsYjh7utmh3ZRHqPX6czPSbu3SsbUK5FJUNqVDnG2J9ltz4f6uvaq+16PZP/AGbc5dbsIuHGvAuuWOX6vRd+rFvAlRcCc35Uf8VI40jpjZzgRT0X8UrJW6zDVc7LC+J2q8UKQhCNi1pCEIIkIQgiQhCCLyn3SfpH4x2Ry9dogl2waxT8wgf+6RzfTHW3Hrob7Wj9kRDtdkFopU0opljths1bq1XZhKVSmzb28ytRlH3Ms9DT6VHLnyBj6nFpbbU44sIQkEqUo5AAcpMYr3HCUjGZOSUj/wALmeId9uNcYibcP7jz/wBKmvMqijtFm2MoZWqv7NadtEZKUX2ev1E/1mn+NI/rGfd2xUZCdta3Uyc9LTKk1BwqDTyVkDejx5GMrNoRvafyaPcj5o5o9glI9ylI+gZRawaOEUgfrbvRVE+kzLGWau/1Wo9wn/k7v+tlP4XYnm65+RCp/rUr55MQPcJ/5O7/AK2U/hdiwd1hLvzOCtSZlmHX3DMypCGkFajk8nkG2Ic333uPhTYPsDwPysORZu5b+XW3f/seYciA+stZ/wBHqfibn9sWVuY6XU5fHC33pimzzLSfVGpbkstKR+Qc4yRlFvaHDYu4FU1madsy7xH5W16p8GTX1K/4THWcj3KfoEdmNU+DJr6lf8JjrOR7lP0CK7RO5/t8qy0xvZ7/AAt5bmL5CbY+pd8+5E/najISSkpnJ6Wl1KGaQ68lBI72ZiAbmL5CbY+pd8+5FL7uVAVdVs5oCv8AAv8Azc//AFExDEO2tLmVpeVOM+wsrX0rcFp/1+on+s0/xpH9Yev1E/1mn+NI/rHWtvSe0j9iG9J7SP2Im/xI83TNQf5g+TqrW3VsxLzWNVReln2n2jKSwC21hSTk3t2iKqjwAAMgABzAR5i0iZs2BuCqJZNo8vxSEIRsWCQhCCJCEIIkIQgiQhCCL1d95X4J/CJPif8AH2q+E15luIw77yvwT+ESfE/4+1XwmvMtxge2OB+FsHdniPlfnYXwpUfsSo/yq4j0SGwvhSo/YlR/lVxHoDtFeHsD9wSEIRmsEhCEEXs02486hpptbji1BKEISSpSicgABxknki07ywTr9pYVIvKszCW5z1S0l6npTn6nZXsClr6eopBA2DPjJiS7jG0ZWs3lULlnmkuooraBLJUMwH3NWS/pSlJy76s+SL43TK2UYGXPv5ASqXQlOfKsuo0/vyittFsc2dsTcRVWlmsTXWd0r8DRYNhA8cIslVpEuwyw7ubEGreo6FKZS7agJmdeBDEuP0jyq5kjae8NsWPgpufarc+8Vu70zFJoysltS2WmZmhycfvaDznsjyAcca2oFGpVApLFKo0gxIyTCdLbLKdKR3++Tyk7TyxWWrSDY/6x3lWlk0a6T+0lw6qH4SYU2zh1I5yDXqyquJymKi+kb6vnSkfMR+iPvJifwhFE97nnWcalX7GNjbqtFAkIQjFZpCEIIkIQgi8KAUCCAQeMGM+42bniRrW/12xUM0+pqJW7TyQiXmDx5o5G1H9k97jjQcI2wzPhdrMK0zQMmbqvC6z6tTp+kVJ+m1STfkpyXVodYeQUrQe+D+PEeSPljsCxVwxtnESmhmrS+8T7SSJaoMAB5nvZ/OTn807ObI7Yxjinhpc2HdTDFYlw9IuqylqgyCWXu9+gr9E7ebMbY6Cy21k9xuK5212F8F4vaoXE4wXw+fxIup+itTvqFtiScmXJje9ekghKBlmM81KGfeBiDxozcMrYFyXO2rL1QqTl1I59AWvV+8pjbapHRwuc3etNkjbLM1rtypO/rPrlkXG9Qq/Lb1MIGttxBzbfbPEtCuVJ6wdhyMR+Nwbqm0ZW48Kp+pb0PXCiIM7LOAbQkZb6j6CnM/Skc0YfjCx2jbx6x3rO22b6eTVG7wSEIRLURIQhBFcu45+WVP2XM/i3Gt8RPk/uL7KmvNKjJG45+WVP2XM/i3Gt8RPk/uL7KmvNKig0h9yPZdDo77Y+664W/e0+CPwj2j1b97T4I/CPaL9c8tRbhP8Ayd3/AFsp/C7Gl1EJGalADnJyjNG4T/yd3/Wyn8LsT3dcEjBCpkEj/EyvEf8AjJjnbWzaWstxI/AXS2OTZ2MPwB+Va++tdtT+3HlLjajklxJPMFZx1la19Nf7RizNy2pRx1t0FSiP8Rxk9ocjdJovUYXa270zWiLSu0eG6m845LcdV+DJr6lf8JjrNR7lP0COzGqfBk19Sv8AhMdZyPcp+gRnonc/2+Vr0xvZ7/C3luYvkJtj6l3z7kWMtttZBW2lWXFmnOK53MXyE2x9S759yKk3alWqtOue3EU+qT0mlck8Vpl5lbYUQ4nInSRnELYma0uYDS8qfthBZWvIrcFp/eGO0N/sCG8MdoR+wI64OE1y90da8oPf3Q4TXL3R1ryg9/dEv+Jd5lC/l2+RfPcGy4KkMsv8a/5xUfDHlSlKUVKUVKUcyScyTzx4i6AoFRk1NUhCEeokIQgiQhCCJCEIIkIQgi9XfeV+CfwiT4n/AB9qvhNeZbiMO+8r8E/hEnxP+PtV8JrzLcYHtjgfhbB3Z4j5X52F8KVH7EqP8quI9EhsL4UqP2JUf5VcR6A7RXh7A/cEhCEZrBc5h9R2bgvug0OZKhLz9QZl3tJyOhSxqyPIcs4tnGjc91K1ZOYr1qTD9XpDILj8u4kGZl0DjVs2OJA4yACOY7TFRWRVxb95UWuqBKKfPszKwOMpSsFX7s47HJV9iclGpmWdQ8w8gONuJOaVpUMwRzggiKy3WiSCRpbuVrYLNFaI3NdvWZNwxUmEu3TSFKG/LEvNoHOka0K6iU9ccPus8U5K4n27Mt6ZS/TpN7fZ+abVmh55OYS2k8qU5kk8RVllxRIazhZUKXc180602DLLuN6UkKe6CUIlJd3N+bJy2hCdGnIdIJ5RFj2BgVh/aso1v9JZrc+kDXN1BsOZn9Fs9ggcwAz75iO6WBsu3N5NKD2UlkM7odgLgK1PusKpUlRySpKjzAxsvBDAOj2omXrtzbxV64AFtoy1S8oeTSD7tQ6R4uQDjiu92VVaLLVSi2jR5KRl1ygM5Oep2EI0lQ0toOkD5upWXfTF7WTi3YN1VeWoNCrZmqg60VIa9SuozCE5q2qSBsA54ztc8skLXMBANarVY4IY53NeQSKU4qfQhCKVXqQhCCJCEIIkIQgiQhCCJCEIIkfHWaZT6zTH6ZVZJidk5hGh1l5AUhY74MfZH5zLzctLuTDytLbSCtZyzyAGZj0VrcvDSl6xrujcGJawZcXLQp3VQ35hLJlX1Euy61ZkBKvno2Hj2jv8cQDCC95iwb5k7hl0mYYSCzOMIVtdYVlqA74yCh30iNJ4gY54dTyKCqmVVuopZrDDk2y7IuBPqcpWhxfZpA7ELCufZFlXBhvh/c0lpqNr0l9Lic0vssJacyI2FLiMj3+OLgWtzIw2dpNVSmxtklL7O4Ci4LFa8aJUdz/cFx0meZm5Gcpq2WXEnjW7+TCSOMKBVtSdoyjJWEmGNw4j1VcvS0olpCXIE1PvJJba/RAHu1kfNH0kgRcly4Oz1pSF129Sn5ioW/XaYuYkA52S5efljvzaFZbDrQlwBYAzyyPEM75wyteSs6x6XQJJtKRLsJLywNrrqhmtZ5yVE/dkOSNbZ22aIiI1JN3BbXWd1qlBlFABfxWQt0VhlSsNXrel6XNzc36tl3jMOzChmtxCk7QAMkjJXF3uOKni+d2pXpeo4gU2iS7gWaTJnf8AL5rjqgrT9ISlB/5ooaLSyOc6FpfvVRbGsbM5rNwSEIRJUZXLuOfllT9lzP4txrfET5P7i+yprzSowlhHfD2Ht3i4mKa3UViWcl95ceLYyWU7cwDxaebli1K/unqlV6FUKUuzpRpM7KuS5cE+olAWgpzy0bcs4qLZZZZJg9ouuVxYrXFFAWON96z0372nwR+Ee0eEjJIHMMo8xbqnWotwn/k7v+tlP4XYnm65+RCp/rUr55MZqwVxZncMWaq3KUWXqXrippSi7MKb0aAobMgc89X7o5vFPHuo37ZszbUzbcpItvuNOF5ubUtSdCwrLIpHHllFTJZZXWraAXVHwriK1xNsmyJvoVTcWbuW/l1t3/7HmHIrKJHhpdb1kXrIXPLyTc65J75kw44UJVrQpHGASMtWf3RYzNLo3NG8gqsgcGStcdwIXYbVPgya+pX/AAmOs5HuU/QI0VMbqisPS7jJs2QAWgpz9Xr2ZjLoRnYbABzRC0fZ5IdbXG+inaStMc5bqGtKreO5i+Qm2PqXfPuR5xcwhoeJNRkJ2rVKpSi5JlbTaZUoAUFKBJOpJ5oz5hvuhp+y7JptsM2tKzrcghSQ+udUgr1LUr3IQcvdZccSH211U7ipLyiv0cQ3WS0tlL2DxPiFNZbLKYWxvPgPAqV+1Ys3uhuH9pn+yHtWLN7obh/aZ/siKe2uqncTJeUV+jh7a6qdxMl5RX6OM9nb8eoWvaaPw6FV3uhsO6Xhvc9OpVJnZ2bampIzC1TRQVBWspyGkDZkIrOJ1jPiNMYl16Rq0xSWqaqUlTLhtt8uhQ1lWeZAy44gsWsAeIxtN6qbQWGQmPckIQjctKQhCCJCEIIkIQgiQhCCL1d95X4J/CJPif8AH2q+E15luIw77yvwT+ESfE/4+1XwmvMtxge2OB+FsHdniPlfnYXwpUfsSo/yq4j0SGwvhSo/YlR/lVxHoDtFeHsD9wSEIRmsFam5dt+hXNia5Srhp7E/Jrpj6gy8MwVBTeRHKCATkRtEamlKfMYYURSacmeq1rSoKvUme+zVPb4zvZO11obToPZpGekqHYjGeDt2IsnEij3C9qMqy6WpoAZksrBSsgcpAOrL9GOwWRm5afkmZyTfbmJZ9AcadbVqStJGYUDygiKPSes2QV7JV9ovUdGQO0FFX8TsPpelyNWmbrpTEtPsF+VW67oU63q0lQSRqyzBHFxiOMn79q1fpS1Ya29MVpbqcmalOpMpIJ/SCnMlugcyEkHpCIvOYUUat4ySRmZFPBu26S0lmUUM23n3HnnAgjlQkHMjlzSOLOLkmn5WnyLszMOtS0rLtlbjiyEobQkZkk8QAEQniJlNW8+qnsMr661w9FgTGi1bota7v/OFSlJ+r1NszzzjDql+6UU9lmkZe5OQGwACODse6atZtxs1+iLYRPMoWhBea3xOSxkdmY5I5fGm8BfOI9Ur7WoSalBiSSoZEMIGSTlyFW1WX6UQ2OjjaTGA8eF65iVwbKTGfG5a+wauLFjEi1n66zdlCpqWZxcrvS6IXSSlKFasw4Onxd6Jt6w4vf8AyBb3/Tx9NFDbiR532SKsxvrm8+tC173rOnVvrQzy4s+/Gv4orZ/xlLWgU4BdBYv+0Ic4mvEqicXq3izh5Z6rieu6g1FImG2N5RQy2ezJGeouHiy5opz2yGJ/51SPJ4/uiT7uF54Xbb7AdcDSqe4pTYWdJId2EjizjO8WNjs8b4g57QSfRVlttMkcxaxxAHqrh9shif8AnVH8nj+6JZhPi5inf95sW21WqLILdZcd35VK3wDQActIWOPPnjOUcnarzrFzUtbLrjS/VjI1IWUnIuJzGYje+yRap1WgHgtEdsm1xrOJHFbh9YcXv/kC3v8Ap4+mgaFi8AT7IFvf9On00WKP+8VvunHXWMDbjdYdcacShnJbaylQ/Lt8RG2KCN7nvDbr/QLoZGNYwuvuGJWcF7o/E9K1J9V0c6SR8HjkPhR49shif+dUfyeP7op48cI6L6WHyhc39ZP5yrgO6RxPAJ9VUjYP9PH90aQlqNi6/LNPcP7fTviArI28dmYz7dGD43NuU3nn8EaO4+646suzIKnFlR2Pry2mIFvibEwOYAPZWGjpnzPLXkm7Ffd6w4vf/IFvf9PH00UxjTihihYtyu2rN1ui1EOySXVPIpW9di5qTlkVnonb341ZHXHiC889fVeU8646pNTmUgrWVEAPLyG3k70adHtEzzrAUHoFv0i8wsGoTU+pXE02UVOT8rIocbaVMPIZStw5JSVKCQVHmGe2NnYXIxQw9obVCuqiIuOjyidMtOUmZDszLoHEhTS9KnEjk05qA2ZHZlirMjaCUkcRHGDzx2AYH3zK35YMjUw6k1FhCWKi1n2TbyRkTlzK90DzHvGJWky4MF1Qomig0vIrQr9KZiph5U51Eg1c8i1OqdDIlJsKYfDhOQQW3AFBWZyyyjym7l3NU6jQrMVrckHVS0/VXWT6nlHQci2gHLfXRzDsU8ajxJMV3ROHUrXaczeVLlgi4KK61MlbYyVMstrClIVzlIBUk8ezLiMWjRqXIUlh9qQZS0iYmXpt0j57jqytaj9JV1ZRUOEQaHN3q4aZXOLXbvTxWc90xh1atp4WOVWSlXH6zM1VkzFTm3C7MzClayvUo7Bnx5JAGzi2Rl+NHbtG95Ofn6dZNPmEumRdM1PlKswl0p0ob+kJKlHm1JjOMX1gD9iC/wAVz+kCzbkM8EhCAiYoSk1Fw+vmtUxmp0i06tPST4JafZY1IWASDkfpBH3R9nsVYldw1d8W/wB417uXwPYJtn6t7z7kTuqVmj0pTaapVZCRU4CUCZmENlQHHlqIz4xFNJpKRshYGi4q7j0XG6MPLjeAsD+xViV3DV3xb/eHsVYldw1d8W/3jdnC+0u6eh+Ptf3R4N32lkf/ADPQ/H2v7ox/k5vJ+Vl/Fw+f8LrrqcjOUyoP0+oSrsrNy6y28y6nJbahxgjnjnqPh7fVYprFTpVpVedkn06mX2WNSFjPLMH6QY+nGmYYmsXLpmZV5p9h2puKbcbWFJUNm0EbCI2JuagPYNtbZ/7VXnVxNtNqdDE14G//ABQbLZGzSuYTcP8AViG5bZuG2nmWbho07S3H0lbSZlvQVgHIkfRmI+Cnyc3UZ9iQkJZ2am5hwNsstJ1LcWeJIHKY0Fu5PjTbP6i/5xMVPgh8sNo/azP4xtimL4NoR4LTNAGT7IG6oXn2KsSu4au+Lf7w9irEruGrvi3+8dg4AyGyI65fVkNuKbcvC3kLSopUlVRaBBByIPZRWDSkp3NHVWp0VC3e78LDSsK8SUgk2NXshzSpMRirUypUibMnVafNyEyNpamWVNL6lAR2KU27bUqc0mUpty0WcmF+5aYnm1rV9ABzMel8WjQbzoTtHuCQbmmFg6F5ZOMq5Ftq40qHe+/MRk3Sjg6j2rB2iWFtY3XrrjhHPYhWxOWbedTtqeVvjkk9pS5lkHWyApC8uTNJB7xzETDc4YeMYgXypqppUqjU1sTE6kEjfSTkhrMcQUQSe8k88WrpWtj2h3KpZC90mzG9RWzrEvC781W5b09PtA6S+lIQyDzFxRCc+9nE2TudcUy3qNJp6VdA1FvP+n742kTSqBRs1GTplNk2uXS0yygdQSBEIOOGFQmfU/DOR155Z727o/b06fvzip/kZ3n/AJtu9yrgaNs8Y/6Pv9gsbXlhtfNoNKfuC25yVlknIzKMnWR9K0EgfflETjstkJymVulIm5GZlahITKDpcaWlxp1J2HaMwRyRj7dTYXSllVmXuCgsBmi1NwoVLpHYyr+WrSnmQoZkDkII4sok2S37V2o8UKjWzR2xbtGGoVSW9Qq1cU+afQqXNVKbDZcLMujUoIBAKsubMjriQ+xViV3DV3xb/eJhuRKhIU3Fd2YqU7KybHrU+nfJh1LacytvIZqIGewxrzhfaXdPQ/H2v7oWq2yQyarW1XlksUc0es51FhP2KsSu4au+Lf7w9irEruGrvi3+8b+ps/IVKW9U06clpxjUU74w6lxOY4xmkkZx6VSq0qlIQuqVKSkUuEhBmX0thRHGBqIziL/KS1pqhS/4mKldYrAnsVYldw1d8W/3iMVem1Cj1J+m1WTekp1hQS8w8nStBIBAI+gg/fHYkbvtLL4z0Px9r+6MPboKZlpzGa5pqTmGZiXcmUFDrSwtChvSBsI2GJdktb53lrm0uUK2WOOBgc11b1A4QhFiq5ervvK/BP4RJ8T/AI+1XwmvMtxGHfeV+CfwiT4n/H2q+E15luMD2xwPwtg7s8R8r87C+FKj9iVH+VXEeiQ2F8KVH7EqP8quI9Adorw9gfuCQhCM1grj3JEjQaviNUKPX6bJVFibpTm9NTTKXE60uIJIB4jpz2jbGlF2hVbIkHX8NylcqjNxVvTryjLOcpDDhzUwo7dm1BJ4hxxiSwrlnbPvCmXJIDW9IvBZbJyDqCMloJ5lJJH3xv8AsS7qFelvs1qgzqJhhwDWgnJxlfKhxPzVD9/GMxFJpJr2PD//ACeSvdGOY9hZucOarC7sd10SboVOkbGn52rVynsTbMt6oSgpccUpG8nsSoqSpBB2D7olTllVi9ac37JM8n1MvJaqFS3VNSqTxgPOA63iNnKlGfIeOPvnbLZnMYpG9ZhltSJCjrlZfP5rynSdX0hClD/mMfbiTfNAsK3XavW5pCexIl5ZKhvsyvLYhA/E8QG0xCLgdUQi/qpwaf7OmN3RY/3UFKt2hYn+sltUyVp0tJ09lLrTCcgXFFSyTznSpG096KtiWX5JXhVFv4gXDSJqVla1OqLcw6jQhaiCoJQD2RSEpyByyyTxxE46KAUjArWi5mc1kJpQFXxuI/lPq32MvzzUbCjHu4j+U+rfYy/PNRsKKLSXfngF0Gi/txxKyVu4vjpbv2a752M9RoXdxfHS3fs13zsZ6i4sP27VS2/7hyR99t/GOl/rzHnEx8Effbfxjpf68x5xMSXbiorO0F2VD/vFabqL5CLl8Bjz7cWWP+8VpuovkIuXwGPPtxytn75nEflddae5fwP4WETCBhHWLkEjcW5M+Q2jfXTXn1xh2Nxbkz5DaN9dNefXFbpTuRx/1Weie/PD/Fa8db99/Hi4PtWa88uOyCOt++/jxcH2rNeeXEbRPacpWmOy33XFSzjbUyy66gLbbcStaSMwpIIJB+kRvGRwvteTeRX7FceteffaCkv09WbDyCMwHGFZoWnbnkMjzERhy26FVrkq7dIoci5PTzqFrQwggKUEJKlZZkDiB+mNa7mfElqZo7GH10qcp1yUlIlmWZtJbXMNJ9yAFZdmkbCnjIAIz25SNIh+qCw7t49OCjaMLA4h437j68V5urGa5LDuFm3L4s1maXNECVn6bM6WJpBUE5hDgJSQSM06jlnyggmZInLuvCs1WmyoNtW9IzS5Mz7Z1zk8pGxe85jSygHMa8lKzB05ZZj7MW7Ll7zo1OZLSVTVPqkrOMLI2gJdTvgz5i3q+8CJg84zLsuPOrQ002Cta1EJSkcZJPEB34qXSR6oLW3+KuWxyaxDnf18FnvdJWZZdl4NTfrPQpOXnZydl2hNrG+zLiivWol1eaySEqJ27dsZNi5t1JibKXxcMtR6E9v1FpSlEPp9zMvnYVjnSkbAeXNR4iIpmL2xMeyL++83rnrfIx839NwuSAhARMUNbv3L/wAhFs/Vvefcin93Xo9ebU16P8vNe6y6bcXBuX/kItn6t7z7kWDPU6QnlIVOyMtMlGYSXWUr058eWY2RzW22Nqc+laErqDDt7K1laVA+F1l/kP8Ag/ujyN5JyG9E97KOyrg/Qv8ARad4oj+kQvHSi0iXwfup5ikyLTiKY8UrRLICknLjBA2RPZpUOcG6u/1Vc/RJa0u1t3osGJAGQAyEb13NXyG2t+qq86uMF/O++N6bmr5DbW/VVedXGWle6HFY6I708PkKk93L8abZ/UX/ADiYqfBD5YbR+1mfxi2N3L8abZ/UX/OJip8EPlhtH7WZ/GNtm+0HA/K1Wr7z3HwuwjkH3R1qXElPCGp9iP8AOv8AJ/xFR2VjiEVbM4AYWzMy7MPUF9TjrinFn1wfGalEkn3XOYq7DamWcu1vFW1vsr7QGhngsMJUplQeaUW3G+zQtByUgjaCCOIjnjsisp+dmrNokzUtXq56nsOTOoZHfC2kqz7+ecQ2i4GYX0moNT0vbDbrzSgtv1TMOvISQcwdKlFJ+8GJPiPdKbNtCduBdLnqmJZGe8SjepX0qPzUDlVyCMrZaW2otawLCxWV1lDnSFZL3Yi5deM7qWctaKbLJey6XZkZ/wDKUxYG4VWz6hu1sFO/b/KqI5dOlwD9+cZwuyvVC57kn7gqjgXOTzxdc0+5TyBKf0QAAO8Ik2CWIczhxeSasGFTUhMN7xPS6SApbeeYUnPZqSdoz48yNmecWctncbLshvoFVxWlote1O6pWqt1FalxXfhqJC22lTMwxOtzD0qlYSqYbSlQyGewkEpVkePLnyjFNapFXokyZes0yeprwORRNMKaP/wDQGcdgtk39aF5SiH7frkpNLUM1S5XofQeZTauyHVlEgnZSUnpdUtOyzMyyr3TbzYWk/cdkVlntr7MNRzfhWtpsLLUdo13yFinc+YwNYay9UkanIz1RkJxSHWGpdaRvTgzCldkQOyGni6Mc/jbjnb+INhP29K2/U5WZVMNPNPPrbKEFCsz7kk7UlQ++LzunAvDOvhxS7dapr6//AF6csy6gefSOwP3pjM2OWC9Vw5CKpKzSqpQXXA2Jgo0uMLPElwDZt4gobCdhAOWcuGSyzyh9KOUOaO1WeEsrVqqggEZEA/SI8aEdBH7Ij2hFsqdbT3G4AwZbAAA9cZniH6QiLbugA2/a+YB/xr/GP+GIlO44+Rpv7Rmf4hEX3c/xftf9df8ANiKCP773K6KT7D2CyloR0EfsiPYAAZAADvQhF+udSEIQRervvK/BP4RJ8T/j7VfCa8y3EYd95X4J/CJPif8AH2q+E15luMD2xwPwtg7s8R8r87C+FKj9iVH+VXEeiQ2F8KVH7EqP8quI9Adorw9gfuCQhCM1gvopku1N1OUlX5lMq0++hpb6k6g0lSgCojlAzz+6NGye55xFtOaNVsu+pRE6lPzQ5LFwdE+6Sod5QyjNRAIIPEY2zuaMUZO8rVlqFUppCLipzIadbWrJU02kZJdTznLIKHIdvEREC3vljaHM3eKsNHsikeWv3+CgVx39jHSMMq4ituGlXHRp+XLz4lGvy0k8FIC0HIoOToHZp58jlH67mvD128V+yZfz8xWnlulNNbnVl0HQci6oHYQFAhKeIZE5cWV/Xxb8tdFpVWgzITpnpRxgLIz0FQ2K+5QSfujjsOpRm1cLKFKVJTUgmnUtpM2p1QQlpSUDfConYBq1bYqzaRsiGChJ8MFbCynbAvJIA8cVWe7aeYRhhTJdRG/OVhstjlyS05q/ERj2NW1Olr3Q1+Im23n5WwaAtTDcwkaXKg+cist5+5GQSNR2gd9Wyn90vZ1OsrE1yQo0qmUps1JszMsykkhvYUKAJ2+6QT/zRY2F7YwIT2t6rNIMdITMOzuUr3Efyn1b7GX55qNhRj3cR/KfVvsZfnmo2FFdpLvzwCstF/bjiVkrdxfHS3fs13zsZ6jQu7i+Olu/ZrvnYz1FxYft2qlt/wBw5I++2/jHS/15jziY+CPvtv4x0v8AXmPOJiS7cVFZ2guyof8AeK03UXyEXL4DHn24ssf94rTdRfIRcvgMefbjlbP3zOI/K6609y/gfwsImEDCOsXIJG4tyZ8htG+umvPrjDsbi3JnyG0b66a8+uK3Sncjj/qs9E9+eH+K146377+PFwfas155cdkEdcd4sOzWIValWBm6/WJhpHhKfUB+8xG0T2nKXpfssU+3I7rTeN1OQ7lqdk5lDefS0Z/gDGmsbMLqTiFQVqDbcrXpZBVIT6RkpKhtCFkbSgnq4xtivb7wR4KN0u9cNUqRW6CG3npIkqRPb2nJak8oWoas0jYrM5ZHjt3DS+qFf1tt1iizA1AATMqpQ32Wcy2oWPwPERtEarVNrvE8R3XcP/q2WSHUYYJRvv4//FmrBHEXEeTn67JVSsTk7JUGlzDzkpNth9wzCSGmWQrLXmXVAZZnPLKOcmcOsdsTpFDl53FL0eQcAUJBw6R3tTLQy/bUTFx4ZWY1QrqvavuMBDlaq5caBTxNISCD97inD1RJb0uii2hb0xXK7OIlpRlOzb2biuRCB85R5APwjx9q/wClYmipp4LKOyf86SuNBXxWF8ZMPzhxccrRHa2zVX3pUTLhaYLYaBUUpBBUcydJMQiOfxDuidvO8qlck+nQ5OO5oazzDTYGSED6EgDvnM8scBF7EHBg19656UsLzqbkgIQEbFgt37l/5CLZ+re8+5Fbbsu5LhoNWtpFDrtTpiXmJkuiUmVtBZCm8idJGeWZ64sncv8AyEWz9W959yKh3dHwzan6vNfxNxz8ABtpBxPyuitBIsIIwHwqV9kO/u7e4/KTv9Y/Cfve86hJPSU/dtdmpV5BQ6y9POLQtJ4wQTkREfhF7s2YBUG0fiUHHG9dzV8htrfqqvOrjBQ443ruavkNtb9VV51cV2le6HFWWiO9PD5CpPdy/Gm2f1F/ziYqfBD5YbR+1mfxi2N3L8abZ/UX/OJip8EPlhtH7WZ/GNtm+0HA/K1Wr7z3HwuwjkEYorO6BxRlqxPSzNakw21MutoBp7RySlZA5OYRtfkH3R1q3F8Yan+uv+cVEDRkTJC7WFdysNKyvjDdQ03q57E3R19N3NIMXC5T6jTn5htp8CVDTiEqUElSVJyGYzzyIOeUbCWlK0KStIUkgggjYRHWZJqCJ2XWTkEvIUfuUI7M8wpOYOYIzENJwsjLSwUrVNFzPlDg81pRdduKlHYt/Em4qNKICJaVqDqGUD5rZOpI+4KA+6OfwywdurEKhPVmhTVJbl2ZlUstM0+tC9QSlXEEHZkoR+O6KQUY3XUFDLOcSetpBixNxne8nR69P2fUn0soqy0vSK1nJJfSNJb+lScsu+nLjIiykkkbZg9m+gVZHFG60lj91Sq7xPwmunDiSkalW3qc43NPllpcm8tSkLCdW0lKctgPFzR8ds4qYh27pTS7tqQaTxMzDnqhv6NLmrL7so3Rfto0S97beoNel1OyrhC0qQrS40scS0K5FDb1kHMGKGm9yhLGYJlL3fbYJ2JepyVrA+kLAPUIiQ2+KRlJ9/BS5tHyxvrBu4rltzxjnV7zuZNq3LIypm3WFuS85KpKAooGakrQSQNmZBB5MsotfF+nS1VwtueSmkhTaqW+vbyKQgrSfuUkH7ojWD2C1uYdTjlUZmpqqVZxsteqpgJSG0HLMIQNgzyGZJJj5t1Hesna+GU/TEzCfXStNKk5ZoHstCtjjhHRCSRnzkCIL9SS0DYC65WDNeOzHbm+9YdSc0g84zjzCEdKuXW09xx8jTf2jM/xCIvu5/i/a/66/wCbESjccfI039ozP8QiL7uf4v2v+uv+bEUEf33uV0Un2HsFlSEIRfrnUhCEEXq77yvwT+ESfE/4+1XwmvMtxGHfeV+CfwiT4n/H2q+E15luMD2xwPwtg7s8R8r87C+FKj9iVH+VXEeiQ2F8KVH7EqP8quI9Adorw9gfuCQhCM1gkSHDiiTNxXvS6NJVhqjzcy9pl5twrGhwAlIBRtCjlkOLaREej3YddYfbfYcW062oLbWg5KQoHMEHkIIzjFwJBAXrSA4ErbNLs/Gyk09LMtihSqmpI7FNRpJV1uBWo/Sc4qXdXyuITdDoVUuKcWJF1n1POyUs7nKNziMyHAABmlxI1J1ZlJBHNFmYIY70K6KXL0q6Z6XpVwNpCFKeUG2ZvL56FHYFHlQctvFmOK1LqoVHu62ZuiVZlE3T55ooXkQcuZSTyKByIPIRHPiV9nmBkaLvRdIYmWiEiNxv9Vx2EtElrew2t+kyqAlLUi0pZHznFpC1qPfKlExl3dn1SWnsVpWSYUFLp1Mbaey5FrWpeX7JSfvi7sRsTpDCixqdSZpaKlcgkUtSrCM9DmgaA8s8iOxzyG0nYOcYxqc3Va7VZurTpmJ2cmnlOzDwbKtS1HM8Q2d4cgiTo+FxkMzt35UXSM7RGIW77vZXTuI/lPq32MvzzUbCjKG5ZuDD+zaPPVO5H3afcTz62ErVKzKyZUhtQGSUlPuwdvHsi7PZrwz7o1+Tpr0cR7ex8kxLWnkpGj5GRwAOcOao3dxfHS3fs13zsZ6jSu6fuXDq9LYYnaDMu1C4pZ1tplSZSZQUsFRLgyUkJPJx7eaM4+op38ymv/wX/SLWwkiEAilFU28Azkg1BwX4R99t/GOl/rzHnEx8/qKd/Mpr/wDBf9ImmC0vbjGIMm/fMtMN0ZptbhUph/IOpyLZ/JjV7ofRzxIkcA0lRomlzwNy38P+8VpuovkIuXwGPPtx9Ps14Z90a/J016OOLuvE3B+5qBNUOtVlc3ITQAdZ9QzaNWlQUNqWwRtAPHHNRRSMka4tNxwXUTSxPjc0OF4xWHDCPpXJTetWmSmtOo5fkF8Wezkj19RTv5lNf/gv+kdRULk6FfhG4tyZ8htG+umvPrjEhkp3I5SU1nls/IL/AKRtWyMSMILVtmUolIq65OVZSVBn1DNr0qUdS9qkE+6J5YrdJVdGGtFb1aaLIZIXOIF3irdjrsrs4inYqz9QcGaJWvuvqHOETJUf3CNo+zXhn3Rr8nTXo4yVju3bE3iDMT1jMPu0uYZS864lh8BUwpS1OH8oMxxjvc0R9Gtcxzg5pFVJ0m9r2NcxwNDit5yr7M1KtzMu4l1l5AcbWk5hSSMwR9xEY6rVr16S3Vc9b9kT8zSXpicTMF+VOkS7DiEuukjiKRqVkk7CSByxJNzJjVLyEpKWNdj6kMpIZpc8QSEgnJLLnLlmckq+gHLIGL9ta1JOnXRX7qeS29Vqu+ErdG0tMNpCG2geTYnUedR7wjQNaxvcHDeLvVSDq21jC07jf6KMz9LxoqtQnFytz2/btPU6oSjfqD1XMpbGxJWokI1HLM5ZgZ5ckZ23SNl3Tbb9Pqd232m5JmccWiXaWhaFtpSM1KSjMpSnaBsy2kRqnEHEi0bHp7kxW6swJgA73JsrC5h08yUA5/ecgOUxh7FO+KpiBd0xX6kN6SRvUrLBWaZdkE5IB5TtJJ5ST3hEjR4kc7WoA3go2knRNZq1Jdx/QorCEIulRpCEIIrmw73QVcsuzKfbEpbtNm2JFK0oedfcSpWpal7QBl87KIvjHifUcTJqmTFQpUpTzT23EIDDil69ZSTnq5tP74gMI0Ns0TX64F63utUrmbMm5IQhG9aEi6cP90LXLOs6m21K25TZpmQaLaHnZhxKlgqKsyAMhxxS0I1SRMlFHiq2RTPiNWGineMWJdQxLqVPnahS5WnqkWVtJSw4pYWFKBzOr6IjNn1t627qpdwS7Dcw7TplEwhpaiErKeQkbQI4qEetja1uoBcvHSvc/XJvWhvbVXH3JUjxp3+kZ/n5hU3PTE2pIQp95bpSOIFSirL98fjCMYoI4q6gos5bRJNTXNaLwRmCM8sxxxoGQ3UlzS0ixLLtilPKaaSguKmXAVkADMjLZnlnGf4R7LBHLTXFaLyKeSGuoaVUyxZvxWIVeZrUxQafSptLW9vLlVqUZjLLSVk8qQMh3vuiHJJSoKSSlQOYIORB548QjNjAxuq3csHvc92s7errsHdIXpb0q1I1qXl7ilWwAlx9ZbmQByFwAhX0qBPfiwmN1ZQ1N5v2fVUL5kTLSh1nL8IylCIr7DA81LVKZpC0MFA5aOurdUVWYl1M21bDEi4oECYnX9+Ke+EJAGf0kxQdzV+s3LWHqvXqi/Pzz3unXTxDkSkDYlI5AAAI42EbYrPHD2AtU1plm7ZqkIQjetCtrCrHOs4fWmm3pGg0+dZS+4/vrzy0qzWcyMhs5I47GPF2qYlyNOlKhR5KnpkXluoUw6tZWVJ05HVFbQjQLNEH64F63m1SlmzJuSEIRvWhIQhBF6u+8r8E/hEnxP8Aj7VfCa8y3EYd95X4J/CJPif8far4TXmW4wPbHA/C2DuzxHyvzsL4UqP2JUf5VcR6JDYXwpUfsSo/yq4j0B2ivD2B+4JCEIzWCQhCCIQCMiMxH6tzMy23vbczMIR0UuqCeoHKPyhHiKwMOququyjWH9dpFRrtMdWt2RMi3vk9TXMs1uMD5yCBmts7DxjIxojclWzVrYpt0SlSp9QlWl1JJlXZuUXLqmGwjIOBCtoz2bOTijOGA9z0qzsUaZcNaW8iRlm30uKaaLis1tKSMkjj2kRp72yWGP55VfJy4qrc2Q1YxtQfyrfR7ohR8jqEXeyuOEU57ZLDH88qvk5cPbJYY/nlV8nLir+lm8p5K3+rg845q44RTntksMfzyq+Tlw9slhj+eVXycuH0s3lPJPq4POOauOEU57ZLDH88qvk5cPbJYY/nlV8nLh9LN5TyT6uDzjmrjhFOe2Swx/PKr5OXD2yWGP55VfJy4fSzeU8k+rg845q44RTntksMfzyq+Tlw9slhj+eVXycuH0s3lPJPq4POOauOEU57ZLDH88qvk5cPbJYY/nlV8nLh9LN5TyT6uDzjmrjj4q6247RJ5ppKlrXLOJSlO0klByAiqfbJYY/nlV8nLh7ZLDH88qvk5cBZZh/4PJeG1wEdsLPctTp/DC0Javi1663c8wN69cKlTlMy1JKswAzq98fIBIWdieQZ5xWZnZ0rcX6tmtbiipxW/qzWonMk7dpJ5Y0NujsX7MvrD1FEoExPOTgn2XyHpRTadCQrPafpEZyjoLMXOaXPFCVzlrDWODYzUBDtUVHaTxnlMIQiUoqQhCCJCEIIpxh5aFDuK3LirFWq1UprVClhMvrYlW3W3Ao6UNpKlg74og5Z7O/HrTKDYtSo1cnGK/cEs/S5AzSG5mQYCX1a0oS2FJcJBKlp5OLM8kTJEjb1BwMo9Ar9fmaJOXRM+vEwWaaqaWuWQdDKFALTpB2LHHntiEUezJW4rvepNs1xU3SZaWM3OVabk1S6JZlIzcWpvMnJPEBnmo83HEQP1i4lxAr+PZTDHqhoDQTTqfdQ6EWdhxbNlXxdD9pyErWZVxyVedk6s9NpJKm05guMBGlKFcwUSNm0x8GGVq21WLZuivXRN1GUlqIwhSHZcp3px1wlLbZGRUolQzyBGzlHHG0ztFa+FOu5aRZ3GlPGvTeoBHkZZjUSBnty5o5671WbvVObtJmua0Mn1e9U1t5uOEjLQhGYSBt5TnmObM+uH9uvXZe1ItxkK/x80ltxQ+a3xuK+5AUYz1xq6xuWGodbVF6ld0WZZltUa3qjU61cq3K5J+rW5NqRl0usNE5JUsqcyOrky48jxRxmKNjM2g3QZ+Qq5qdMrsiJ2TW6xvLyE9j2K0ZkA9kNoPPzRYlVmMNcRcbvW+feuBCFPJpdNbQlr1EQ1mhtBKTvgbUQTsyPZcY4xxF12rdt337cLlyPtCRtjTIn1vQlLYSB+RlpVC1AAkHPsj2IzKs9gMNkrgRrml1TXpRTZIWkHUFb6CnWqp2P2ErNGTVOiWeMqlwNqf3s72FkEhOrizyB2ceyLEuaz6DI4bLuB6RnaHVWKm3KokXao1NLnGVDNSwlKQUKG3blp2RzWNDtr25bVCw8TKVwTNLk/V7qRNMhKJuZGsh4aM1qSnIdjp2HKN+3BIDRvUf6cgEuP6VUKZWaVJrnEyzypZtYQt4Nne0qPEkq4gTzccfjF0YpJtyh2hbeG0rT7gcn0y4qamW5lrP1bND8mh4b32akpyACdOxWXfj46fhgzSLhp9FuCkz1UddcbbqMxLVRmVl5DURqCScy4pAPZE6U5ggA8ceC0N1an24L11ldrao9+KqOEWnaliWdN3reclVqxUHLfttp2YTUJVaAhxCF6UpUdJJKicho49Jy4xEOudVlJpFOatpuurqIKjPzE+W0Nq6KW20E5DlzJz5DmeLY2UONAFrdCWtqSFHfoixqlZlnUmxKDdNTrlwpNb331NItSLG+aWzpU4VFzIIJyyOWZzGyIPb9Kmq5XZCiyKdUzPzCJdrvKWoDP7s8/uibboOqSs1iAqhUwj1qtuVbo8mBxfkhk4rZyleYz/REYyEl7Wg+pWUYAY57hXwHFeaDh7SrypVRmLFrs5M1OnMGZepFTlEsvONDjU04hakr5sjkcyOcRXQ2jOLi3ObwtSQuvEmf/JyVNpypGVz2eqJt0pKW085GlOfNqz5Iilm0K3Z5+hsOoqVy1OpzKW5iRpyjLokgpYSN8dKFalnMnIAJAG1RjBsha5wN4H6Vm6IOa0i4n9ChEItu2rEsyq7oCoYf7/VXaT6oel5SaamUJcbW0gqUFZoIWNSVJz2cWcRSg0u23ZisVisyVSl7ek9TEuhqdT6odmfmNJUW8lk5FSjpAQnb0QdgmaeQPNa9g7qRyUPhFmTtm0q37WoF2Vi36xUKZXM3j6nndDMgxqASlbobJW6RmraEpHFkTnlArjTSk1+oIoRmFUpMwtMmp9WbimgckqUchtI28XLGTJA/csXxFgvXwQhCNi1pCEIIvV33lfgn8Ik+J/x9qvhNeZbiMO+8r8E/hEnxP+PtV8JrzLcYHtjgfhbB3Z4j5X52F8KVH7EqP8quI9EhsL4UqP2JUf5VcR6A7RXh7A/cEhCEZrBIQhBEhCEESEIQRIQhBEhCEESEIQRIQhBEhCEESEIQRIQhBEhCEESEIQRIQhBEjkrclaPN1JDddqq6bIgguuNyqn1qTntSlKeXLPaSBHGwjwioXoNDVTzHC4KPc95eu1BqCnqamWalJSVXKrZVKstIACTq2HM6js54/TCm5KJTLdvG261NLpwuGnol2KgllTqWFoKjpWlPZaFatpAOWXFFfwjVsW7PU8Fs2ztoZPFTqj3FTLKo9UZt2eNSr1VlzJuVJLKmmJKWUezSyFgLW4rIZrISEgbMztj6q3VrYlcHJS0qHXVvzxqKqhUgqnutpmFaQhtCFHiShOZ7LLM8UV3CGxBNa+q9E5ApTwokWfgvWLQtUVSsVG43JauTNMelKfoprriJJxwZFxahxkZADSDxmKwhGUjBI3VJWEUhjdrAKwrNq1oWDVW7hlZ566a3KgmntCTXLSbLhBAdcU4dayM9iQkbeWOaot12pdWF9Vta967NUirP1xdaTUUyKpluYcUnIhSEbc9pGWzIacjsyio4Rg6Brryb8f25bG2hzbgLsP29Sq212VTMQ6G+67PzVClZttydmHpVKFPBKtWaWkklKNiRkVKURmdnFHL3NVLXqGNKLinq49WaPN1cTc6tMi40UMb4CEBKjmrJICTkOIbM4r6EZGIE1r4UWImIFKDfVWjXruoLGPbF+s1V2vyfrsJ1xAklsqaaGQQhO+HslJTllsA7Ebduz4MUGcNpqv1W4KLclTqzlSedmkSQpm8llxwlWTjzh2pCjxJSSRszHHFewjxsIaQQTcKLIzkgggXmqsRirWxTMGalbdNry1VqqTrUzPf+HupbWy0CUS6Vc+vsiSAOOK7hCM2M1a+q1veX09FZOBVWs61rmbue4q061Ny7LqZOXapzjwaeUkpDq1DYQASQBt28mUcGqQsuXmlzlVu2frRUsrWzTaatlbyiczm6/kEZnlCVHvREoRjsv7F1Tfw/xZ7b+obQXKZ1C75Wv1ehUypyfrVZtOmUaaXIkq3toqG+LKj2Tjqk55rO3acsos2nX5ZVMxOmKnJXnOtUWWlHvWWSl6W6xISjhb0thxtJ1OEEqOejadpPFGf45K2ZSlT1dlZWuVY0inLUd/nBLqeLQAJ2ITtJJAH3xhJAwj0/eqzjtDwfCtf32UywHnmKXjDJV6bmlO0+mCZm52dUggBoNLBcUDtGpSkgDjJUBxmOEqFcpNZu2mImmH5G1pSbSlEsns3ES6nAp1asstTqxmVEcuQGxIj1uir0hmQNuWmJoUkOB2am5pIRMVF1OelS0jYhtOZ0N7dpKjmTsjEetj1na5wosXSardQY1/fS5W9Qr4p1iSdzU+jXQ5cNHqUu+xTqSZV1LLJdOxx3fQAkpTmClGeo8ZHHFQAZADjyGUeYRmyMMqRvKwklLwAdwSEIRsWtIQhBF6u+8r8E/hEnxP8Aj7VfCa8y3EYd95X4J/CJPif8far4TXmW4wPbHA/C2DuzxHymG7D03X5uVlmlOvv0eoNtNp90tZllgJHOTzR6cBb07lav4uYjpAIyIBEeuhHQT1QLTWoK8Dm0oQpJwFvTuVq/i5hwFvTuVq3i5iN6EdBPVDQjoJ6oUfj0zSrMDzyUk4C3p3K1bxcw4C3p3K1fxcxG9COgnqhoR0E9UKPx6ZpVmB55KScBb07lat4uYcBb07lav4uYjehHQT1Q0I6CeqFH49M0qzA88lJOAt6dytX8XMOAt6dytW8XMRvQjoJ6oaEdBPVCj8emaVZgeeSknAW9O5WreLmHAW9O5WreLmI3oR0E9UNCOgnqhR+PTNKswPPJSTgLencrVvFzDgLencrV/FzEb0I6CeqGhHQT1Qo/HpmlWYHnkpJwFvTuVq3i5hwFvTuVq3i5iN6EdBPVDQjoJ6oUfj0zSrMDzyUk4C3p3K1fxcw4C3p3K1bxcxG9COgnqhoR0E9UKPx6ZpVmB55KScBb07lat4uYcBb07lat4uYjehHQT1Q0I6CeqFHY9M0qzA88lJOAt6dytW8XMOAt6dytX8XMRvQjoJ6oaEdBPVCj8emaVZgeeSknAW9O5Wr+LmHAW9O5WreLmI3oR0E9UNCOgnqhR+PTNKswPPJSTgLencrV/FzDgLencrVvFzEb0I6CeqGhHQT1Qo/HpmlWYHnkpJwFvTuVq3i5hwFvTuVq/i5iN6EdBPVDQjoJ6oUfj0zSrMDzyUk4C3p3K1fxcw4C3p3K1fxcxG9COgnqhoR0E9UKPx6ZpVmB55KScBb07lav4uYcBb07lav4uYjehHQT1Q0I6CeqFH49M0qzA88lJOAt6dytX8XMOAt6dytW8XMRvQjoJ6oaEdBPVCj8emaVZgeeSknAW9O5WreLmHAW9O5Wr+LmI3oR0E9UNCOgnqhR2PTNKswPPJSTgLencrVvFzDgLencrV/FzEb0I6CeqGhHQT1Qo/HpmlWYHnkpJwFvTuVq/i5hwFvTuVq3i5iN6EdBPVDQjoJ6oUfj0zSrMDzyUk4C3p3K1bxcw4C3p3K1bxcxG9COgnqhoR0E9UKPx6ZpVmB55KScBb07lat4uYcBb07lav4uYjehHQT1Q0I6CeqFH49M0qzA88lJOAt6dytW8XMOAt6dytW8XMRvQjoJ6oaEdBPVCj8emaVZgeeSknAW9O5Wr+LmHAW9O5WreLmI3oR0E9UNCOgnqhR+PTNKswPPJSTgLencrVvFzDgLencrVvFzEb0I6CeqGhHQT1Qo/HpmlWYHnkpJwFvTuVq3i5hwFvTuVq/i5iN6EdBPVDQjoJ6oUfj0zSrMDzyUk4C3p3K1fxcw4C3p3K1bxcxG9COgnqhoR0E9UKPx6ZpVmB55KScBb07lav4uYcBb07lat4uYjehHQT1Q0I6CeqFH49M0qzA88lJOAt6dytW8XMOAt6dytX8XMRvQjoJ6oaEdBPVCj8emaVZgeeSkTtiXqWljgrV9qT/7c80frikCm/6uhQyUlxtKhzEMtgjrBiMaEdBPVHsAAMgMoBprUlC4auqAv//Z" alt="THE FIRST - For Better Days" style="width:119px;height:auto;flex:0 0 auto;border-radius:3px">
-    <span style="font-weight:500;font-size:.72rem;color:#0a4771;letter-spacing:-.2px">숙제관리 v500</span>
+    <span style="font-weight:500;font-size:.72rem;color:#0a4771;letter-spacing:-.2px">숙제관리 v504</span>
   </div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
@@ -1352,7 +1368,7 @@ button.rq-pn.on{border-color:currentColor}
 
 <!-- ════ 전체 현황 ════ -->
 <div class="page" id="p-overview">
-  <div class="ph"><h1>학원 일정 · 휴무일</h1><p>학원 일정과 추가 휴무일(방학·대체공휴일)을 관리 — 휴무일은 보카 자동 배정 날짜에서 빠져요</p></div>
+  <div class="ph"><h1>학원 일정 · 휴무일</h1><p>학원 일정은 달력 표시만 · 숙제를 미루는 곳은 🏫 학교 시험대비 기간(중등 학교별)과 🗓 학원 휴무일(전체 학생) 두 곳이에요</p></div>
 
   <div class="card" style="margin-bottom:1rem;display:none">
     <div class="ct" style="margin-bottom:.7rem">⏰ 곧 종료되는 과제 (5일 이내)</div>
@@ -1361,7 +1377,7 @@ button.rq-pn.on{border-color:currentColor}
 
   <div class="card" style="margin-bottom:1rem">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem">
-      <div class="ct" style="margin:0">📅 학원 일정</div>
+      <div class="ct" style="margin:0">📅 학원 일정 <span class="ev-eff">달력 표시만 · 숙제 영향 없음</span></div>
       <button class="btn bp bsm" onclick="toggleEvtAddForm()">+ 일정 추가</button>
     </div>
 
@@ -1376,13 +1392,14 @@ button.rq-pn.on{border-color:currentColor}
         <div><label>학교 <span style="font-weight:400;color:var(--mu);font-size:.68rem">(선택)</span></label><select id="evt-school" onchange="_evFormSync()"></select></div>
         <div style="flex:1"><label>반 <span style="font-weight:400;color:var(--mu);font-size:.68rem">(선택 · 안 고르면 전체)</span></label><div id="evt-groups" class="ev-chks"></div></div>
       </div>
+      <div id="evt-prep-note" class="ev-note" style="display:none">ⓘ 시험 일정만으로는 숙제가 밀리지 않아요. <b>학교</b>를 고르면 '시험대비 기간도 같이 만들기'가 나와요.</div>
       <div id="evt-prep" class="ev-prep" style="display:none">
         <label style="display:flex;align-items:center;gap:.35rem;margin:0;font-weight:700;color:#b45309;cursor:pointer"><input type="checkbox" id="evt-prep-on" checked style="width:auto;margin:0"> 🏫 시험대비 기간도 같이 만들기</label>
         <span>시작</span><input type="date" id="evt-prep-start" style="width:150px" oninput="this.dataset.touched='1'"><span>~ 시험 마지막 날까지</span>
         <span class="hint-i" tabindex="0" data-tip="아래 '학교 시험대비 기간'에 같이 등록돼요. 그 학교·반 학생의 숙제가 기간이 끝난 다음 수업일로 밀려요. 등록 전에 몇 건이 밀리는지 먼저 보여 줘요.">ⓘ</span>
       </div>
       <div class="ev-fbtn"><button class="btn bp bsm" id="evt-save-btn" onclick="addSchoolEvent()">추가</button><button class="btn bg bsm" onclick="evFormClose()">닫기</button>
-        <span style="font-size:.7rem;color:var(--mu)">숙제를 쉬는 날은 아래 <b>추가 휴무일</b>에 넣어요</span></div>
+        <span style="font-size:.7rem;color:var(--mu)">여기 일정은 <b>달력 표시만</b> 해요 · 숙제를 미루려면 시험은 <b>🏫 학교 시험대비 기간</b>, 학원이 쉬는 날은 <b>🗓 학원 휴무일</b></span></div>
     </div>
 
     <div class="ev-wrap">
@@ -1409,18 +1426,18 @@ button.rq-pn.on{border-color:currentColor}
 
   <div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem">
-      <div class="ct" style="margin:0">🗓 추가 휴무일 등록</div>
+      <div class="ct" style="margin:0">🗓 학원 휴무일 <span class="ev-eff on">전체 학생 숙제·교재 끝날 미룸</span></div>
       <span id="vac-count-badge" style="font-size:.72rem;color:var(--mu)"></span>
     </div>
     <div style="padding:.6rem .7rem;background:rgba(10,71,113,.06);border-radius:8px;font-size:.75rem;color:var(--mu);margin-bottom:.8rem">
-      ℹ 토·일·법정공휴일은 자동으로 제외됩니다. 여기에는 <b>대체공휴일, 방학, 학원 자체 휴무일</b>만 추가하세요. 날짜를 추가하면 그날은 <b>앞으로 새로 배정하는 숙제</b>에서 빠져요. 그날에 <b>이미 배정된 보카 숙제</b>가 있으면 등록할 때 뒤로 미룰지 바로 물어봐요.
+      ℹ 토·일·법정공휴일은 자동으로 빠져요. 여기에는 <b>방학·대체공휴일·학원 자체 휴무</b>를 넣어요. 하루면 끝 날짜는 비워 두세요.<br>등록하면 그 기간에 걸린 <b>점수 입력 전 숙제</b>(보카, 체크하면 교재도)가 휴무 뒤 수업일로 밀리고 교재 끝 예정일도 늘어나요. <b>지우면 원래대로</b> 돌아와요.
     </div>
-    <div class="g2" style="margin-bottom:.8rem;align-items:end">
-      <div><label>날짜</label><input type="date" id="vac-new-date"></div>
-      <div style="display:flex;gap:.5rem;align-items:end">
-        <div style="flex:1"><label>사유 <span style="font-weight:400;color:var(--mu);font-size:.68rem">(선택)</span></label><input type="text" id="vac-new-reason" placeholder="예: 여름방학, 대체공휴일, 학원행사"></div>
-        <button class="btn bs" style="white-space:nowrap" onclick="_addVacationFromForm()">+ 추가</button>
-      </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:.8rem">
+      <div><label>시작</label><input type="date" id="vac-new-date" style="width:150px"></div>
+      <div><label>끝 <span style="font-weight:400;color:var(--mu);font-size:.68rem">(하루면 비움)</span></label><input type="date" id="vac-new-end" style="width:150px"></div>
+      <div style="flex:1 1 180px"><label>사유 <span style="font-weight:400;color:var(--mu);font-size:.68rem">(선택)</span></label><input type="text" id="vac-new-reason" placeholder="예: 겨울방학, 대체공휴일"></div>
+      <label style="display:flex;align-items:center;gap:.25rem;margin:0 0 .45rem;font-size:.76rem;white-space:nowrap;cursor:pointer"><input type="checkbox" id="vac-new-book" checked style="width:auto;margin:0"> 교재 숙제도 미루기</label>
+      <button class="btn bp bsm" style="margin-bottom:.3rem" onclick="addVacationRange()">+ 등록</button>
     </div>
     <div id="vac-list-box"></div>
   </div>
@@ -1632,7 +1649,7 @@ button.rq-pn.on{border-color:currentColor}
         <div style="display:grid;grid-template-columns:1fr 1fr 1.6fr;gap:.7rem;margin-top:.55rem;margin-bottom:.1rem">
           <div><label>시작 날짜</label><input type="date" id="d-start-date" onchange="autoFillDistribEnd()"></div>
           <div><label>종료 예상일 <span style="font-weight:400;color:var(--mu);font-size:.68rem">(선택)</span></label>
-            <input type="date" id="d-end-date" oninput="_dEndTouched = true">
+            <input type="date" id="d-end-date" oninput="_dEndTouched = true" onchange="autoFillDistribEnd()">
             <div id="d-end-hint" style="font-size:.68rem;color:var(--mu);margin-top:.15rem"></div>
           </div>
           <div>
@@ -1811,6 +1828,7 @@ button.rq-pn.on{border-color:currentColor}
       <tbody id="st-tbody"></tbody>
     </table>
   </div>
+  <div id="st-left-box"></div>
 </div>
 
 <!-- ════ 교재 관리 ════ -->
@@ -2470,6 +2488,26 @@ const S = {
     ]},
   ],
 };
+/* ★ v503 퇴원(보관) — 퇴원한 학생(st.left = 퇴원일)은 S.students(화면·배정·출석 등 모든 곳)에서 빠지고,
+   저장·동기화·백업은 _SF('students') = 전체 목록으로 해서 기록은 그대로 남는다. 복귀하면 다시 나타남 */
+let _stLeftVer = 0;
+(function () {
+  let all = Array.isArray(S.students) ? S.students : [];
+  let cache = null, cSrc = null, cLen = -1, cVer = -1;
+  Object.defineProperty(S, 'students', {
+    get() {
+      if (cache && cSrc === all && cLen === all.length && cVer === _stLeftVer) return cache;
+      cSrc = all; cLen = all.length; cVer = _stLeftVer;
+      cache = all.some(x => x && x.left) ? all.filter(x => !(x && x.left)) : all;
+      return cache;
+    },
+    set(v) { all = Array.isArray(v) ? v : []; cache = null; },
+    enumerable: true, configurable: true
+  });
+  S._allStudents = () => all;
+})();
+function _SF(k) { return k === 'students' ? S._allStudents() : S[k]; }
+function _leftStudents() { return S._allStudents().filter(x => x && x.left); }
 
 // ══════════ UTILS ══════════
 const $ = id => document.getElementById(id);
@@ -2949,7 +2987,7 @@ function doDistribute() {
   }
 
   window._dSel = new Set();   // v400: 배부하면 임시 선택은 비움
-  let added = 0, already = 0;
+  let added = 0, already = 0; const _dNewPairs = [];
   ids.forEach(sid => {
     const st = S.students.find(s => s.id === sid);
     if (!st) return;
@@ -2971,18 +3009,20 @@ function doDistribute() {
     if (!st.bookEndDates) st.bookEndDates = {};
     if (endDate) st.bookEndDates[bdKey] = endDate;
     else delete st.bookEndDates[bdKey];
+    _shEndFresh(st, bdKey); _dNewPairs.push({ st, key: bdKey });   // v502
     _feeAdd(st, book, cohort, startDate); // ★ v428 교재비 목록
     added++;
   });
+  const extN = (endDate && !book.extra) ? _shAfterEndSet(_dNewPairs.filter(x => x.st)) : 0;   // v502 이미 등록된 시험대비·휴무만큼 끝날 늘림
 
   save();
   updateSidebar();
 
   // 성공 시 폼 초기화 (교재/반 선택 해제, 학생 목록 리셋)
-  const msg = (added === 0)
+  const msg = ((added === 0)
     ? `이미 모두 배부되어 있습니다 (${already}명)`
     : (already === 0 ? `✅ ${added}명에게 '${book.name}' 배부 완료`
-                     : `✅ ${added}명 배부 · ${already}명 이미 배부됨`);
+                     : `✅ ${added}명 배부 · ${already}명 이미 배부됨`)) + (extN ? ` · 시험대비·휴무로 ${extN}명 끝 예정일 늘림` : '');
 
   if (added > 0) {
     $('d-book').value = '';
@@ -3170,31 +3210,80 @@ function removeVacationDate(ds) {
   toast('🎓 휴무일이 해제됐습니다');
 }
 
-function _addVacationFromForm() {
-  const dEl = $('vac-new-date'), rEl = $('vac-new-reason');
-  const ds = (dEl || {}).value || '';
-  const reason = (rEl || {}).value?.trim() || '';
-  addVacationWithReason(ds, reason);
-  if (dEl) dEl.value = '';
-  if (rEl) rEl.value = '';
+function _addVacationFromForm() { addVacationRange(); }
+function vacRanges() { return (S.classPauses || []).filter(p => p && p.vac); }
+/* v501 학원 휴무 기간 — classPauses에 { vac:true, start, end, label, book, days } 로 저장(기록 단위 동기화),
+   날짜는 예전처럼 S.vacations에도 넣어 옛 버전·자동 배정이 그대로 피해 감. 밀린 숙제는 a.vz·a.pzFrom 으로 기억 */
+function _vrPlan(r, onlyIds) { return _shPlanG(r, () => true, true, onlyIds); }
+function _vrApply(r, onlyIds) {
+  const plan = _vrPlan(r, onlyIds);
+  _shApplyPlan(plan, r.id, 'vz');
+  if (r.book) _shEndApply(r, () => true, true, onlyIds, 'vz');
+  return plan;
+}
+function addVacationRange() {
+  const start = $('vac-new-date')?.value || '', end = $('vac-new-end')?.value || start;
+  const label = ($('vac-new-reason')?.value || '').trim(), book = !!$('vac-new-book')?.checked;
+  if (!start) { toast('시작 날짜를 고르세요'); return; }
+  if (end < start) { toast('끝 날짜가 시작보다 빨라요'); return; }
+  const days = []; for (let d = start, i = 0; d <= end && i < 400; d = _spNext(d), i++) { const w = parseYMD(d).getDay(); if (w !== 0 && w !== 6 && !HOLIDAYS.has(d)) days.push(d); }
+  if (!days.length) { toast('그 기간에는 평일이 없어요 (주말·공휴일은 원래 빠져요)'); return; }
+  const dup = vacRanges().find(r => r.start <= end && r.end >= start);
+  if (dup) { toast(`이미 등록된 휴무(${_rmMD(dup.start)}~${_rmMD(dup.end)})와 겹쳐요 — 그걸 지우고 다시 넣어 주세요`); return; }
+  const r = { id: S.nid++, vac: true, start, end, label: label || '휴무', book, days };
+  const plan = _vrPlan(r), sm = _spSummary(plan, 6);
+  const endN = book ? S.students.filter(st => st && _shEndDays(r, st, true).length).length : 0;
+  const rng = start === end ? _rmMD(start) : `${_rmMD(start)} ~ ${_rmMD(end)}`;
+  let msg = `🗓 ${rng} ${r.label} — 평일 ${days.length}일 학원 휴무\n\n`;
+  msg += plan.length ? `전체 학생 ${sm.n}명의 숙제 ${plan.length}건을 휴무가 끝난 다음 수업일로 미뤄요.\n${sm.lines.join('\n')}` : '지금 이 기간에 걸린 숙제는 없어요. 앞으로 배정하는 숙제도 이 날들은 피해서 잡혀요.';
+  if (endN) msg += `\n\n교재 끝 예정일도 ${endN}명 늘어나요.`;
+  msg += `\n\n(점수가 이미 들어간 숙제는 그대로예요 · 나중에 지우면 원래대로 돌아와요)\n등록할까요?`;
+  if (!confirm(msg)) return;
+  if (!Array.isArray(S.classPauses)) S.classPauses = [];
+  S.classPauses.push(r);
+  if (!S.vacations) S.vacations = [];
+  if (!S.vacationReasons) S.vacationReasons = {};
+  days.forEach(d => { if (!S.vacations.includes(d)) S.vacations.push(d); if (label) S.vacationReasons[d] = label; });
+  S.vacations.sort();
+  _vrApply(r);
+  ['vac-new-date', 'vac-new-end', 'vac-new-reason'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+  save(); renderVacationList(); renderEventCalendar(); try { renderCal(); renderVocaPreview(); renderTodayPreview(); updateSidebar(); } catch (e) {}
+  toast(`🗓 ${rng} 휴무 등록${plan.length ? ` · 숙제 ${plan.length}건 미룸` : ''}`);
+}
+function deleteVacationRange(id) {
+  const r = vacRanges().find(x => x.id === id); if (!r) return;
+  const n = S.assigns.filter(a => a && (a.vz || []).includes(id) && (a.result === '' || a.result == null)).length;
+  if (!confirm(`🗓 ${_rmMD(r.start)}${r.end !== r.start ? ' ~ ' + _rmMD(r.end) : ''} ${r.label} 휴무를 지울까요?${n ? `\n\n이 휴무 때문에 밀렸던 숙제 ${n}건과 늘어난 교재 끝 예정일이 원래대로 돌아가요.` : ''}`)) return;
+  const ids = _shTouched(id);
+  S.classPauses = (S.classPauses || []).filter(x => x.id !== id);
+  const keep = new Set(vacRanges().flatMap(x => x.days || []));
+  (r.days || []).forEach(d => { if (keep.has(d)) return; const i = (S.vacations || []).indexOf(d); if (i >= 0) S.vacations.splice(i, 1); if (S.vacationReasons) delete S.vacationReasons[d]; });
+  _shRebuild(ids);
+  save(); renderVacationList(); renderEventCalendar(); try { renderCal(); renderVocaPreview(); renderTodayPreview(); updateSidebar(); } catch (e) {}
+  toast(`🗑 휴무를 지웠어요${n ? ` · 숙제 ${n}건 원래 날짜로` : ''}`);
 }
 
 function renderVacationList() {
   const box = $('vac-list-box');
   const badge = $('vac-count-badge');
   if (!box) return;
-  const dates = [...(S.vacations || [])].sort();
-  if (badge) badge.textContent = `${dates.length}일 등록됨`;
-  box.innerHTML = dates.length
-    ? `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem">${dates.map(ds => `
-        <div style="display:flex;flex-direction:column;gap:.3rem;padding:.5rem .7rem;border:1px solid var(--bd);border-radius:8px">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:.4rem">
-            <span style="font-weight:700;font-size:.82rem;white-space:nowrap">${ds}</span>
-            <button class="btn bd2 bsm" style="font-size:.68rem;padding:.15rem .4rem" onclick="removeVacationDate('${ds}')">삭제</button>
-          </div>
-          <span style="font-size:.78rem;color:var(--mu)">${escHtml(S.vacationReasons?.[ds] || '')}</span>
-        </div>`).join('')}</div>`
-    : '<div style="color:var(--mu);font-size:.82rem;text-align:center;padding:1rem">등록된 휴무일이 없습니다</div>';
+  const today = getTodayStr();
+  const ranges = vacRanges().sort((a, b) => b.start.localeCompare(a.start));
+  const inR = new Set(ranges.flatMap(r => r.days || []));
+  const singles = [...(S.vacations || [])].filter(d => !inR.has(d)).sort();
+  if (badge) badge.textContent = `${(S.vacations || []).length}일 등록됨`;
+  const moved = id => S.assigns.filter(a => a && (a.vz || []).includes(id)).length;
+  const rangeHtml = ranges.map(r => { const past = r.end < today, n = moved(r.id);
+    return `<div style="display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;border:1px solid var(--bd);border-left:4px solid #9aa0a6;border-radius:8px;margin-bottom:.35rem;${past ? 'opacity:.55' : ''}">
+      <b style="font-size:.82rem">${_rmMD(r.start)}${r.end !== r.start ? ' ~ ' + _rmMD(r.end) : ''}</b><span style="font-size:.8rem">${escHtml(r.label || '휴무')}</span>
+      <span style="font-size:.76rem;color:var(--mu)">평일 ${(r.days || []).length}일${r.book ? ' · 교재 포함' : ''}${n ? ` · 숙제 ${n}건 밀림` : ''}${past ? ' · 지남' : ''}</span>
+      <button class="btn bd2 bsm" style="margin-left:auto;font-size:.65rem;padding:.15rem .4rem" onclick="deleteVacationRange(${r.id})">삭제</button></div>`; }).join('');
+  const singleHtml = singles.length ? `<div class="todo-sm" style="margin:.5rem 0 .3rem">예전 방식으로 넣은 하루 휴무 ${singles.length}일 <span class="hint-i" tabindex="0" data-tip="예전 방식이라 지워도 밀린 숙제가 자동으로 돌아오지 않아요">ⓘ</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.4rem">${singles.map(ds => `
+      <div style="display:flex;align-items:center;gap:.3rem;padding:.35rem .55rem;border:1px solid var(--bd);border-radius:8px;${ds < today ? 'opacity:.55' : ''}">
+        <span style="font-weight:700;font-size:.78rem;white-space:nowrap">${_rmMD(ds)}</span><span style="font-size:.72rem;color:var(--mu);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(S.vacationReasons?.[ds] || '')}</span>
+        <button class="btn bd2 bsm" style="font-size:.62rem;padding:.1rem .35rem" onclick="removeVacationDate('${ds}')">삭제</button></div>`).join('')}</div>` : '';
+  box.innerHTML = (rangeHtml || singleHtml) ? rangeHtml + singleHtml : '<div style="color:var(--mu);font-size:.82rem;text-align:center;padding:1rem">등록된 휴무일이 없습니다</div>';
 }
 
 // ══════════ 전체 현황 — 학원 일정(날짜/기간 + 내용만) ══════════
@@ -3241,8 +3330,10 @@ function evOpenForm(ds, id) {
 function evFormClose() { const f = $('evt-add-form'); if (f) f.style.display = 'none'; window._evEditId = null; }
 function _evFormSync() {
   const box = $('evt-prep'); if (!box) return;
-  const show = !window._evEditId && $('evt-type').value === 'exam' && !!$('evt-school').value;
+  const exam = $('evt-type').value === 'exam', sch = !!$('evt-school').value;
+  const show = !window._evEditId && exam && sch;
   box.style.display = show ? 'flex' : 'none';
+  const nt = $('evt-prep-note'); if (nt) nt.style.display = (!window._evEditId && exam && !sch) ? '' : 'none';   // v501
   const ps = $('evt-prep-start'), d = $('evt-date').value;
   if (show && ps && d && !ps.dataset.touched) ps.value = _evAddDays(d, -21);
 }
@@ -3394,8 +3485,14 @@ function addSchoolEvent() {
   if (editId) {
     const e = S.schoolEvents.find(x => x.id === editId);
     if (e) { Object.assign(e, rec); if (!school) delete e.school; if (!groups.length) delete e.groups; }
-  } else S.schoolEvents.push({ id: S.nid++, ...rec });
+  } else { window._evNewId = S.nid++; S.schoolEvents.push({ id: window._evNewId, ...rec }); }
   const prep = !editId && type === 'exam' && school && $('evt-prep-on')?.checked ? ($('evt-prep-start')?.value || '') : '';
+  // v501 고친 시험의 마지막 날이 바뀌면 연결된 시험대비 기간도 같이
+  let spFix = null;
+  if (editId) { const e = S.schoolEvents.find(x => x.id === editId), lp = e && e.spId ? schoolPauses().find(x => x.id === e.spId) : null;
+    if (lp && lp.end !== rec.endDate && confirm(`연결된 시험대비 기간(${lp.school} ${lp.label} ${_rmMD(lp.start)}~${_rmMD(lp.end)})도 끝나는 날을 ${_rmMD(rec.endDate)}로 바꿀까요?\n밀린 숙제와 교재 끝 예정일이 새 날짜로 다시 맞춰져요.`)) spFix = lp; }
+  if (spFix) { const ids = _shTouched(spFix.id, S.students.filter(st => st && _spHits(spFix, st.school, st.group)).map(st => st.id));
+    spFix.end = rec.endDate; if (spFix.start > spFix.end) spFix.start = spFix.end; _shRebuild(ids); }
   save();
   evFormClose();
   renderEventCalendar();
@@ -3409,13 +3506,17 @@ function addSchoolEvent() {
     if (groups.length && gb.length && !gb.some(c => groups.includes(c.value))) { toast(`${school}에 ${groups.join('·')} 학생이 없어 시험대비 기간은 만들지 않았어요`); return; }
     gb.forEach(c => { c.checked = !groups.length || groups.includes(c.value); });
     $('sp-start').value = prep; $('sp-end').value = rec.endDate; $('sp-label').value = title + ' 대비';
-    addSchoolPause();
+    const np = addSchoolPause();
+    if (np) { np.evId = window._evNewId; const ev = (S.schoolEvents || []).find(x => x.id === window._evNewId); if (ev) ev.spId = np.id; save(); }   // v501 시험 일정과 연결
   }
 }
 
 function deleteSchoolEvent(id) {
+  const e = (S.schoolEvents || []).find(x => x.id === id);
+  const lp = e && e.spId ? schoolPauses().find(x => x.id === e.spId) : null;
   if (!confirm('이 일정을 삭제하시겠습니까?')) return;
-  S.schoolEvents = (S.schoolEvents || []).filter(e => e.id !== id);
+  if (lp && confirm(`이 시험과 연결된 시험대비 기간(${lp.school} ${lp.label} ${_rmMD(lp.start)}~${_rmMD(lp.end)})도 같이 지울까요?\n지우면 밀렸던 숙제와 교재 끝 예정일이 원래대로 돌아가요.\n(취소를 누르면 시험대비 기간은 그대로 둬요)`)) deleteSchoolPause(lp.id, true);
+  S.schoolEvents = (S.schoolEvents || []).filter(x => x.id !== id);
   save();
   renderEventCalendar();
   toast('삭제됐습니다');
@@ -4359,15 +4460,17 @@ function _schoolPausedOn(ds, school, group) { return schoolPauses().some(p => _s
 function _spGroupsTxt(p) { return Array.isArray(p.groups) && p.groups.length ? p.groups.join('·') : '전체 반'; }
 function _spNext(ds) { const d = parseYMD(ds); d.setDate(d.getDate() + 1); return toYMD(d); }
 /* 이 시험기간 때문에 바뀔 날짜 계획 — [{ a, st, from, to }] */
-function _spPlan(p, onlyIds) {
+function _spPlan(p, onlyIds) { return _shPlanG(p, st => _spHits(p, st.school, st.group), false, onlyIds); }
+/* v501 공용: 기간 p({start,end,book}) 안에 걸린 '결과 없는' 숙제를 기간 뒤 수업일로 — hits: 대상 학생, extraToo: 단기 교재도 미룰지 */
+function _shPlanG(p, hits, extraToo, onlyIds) {
   const noRes = a => a.result === '' || a.result === null || a.result === undefined;
   const plan = [];
-  S.students.filter(st => st && _spHits(p, st.school, st.group) && (!onlyIds || onlyIds.has(st.id))).forEach(st => {
+  S.students.filter(st => st && hits(st) && (!onlyIds || onlyIds.has(st.id))).forEach(st => {
     const series = new Map();
     S.assigns.forEach(a => {
       if (!a || a.studentId !== st.id || !a.date) return;
       if (a.type !== 'voca' && !(p.book && a.type === 'book')) return;
-      if ((getBook(a.bookId) || {}).extra) return;   // ★ v456 시험대비(단기) 교재 숙제는 그 기간에 하는 것이라 안 밀림
+      if (!extraToo && (getBook(a.bookId) || {}).extra) return;   // ★ v456 시험대비(단기) 교재 숙제는 그 기간에 하는 것이라 안 밀림
       const k = `${a.type}|${a.bookId}|${a.cohort || ''}|${a.type === 'voca' ? (a.category || '수업보카') : ''}`;
       if (!series.has(k)) series.set(k, []); series.get(k).push(a);
     });
@@ -4379,7 +4482,7 @@ function _spPlan(p, onlyIds) {
       const dates = [...new Set(pend.map(a => a.date))].sort();
       const map = {}; let prev = null;
       for (const d of dates) {
-        if (d > p.end && (!prev || d > prev)) break;      // 시험 뒤로 여유가 있으면 그 뒤는 그대로
+        if (d > p.end && (!prev || d > prev)) break;      // 기간 뒤로 여유가 있으면 그 뒤는 그대로
         let c = prev && d <= prev ? _spNext(prev) : d;
         for (let i = 0; i < 400 && !ok(c); i++) c = _spNext(c);
         map[d] = c; prev = c;
@@ -4391,14 +4494,94 @@ function _spPlan(p, onlyIds) {
 }
 function _spApply(p, onlyIds) {
   const plan = _spPlan(p, onlyIds);
-  plan.forEach(x => {
-    const a = x.a;
-    if (a.pzFrom == null) a.pzFrom = a.date;
-    a.pz = [...new Set([...(a.pz || []), p.id])];
-    a.date = x.to;
-  });
+  _shApplyPlan(plan, p.id, 'pz');
+  if (p.book) _shEndApply(p, st => _spHits(p, st.school, st.group), false, onlyIds, 'pz');
   return plan;
 }
+function _shApplyPlan(plan, id, tag) {
+  plan.forEach(x => { const a = x.a; if (a.pzFrom == null) a.pzFrom = a.date; a[tag] = [...new Set([...(a[tag] || []), id])]; a.date = x.to; });
+}
+/* v501 교재 끝 예정일도 기간만큼 늘림 — st.pzEnd[key] = { from(원래), to(늘린 날), by:[기간 id] } 로 기억해서 지우면 되돌림 */
+function _shEndDays(p, st, extraToo) {
+  const out = [];
+  _asgActive(st).forEach(x => {
+    if (x.book.mode === 'voca' || (!extraToo && x.book.extra)) return;
+    const k = _bdKey(x.book.id, x.cohort), end = (st.bookEndDates || {})[k], since = (st.bookDates || {})[k] || '';
+    if (!end || end < p.start || (since && since > p.end)) return;
+    const from = since && since > p.start ? since : p.start;
+    const days = Math.round((parseYMD(p.end) - parseYMD(from)) / 864e5) + 1;
+    if (days > 0) out.push({ k, end, days, name: x.book.name });
+  });
+  return out;
+}
+function _shEndApply(p, hits, extraToo, onlyIds, tag) {
+  S.students.forEach(st => {
+    if (!st || !hits(st) || (onlyIds && !onlyIds.has(st.id))) return;
+    _shEndDays(p, st, extraToo).forEach(({ k, end, days }) => {
+      if (((st.pzEnd || {})[k]?.baked || []).includes(p.id)) return;   // v502 손으로 정한 끝날에 이미 들어간 기간
+      const d = parseYMD(end); d.setDate(d.getDate() + days); const to = toYMD(d);
+      if (!st.pzEnd) st.pzEnd = {};
+      let o = st.pzEnd[k] || { from: end, by: [] };
+      if (o.to && o.to !== end) o = { from: end, by: [], baked: [...new Set([...(o.baked || []), ...(o.by || [])])] };   // v502 그사이 손으로 바꾼 끝날은 새 기준으로
+      if (!o.from) o.from = end;
+      o.to = to; o.by = [...new Set([...(o.by || []), p.id])];
+      st.pzEnd[k] = o; st.bookEndDates[k] = to;
+    });
+  });
+}
+/* v501 이 학생들의 '미룬 숙제·늘린 끝날'을 전부 원래대로 돌린 뒤, 남아 있는 시험대비 기간·학원 휴무를 날짜 순으로 다시 적용 */
+function _shRebuild(ids) {
+  if (!ids || !ids.size) return;
+  const noRes = a => a.result === '' || a.result === null || a.result === undefined;
+  const live = new Set((S.classPauses || []).filter(p => p && (p.school || p.vac)).map(p => p.id));
+  S.assigns.forEach(a => {
+    if (!a || !ids.has(a.studentId) || (!a.pz && !a.vz)) return;
+    if (noRes(a)) { if (a.pzFrom) a.date = a.pzFrom; delete a.pz; delete a.vz; delete a.pzFrom; return; }
+    ['pz', 'vz'].forEach(t => { if (Array.isArray(a[t])) { a[t] = a[t].filter(x => live.has(x)); if (!a[t].length) delete a[t]; } });
+    if (!a.pz && !a.vz) delete a.pzFrom;
+  });
+  S.students.forEach(st => {
+    if (!st || !ids.has(st.id) || !st.pzEnd) return;
+    // v502 그대로면 원래 끝날로 돌림 · 손으로 바꾼 끝날은 그대로 두고, 이미 들어간 기간(baked)은 다시 안 늘림
+    Object.entries(st.pzEnd).forEach(([k, o]) => {
+      const cur = (st.bookEndDates || {})[k];
+      if (!cur || !o) { delete st.pzEnd[k]; return; }
+      let baked, from;
+      if (o.to && cur === o.to) { from = o.from || cur; baked = (o.baked || []).filter(x => live.has(x)); }
+      else { from = cur; baked = [...new Set([...(o.baked || []), ...(o.by || [])])].filter(x => live.has(x)); }
+      st.bookEndDates[k] = from;
+      if (baked.length) st.pzEnd[k] = { from, to: from, by: [], baked }; else delete st.pzEnd[k];
+    });
+    if (!Object.keys(st.pzEnd).length) delete st.pzEnd;
+  });
+  const rules = [...schoolPauses().map(p => ({ p, sp: true })), ...vacRanges().filter(r => r.shift !== false).map(p => ({ p, sp: false }))]
+    .sort((a, b) => a.p.start.localeCompare(b.p.start));
+  rules.forEach(({ p, sp }) => sp ? _spApply(p, ids) : _vrApply(p, ids));
+}
+function _shTouched(id, extraIds) {
+  const ids = new Set(extraIds || []);
+  S.assigns.forEach(a => { if (a && ((a.pz || []).includes(id) || (a.vz || []).includes(id))) ids.add(a.studentId); });
+  S.students.forEach(st => { if (st && st.pzEnd && Object.values(st.pzEnd).some(o => o && (o.by || []).includes(id))) ids.add(st.id); });
+  return ids;
+}
+/* v502 새로 배부하거나 끝날을 새로 정하면: 그 끝날 기준으로 이미 등록된 시험대비·휴무를 다시 반영 */
+function _shEndFresh(st, key) { if (st && st.pzEnd) { delete st.pzEnd[key]; if (!Object.keys(st.pzEnd).length) delete st.pzEnd; } }
+function _shHasRules() { return schoolPauses().length > 0 || vacRanges().some(r => r.book); }
+function _shAfterEndSet(pairs) {   // pairs: [{ st, key }] → 늘어난 학생 수
+  if (!pairs.length || !_shHasRules()) return 0;
+  const before = pairs.map(x => (x.st.bookEndDates || {})[x.key]);
+  _shRebuild(new Set(pairs.map(x => x.st.id)));
+  return pairs.filter((x, i) => (x.st.bookEndDates || {})[x.key] !== before[i]).length;
+}
+/* v502 배부 칸 아래 안내 — 시작~끝 사이에 걸린 시험대비·휴무 */
+function _shOverlapTxt(start, end) {
+  if (!start || !end) return '';
+  const sp = schoolPauses().filter(p => p.book && p.start <= end && p.end >= start).map(p => `${p.school} ${_rmMD(p.start)}~${_rmMD(p.end)}`);
+  const vr = vacRanges().filter(r => r.book && r.start <= end && r.end >= start).map(r => `${r.label || '휴무'} ${_rmMD(r.start)}~${_rmMD(r.end)}`);
+  const all = [...sp, ...vr];
+  return all.length ? `· 이 기간에 ${all.slice(0, 3).join(', ')}${all.length > 3 ? ' 외' : ''}이 있어요 — 해당 학생은 끝 예정일이 그만큼 자동으로 늘어나요` : '';
+}
+function _isMidGroup(g) { return /^[중고]/.test(String(g || '').trim()); }
 /* 이 시험기간으로 밀린 숙제를 원래 날짜로 되돌리고, 같은 학교의 다른 시험기간은 다시 적용 */
 function _spUndo(p) {
   const noRes = a => a.result === '' || a.result === null || a.result === undefined;
@@ -4435,34 +4618,40 @@ function addSchoolPause() {
   if (gBoxes.length && !pickG.length) { toast('반을 하나 이상 고르세요'); return; }
   if (!start || !end) { toast('시작일과 끝나는 날을 넣으세요'); return; }
   if (end < start) { toast('끝나는 날이 시작일보다 빨라요'); return; }
-  const allG = [...new Set(S.students.filter(st => st && st.school === school).map(st => st.group))];
+  const allG = [...new Set(S.students.filter(st => st && st.school === school && _isMidGroup(st.group)).map(st => st.group))];   // v501 중등 반만
   const p = { id: S.nid++, school, start, end, label, book };
   if (pickG.length && pickG.length < allG.length) p.groups = pickG;
   const groups = p.groups || allG;
   const blank = S.students.filter(st => st && groups.includes(st.group) && !_normSchool(st.school));
+  const endN = book ? S.students.filter(st => st && _spHits(p, st.school, st.group) && _shEndDays(p, st, false).length).length : 0;
   const plan = _spPlan(p), sm = _spSummary(plan);
   let msg = `🏫 ${school} ${label} · ${_spGroupsTxt(p)} (${_rmMD(start)} ~ ${_rmMD(end)})\n\n`;
   msg += plan.length ? `이 학교 학생 ${sm.n}명의 숙제 ${plan.length}건을 시험대비 기간이 끝난 다음 수업일로 미뤄요.\n${sm.lines.join('\n')}` : `지금 이 기간에 걸린 숙제는 없어요. 앞으로 배정하는 보카 숙제는 이 기간을 건너뛰어요.`;
+  if (endN) msg += `\n\n교재 끝 예정일도 ${endN}명 늘어나요 (기간이 겹친 날만큼).`;
   msg += `\n\n이 기간에는 시험대비 교재(단기 교재)를 배부하세요 — 단기 교재 숙제는 밀리지 않아요.`;
-  if (blank.length) msg += `\n\n⚠ 같은 반(${groups.join(', ')})에 학교를 안 넣은 학생 ${blank.length}명은 안 밀려요:\n${blank.slice(0, 10).map(x => x.name).join(', ')}${blank.length > 10 ? ' …' : ''}`;
+  if (blank.length) msg += `\n\n⚠⚠ 같은 반(${groups.join(', ')})에 학교를 안 넣은 학생 ${blank.length}명은 숙제가 안 밀려요:\n${blank.slice(0, 12).map(x => x.name + '(' + x.group + ')').join(', ')}${blank.length > 12 ? ' …' : ''}\n→ 취소하고 아래 '학교 미입력 중등 학생'에서 학교를 먼저 넣는 걸 권해요.`;
   msg += `\n\n(점수가 이미 들어간 숙제와 시작일 전에 밀린 숙제는 그대로예요)\n등록할까요?`;
-  if (!confirm(msg)) return;
+  if (!confirm(msg)) return null;
   if (!Array.isArray(S.classPauses)) S.classPauses = [];
   S.classPauses.push(p);
   _spApply(p);
   ['sp-start', 'sp-end', 'sp-label'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   save(); renderEventCalendar(); try { renderCal(); renderTodayPreview(); updateSidebar(); } catch (e) {}
   toast(`✅ ${school} ${label} 등록${plan.length ? ` · 숙제 ${plan.length}건 미룸` : ''}`);
+  return p;
 }
-function deleteSchoolPause(id) {
-  const p = schoolPauses().find(x => x.id === id); if (!p) return;
+function deleteSchoolPause(id, noAsk) {
+  const p = schoolPauses().find(x => x.id === id); if (!p) return false;
   const n = S.assigns.filter(a => a && Array.isArray(a.pz) && a.pz.includes(id) && (a.result === '' || a.result == null)).length;
-  if (!confirm(`🏫 ${p.school} ${p.label} · ${_spGroupsTxt(p)} (${_rmMD(p.start)} ~ ${_rmMD(p.end)})을(를) 지울까요?${n ? `\n\n이 시험기간 때문에 밀렸던 숙제 ${n}건이 원래 날짜로 돌아가요.` : ''}`)) return;
-  const r = _spUndo(p);
+  const ne = S.students.filter(st => st && st.pzEnd && Object.values(st.pzEnd).some(o => o && (o.by || []).includes(id))).length;
+  if (!noAsk && !confirm(`🏫 ${p.school} ${p.label} · ${_spGroupsTxt(p)} (${_rmMD(p.start)} ~ ${_rmMD(p.end)})을(를) 지울까요?${n ? `\n\n이 시험기간 때문에 밀렸던 숙제 ${n}건이 원래 날짜로 돌아가요.` : ''}${ne ? `\n늘어났던 교재 끝 예정일(${ne}명)도 원래대로 돌아가요.` : ''}`)) return false;
+  const ids = _shTouched(id, S.students.filter(st => st && _spHits(p, st.school, st.group)).map(st => st.id));
   S.classPauses = (S.classPauses || []).filter(x => x.id !== id);
-  _spReapplyAll(r.touched);
+  (S.schoolEvents || []).forEach(e => { if (e && e.spId === id) delete e.spId; });
+  _shRebuild(ids);
   save(); renderEventCalendar(); try { renderCal(); renderTodayPreview(); updateSidebar(); } catch (e) {}
-  toast(`🗑 지웠어요${r.back ? ` · 숙제 ${r.back}건 원래 날짜로` : ''}`);
+  toast(`🗑 지웠어요${n ? ` · 숙제 ${n}건 원래 날짜로` : ''}`);
+  return true;
 }
 function renameSchool(oldName) {
   const nv = _normSchool(prompt(`'${oldName}' 학교 이름을 무엇으로 바꿀까요?\n(같은 이름이 이미 있으면 그 학교로 합쳐져요)`, oldName));
@@ -4478,30 +4667,35 @@ function setStudentSchool(id, val) {
   const v = _normSchool(val);
   if ((st.school || '') === v) return;
   if (v) st.school = v; else delete st.school;
-  if (schoolPauses().some(p => p.school === v || p.school === st.school)) {   // (반 지정 시험기간은 아래 _spApply가 반을 확인함)
-    // 학교가 바뀌면 이 학생 숙제를 새 학교 시험기간 기준으로 다시 맞춤
-    S.assigns.forEach(a => { if (a && a.studentId === id && Array.isArray(a.pz) && (a.result === '' || a.result == null)) { if (a.pzFrom) a.date = a.pzFrom; delete a.pz; delete a.pzFrom; } });
-    if (v) schoolPauses().filter(p => p.school === v).sort((a, b) => a.start.localeCompare(b.start)).forEach(p => _spApply(p, new Set([id])));
-  }
-  save(); renderStudents();
+  if (schoolPauses().length) _shRebuild(new Set([id]));   // v501 학교가 바뀌면 이 학생 숙제·교재 끝날을 새 학교 시험기간 기준으로 다시 맞춤
+  save(); if ($('p-students')?.classList.contains('active')) renderStudents();
 }
 function _spRenderGroups() {
   const box = $('sp-groups'), school = $('sp-school')?.value; if (!box) return;
   const m = new Map();
-  S.students.forEach(st => { if (st && st.school === school) m.set(st.group, (m.get(st.group) || 0) + 1); });
+  S.students.forEach(st => { if (st && st.school === school && _isMidGroup(st.group)) m.set(st.group, (m.get(st.group) || 0) + 1); });
   const gs = [...m.entries()].sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'ko'));
   box.innerHTML = gs.map(([g, c]) => `<label style="display:flex;align-items:center;gap:.2rem;margin:0;font-size:.78rem;white-space:nowrap;cursor:pointer"><input type="checkbox" value="${escHtml(g)}" checked style="width:auto;margin:0"> ${escHtml(g)} <span style="color:var(--mu)">${c}</span></label>`).join('');
 }
+function _spMidSchools() {   // v501 중등 반 학생이 있는 학교만 (초등은 시험대비 없음)
+  const m = new Map();
+  S.students.forEach(st => { if (!st || !_isMidGroup(st.group)) return; const k = _normSchool(st.school); if (k) m.set(k, (m.get(k) || 0) + 1); });
+  return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], 'ko'));
+}
+function spSetSchool(id, val) { setStudentSchool(id, val); renderEventCalendar(); }
 function _spCardHtml() {
-  const sc = schoolCounts();
+  const sc = _spMidSchools();
   const today = getTodayStr();
   const list = schoolPauses().sort((a, b) => b.start.localeCompare(a.start));
   const moved = id => S.assigns.filter(a => a && Array.isArray(a.pz) && a.pz.includes(id)).length;
-  const blankN = S.students.filter(st => st && !_normSchool(st.school)).length;
+  const blankSt = S.students.filter(st => st && _isMidGroup(st.group) && !_normSchool(st.school)).sort((a, b) => String(a.group).localeCompare(String(b.group), 'ko') || a.name.localeCompare(b.name, 'ko'));
+  const blankN = blankSt.length;
+  const allSc = schoolCounts().map(([n]) => n);
+  const blankHtml = blankN ? `<details class="sp-blank" ${window._spBlankOpen ? 'open' : ''} ontoggle="window._spBlankOpen=this.open"><summary>⚠ 학교 미입력 중등 학생 <b>${blankN}명</b> — 이 학생들은 시험대비 기간에 숙제가 안 밀려요 (눌러서 바로 입력)</summary><datalist id="sp-sc-dl">${allSc.map(n => `<option value="${escHtml(n)}">`).join('')}</datalist><div class="sp-blank-g">${blankSt.map(st => `<label><span>${escHtml(st.name)} <small>${escHtml(st.group || '')}</small></span><input list="sp-sc-dl" placeholder="학교" onchange="spSetSchool(${st.id}, this.value)"></label>`).join('')}</div></details>` : '';
   const legacy = (S.classPauses || []).filter(p => p && !p.school && p.group && p.bookId && p.end >= today);
   const legacyHtml = legacy.length ? `<div class="todo-sm" style="margin-top:.5rem;color:#b45309">⏸ 예전 방식(반·교재)으로 걸어 둔 일시정지 ${legacy.length}개가 아직 적용 중이에요: ${legacy.slice(0, 6).map(p => `${escHtml(p.group)} · ${escHtml((getBook(p.bookId) || {}).name || '')} ${_rmMD(p.start)}~${_rmMD(p.end)}`).join(', ')}${legacy.length > 6 ? ' …' : ''} — 지우려면 📊 숙제 배정 내역에서 그 반·교재를 고르세요</div>` : '';
   return `<div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.6rem">
-      <div class="ct" style="margin:0">🏫 학교 시험대비 기간</div>
+      <div class="ct" style="margin:0">🏫 학교 시험대비 기간 <span class="ev-eff on">그 학교 중등 학생 숙제·교재 끝날 미룸</span></div>
       <span class="hint-i" tabindex="0" data-tip="그 학교 학생의 홈보카·수업보카·교재 숙제를 기간이 끝난 다음 수업일로 미루고, 그 기간엔 시험대비 교재(단기 교재)로 수업해요 · 오늘 수업 화면도 이 기간을 봐요 · 학교는 학생 관리에서 넣어요">ⓘ</span></div>
     ${sc.length ? `<div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:.6rem">
       <div><label>학교</label><select id="sp-school" style="width:auto" onchange="_spRenderGroups()">${sc.map(([n, c]) => `<option value="${escHtml(n)}">${escHtml(n)} (${c}명)</option>`).join('')}</select></div>
@@ -4517,7 +4711,7 @@ function _spCardHtml() {
         <b style="font-size:.82rem">${escHtml(p.school)}</b><span style="font-size:.74rem;background:#fff3e6;color:#b45309;border-radius:4px;padding:0 .3rem">${escHtml(_spGroupsTxt(p))}</span><span style="font-size:.8rem">${escHtml(p.label || '시험대비')}</span>
         <span style="font-size:.78rem;color:var(--mu)">${_rmMD(p.start)} ~ ${_rmMD(p.end)}${p.book ? ' · 교재 숙제 포함' : ''}${n ? ` · 숙제 ${n}건 밀림` : ''}</span>
         <button class="btn bd2 bsm" style="margin-left:auto;font-size:.65rem;padding:.15rem .4rem" onclick="deleteSchoolPause(${p.id})">삭제</button></div>`; }).join('') : ''}
-    ${sc.length ? `<div style="font-size:.72rem;color:var(--mu);margin-top:.4rem">학교 ${sc.length}곳 · ${sc.map(([n, c]) => `<a href="#" onclick="event.preventDefault();renameSchool('${escHtml(n).replace(/'/g, "\\'")}')" title="눌러서 이름 바꾸기">${escHtml(n)}</a> ${c}명`).join(' · ')}${blankN ? ` · <span style="color:#b45309">학교 미입력 ${blankN}명</span>` : ''} <span>(이름을 누르면 바꿀 수 있어요)</span></div>` : ''}${legacyHtml}`;
+    ${sc.length ? `<div style="font-size:.72rem;color:var(--mu);margin-top:.4rem">학교 ${sc.length}곳 · ${sc.map(([n, c]) => `<a href="#" onclick="event.preventDefault();renameSchool('${escHtml(n).replace(/'/g, "\\'")}')" title="눌러서 이름 바꾸기">${escHtml(n)}</a> ${c}명`).join(' · ')} <span>(이름을 누르면 바꿀 수 있어요)</span></div>` : ''}${blankHtml}${legacyHtml}`;
 }
 
 /* ★ 특정 반의 특정 교재가 그 날짜에 "일시정지" 상태인지 (시험기간 등)
@@ -8046,6 +8240,7 @@ function _saveVocaEdit() {
         if (st?.bookEndDates && st.bookEndDates[oldKey] != null) {
           st.bookEndDates[newKey] = st.bookEndDates[oldKey]; delete st.bookEndDates[oldKey];
         }
+        if (st?.pzEnd && st.pzEnd[oldKey]) { st.pzEnd[newKey] = st.pzEnd[oldKey]; delete st.pzEnd[oldKey]; }   // v502
       }
     }
   });
@@ -9047,7 +9242,14 @@ function _confirmRenameGroup() {
     }
   });
   // 반별 일시정지 기록
-  (S.classPauses || []).forEach(p => { if (p.group === oldName) p.group = newName; });
+  (S.classPauses || []).forEach(p => { if (p.group === oldName) p.group = newName;
+    if (Array.isArray(p.groups)) p.groups = p.groups.map(g => g === oldName ? newName : g); });   // v502 학교 시험대비 기간의 반
+  // v502 반 수업 요일 · 학원 일정의 반
+  (S.classDaysByGroup || []).forEach(r => { if (r && r.g === oldName) r.g = newName; });
+  (S.schoolEvents || []).forEach(e => { if (e && Array.isArray(e.groups)) e.groups = e.groups.map(g => g === oldName ? newName : g); });
+  if (typeof _todoGroup !== 'undefined' && _todoGroup === oldName) _todoGroup = newName;
+  if (window._evFG === oldName) window._evFG = newName;
+  try { if (localStorage.getItem('hw_rq_group') === oldName) localStorage.setItem('hw_rq_group', newName); } catch (e) {}
   // 지금 화면에 적용된 필터가 옛 이름을 가리키고 있으면 갱신
   if (S.stFilter === oldName) S.stFilter = newName;
   if (S.chipFilter === oldName) S.chipFilter = newName;
@@ -9150,6 +9352,7 @@ function renderStudents() {
           <button class="btn bg bsm" onclick="renameStudent(${s.id})">수정</button>
           <details class="hdrop st-more"><summary class="btn bg bsm" title="반 이동 · 삭제">⋯</summary><div class="hdrop-menu">
             ${canMove ? `<label class="st-mv">반 이동<select onchange="this.closest('details').removeAttribute('open'); doMoveStudent(${s.id}, this.value)"><option value="">— 반 고르기 —</option>${otherGroups.map(g => `<option value="${escHtml(g)}">${escHtml(g)}</option>`).join('')}</select></label>` : ''}
+            <button class="btn bg bsm hd-item" onclick="this.closest('details').removeAttribute('open'); stLeave(${s.id})">🚪 퇴원 (기록 보관)</button>
             <button class="btn bg bsm hd-item hd-danger" onclick="delStudent(${s.id})">🗑 학생 삭제</button>
           </div></details>
         </div>
@@ -9162,8 +9365,44 @@ function renderStudents() {
   dlEl.innerHTML = dl;
 
   $('st-cnt').textContent = S.students.length;
+  _renderLeftBox();   // v503
   renderAllGroupUIs();
   updateSidebar();
+}
+
+/* ══ v503 퇴원(보관) ══ */
+function stLeave(id, fromDelete) {
+  const st = S._allStudents().find(s => s.id === id); if (!st || st.left) return;
+  const today = getTodayStr();
+  const fut = S.assigns.filter(a => a && a.studentId === id && a.date && a.date > today && (a.result === '' || a.result == null)).length;
+  if (!fromDelete && !confirm(`'${st.name}'(${st.group || '반 없음'}) 학생을 퇴원 처리할까요?\n\n· 학생 목록·교재 배정·출석·상황판·오늘 수업에서 빠져요\n· 숙제 기록과 점수는 그대로 보관돼요${fut ? `\n· 앞으로 남은 숙제 ${fut}건도 지우지 않고 보관해요` : ''}\n· 아래 '퇴원생' 목록에서 언제든 복귀할 수 있어요`)) return;
+  st.left = today;
+  _stLeftVer++;
+  if (Array.isArray(S.selStudents)) S.selStudents = S.selStudents.filter(x => x !== id);
+  if (window._stSel) window._stSel.delete(id);
+  try { if (typeof _clsSel !== 'undefined') _clsSel.delete(id); } catch (e) {}
+  save(); renderStudents(); try { renderStudentChips(); } catch (e) {}
+  toast(`🚪 ${st.name} 퇴원 처리 — 기록은 보관돼요`);
+}
+function stReturn(id) {
+  const st = S._allStudents().find(s => s.id === id); if (!st || !st.left) return;
+  if (S.students.some(x => x.name === st.name) && !confirm(`같은 이름의 재원생이 이미 있어요. 그래도 '${st.name}'을(를) 복귀할까요?`)) return;
+  delete st.left;
+  _stLeftVer++;
+  save(); renderStudents(); try { renderStudentChips(); } catch (e) {}
+  toast(`↩ ${st.name} 복귀${S.groups.includes(st.group) ? '' : ' — 반이 없어졌어요. 반을 다시 정해 주세요'}`);
+}
+function _renderLeftBox() {
+  const box = $('st-left-box'); if (!box) return;
+  const L = _leftStudents().sort((a, b) => String(b.left).localeCompare(String(a.left)) || a.name.localeCompare(b.name, 'ko'));
+  if (!L.length) { box.innerHTML = ''; return; }
+  const cnt = id => S.assigns.filter(a => a && a.studentId === id).length;
+  box.innerHTML = `<details class="card st-left" ${window._stLeftOpen ? 'open' : ''} ontoggle="window._stLeftOpen=this.open" style="margin-top:1rem">
+    <summary><b>🗂 퇴원생 ${L.length}명</b> <span class="todo-sm">기록 보관 중 · 눌러서 보기</span></summary>
+    <table class="st-left-t"><thead><tr><th>이름</th><th>반</th><th>학교</th><th>퇴원일</th><th>기록</th><th></th></tr></thead><tbody>
+    ${L.map(st => `<tr><td style="font-weight:700">${escHtml(st.name)}</td><td>${escHtml(st.group || '—')}</td><td>${escHtml(st.school || '—')}</td><td>${_rmMD(st.left)}</td><td>${cnt(st.id)}건</td>
+      <td style="text-align:right;white-space:nowrap"><button class="btn bp bsm" onclick="stReturn(${st.id})">↩ 복귀</button> <button class="btn bd2 bsm" onclick="delStudent(${st.id})">🗑 완전 삭제</button></td></tr>`).join('')}
+    </tbody></table></details>`;
 }
 
 /* ══ v490 학생 관리 정리 ══ */
@@ -9308,7 +9547,8 @@ function addStudent() {
     seen.add(name);
     if (name.length > 20)                      { skipped.push(`${name.slice(0,8)}…(20자초과)`); return; }
     if (S.students.find(s => s.name === name)) { skipped.push(`${name}(등록됨)`); return; }
-    S.students.push({ id: S.nid++, name, group, books: [], accessKey: genAccessKey() });
+    if (_leftStudents().find(s => s.name === name)) { skipped.push(`${name}(퇴원생 — 아래 퇴원생 목록에서 복귀)`); return; }   // v503
+    S._allStudents().push({ id: S.nid++, name, group, books: [], accessKey: genAccessKey() }); _stLeftVer++;
     added.push(name);
   });
 
@@ -9371,6 +9611,8 @@ function doMoveStudent(id, newGroup) {
 
   const prevGroup = st.group;
   st.group = newGroup;
+  if (schoolPauses().some(p => p.school === st.school)) _shRebuild(new Set([id]));   // v501 반이 바뀌면 그 반의 시험대비 기간으로 다시 맞춤
+  const vMoved = _moveVocaToGroupDays(st, prevGroup, newGroup);   // v504 진행 중인 수업보카를 새 반 요일로
 
   save(); // ★ P0 FIX - 이동 후 즉시 저장
 
@@ -9379,7 +9621,35 @@ function doMoveStudent(id, newGroup) {
   renderStudents();
   renderStudentChips();  // 배정 화면 학생 칩도 동기화
 
-  toast(`'${st.name}' → '${newGroup}'으로 이동했습니다`);
+  toast(`'${st.name}' → '${newGroup}'으로 이동했습니다${vMoved ? ` · 수업보카 ${vMoved}건 새 반 요일로` : ''}`);
+}
+/* v504 반 이동 시: 진행 중인 수업보카의 '내일부터 결과 없는 회차'를 새 반 수업 요일로 다시 잡음 (물어보고). 홈보카는 그대로 */
+function _moveVocaToGroupDays(st, oldGroup, newGroup) {
+  const nd = _groupDays(newGroup), od = _groupDays(oldGroup);
+  const DN = ['일', '월', '화', '수', '목', '금', '토'], dTxt = d => d.slice().sort().map(x => DN[x]).join('·');
+  const today = getTodayStr(), noRes = a => a.result === '' || a.result == null;
+  const series = new Map();
+  S.assigns.forEach(a => { if (a && a.studentId === st.id && a.type === 'voca' && (a.category || '수업보카') === '수업보카') {
+    const k = `${a.bookId}|${a.cohort || ''}`; if (!series.has(k)) series.set(k, []); series.get(k).push(a); } });
+  const jobs = [];
+  series.forEach(all => {
+    const pend = all.filter(a => noRes(a) && a.date > today).sort((x, y) => String(x.date).localeCompare(String(y.date)) || String(x.unitFrom).localeCompare(String(y.unitFrom)));
+    if (!pend.length) return;
+    const cur = new Set(all.map(a => parseYMD(a.date).getDay()));
+    if (nd && nd.length === cur.size && nd.every(d => cur.has(d))) return;   // 이미 새 반 요일
+    jobs.push({ all, pend, name: `${all[0].bookName || (getBook(all[0].bookId) || {}).name || ''}${all[0].cohort ? ' ' + all[0].cohort : ''}` });
+  });
+  if (!jobs.length) return 0;
+  if (!nd || !nd.length) { setTimeout(() => alert(`'${newGroup}' 반은 수업 요일이 아직 정해져 있지 않아 ${st.name}의 수업보카(${jobs.map(j => j.name).join(', ')})는 예전 요일 그대로 뒀어요.\n반별 셋팅에서 ✏ 수정으로 요일을 맞춰 주세요.`), 50); return 0; }
+  const n = jobs.reduce((m, j) => m + j.pend.length, 0);
+  if (!confirm(`${st.name}의 진행 중인 수업보카를 새 반(${newGroup}) 요일로 바꿀까요?\n\n${jobs.map(j => `· ${j.name} — 남은 ${j.pend.length}회`).join('\n')}\n\n${od ? dTxt(od) : '예전 요일'} → ${dTxt(nd)}\n내일부터 남은 회차 ${n}건만 다시 잡아요 (오늘·지난 회차와 점수 있는 회차는 그대로)\n[취소]를 누르면 예전 요일 그대로 둬요.`)) return 0;
+  let moved = 0;
+  jobs.forEach(j => {
+    const dates = generateClassDates(_spNext(today), j.pend.length, new Set(nd), newGroup, j.all[0].bookId, st.school || undefined);
+    if (dates.length < j.pend.length) return;
+    j.pend.forEach((a, i) => { delete a.pz; delete a.vz; delete a.pzFrom; if (a.date !== dates[i]) { a.date = dates[i]; moved++; } });
+  });
+  return moved;
 }
 
 let _renameStudentId = null;
@@ -9410,17 +9680,20 @@ function _confirmRenameStudent() {
 }
 
 function delStudent(id) {
-  const st = S.students.find(s => s.id === id);
+  const st = S._allStudents().find(s => s.id === id);
   if (!st) return;
   const hasAssigns = S.assigns.some(a => a.studentId === id);
+  // v503 기록이 있으면 먼저 '퇴원(보관)'을 권함
+  if (hasAssigns && !st.left && confirm(`'${st.name}' 학생에게 숙제 기록 ${S.assigns.filter(a => a.studentId === id).length}건이 있어요.\n지우면 기록과 점수가 모두 사라지고 되돌릴 수 없어요.\n\n[확인] 지우지 않고 퇴원(보관) 처리 — 목록에서만 빠지고 기록은 남아요\n[취소] 그래도 완전히 지우기`)) { stLeave(id, true); return; }
   const msg = hasAssigns
-    ? `'${st.name}' 학생을 삭제하시겠습니까?\n배정 내역(${S.assigns.filter(a=>a.studentId===id).length}건)도 함께 삭제됩니다.`
+    ? `⚠ '${st.name}' 학생을 완전히 삭제할까요?\n배정 내역(${S.assigns.filter(a=>a.studentId===id).length}건)과 점수도 함께 삭제되고 되돌릴 수 없어요.`
     : `'${st.name}' 학생을 삭제하시겠습니까?`;
   if (!confirm(msg)) return;
-  S.students   = S.students.filter(s => s.id !== id);
+  S.students   = S._allStudents().filter(s => s.id !== id);
   S.selStudents = S.selStudents.filter(sid => sid !== id);
   S.assigns    = S.assigns.filter(a => a.studentId !== id); // ★ 고아 데이터 함께 제거
   _tombAddStudents([id]); // ★ v417 다른 기기에서 되살아나지 않게 삭제 표시
+  _stLeftVer++;
   save(); // ★ P0 FIX
   renderStudents();
   renderStudentChips();
@@ -9742,7 +10015,8 @@ function confirmCsvImport(toAdd) {
 
   // 학생 추가
   toAdd.forEach(s => {
-    S.students.push({
+    _stLeftVer++;
+    S._allStudents().push({
       id:        S.nid++,
       name:      s.name,
       group:     s.group,
@@ -9829,10 +10103,12 @@ function autoFillDistribEnd(force) {
   if (hint) hint.textContent = dur
     ? `${book.name} 기본 사용기간: ${dur.n}${dur.unit === 'day' ? '일' : dur.unit === 'week' ? '주' : '개월'}`
     : '';
-  if (!dur) return;
-  if (_dEndTouched && !force) return;      // 직접 고친 값은 존중
-  const end = _calcBookEndDate(startEl.value || getTodayStr(), dur);
-  if (end) endEl.value = end;
+  if (dur && !(_dEndTouched && !force)) {      // 직접 고친 값은 존중
+    const end = _calcBookEndDate(startEl.value || getTodayStr(), dur);
+    if (end) endEl.value = end;
+  }
+  // v502 그 기간에 걸린 시험대비·휴무 안내 (배부하면 해당 학생 끝날이 자동으로 늘어남)
+  if (hint && book && !book.extra) { const t = _shOverlapTxt(startEl.value || getTodayStr(), endEl.value); if (t) hint.innerHTML = escHtml(hint.textContent) + `<div style="color:#b45309">${escHtml(t)}</div>`; }
 }
 
 function _readBookDuration() {
@@ -10825,7 +11101,7 @@ async function onHistThresholdChange() {
   sanitizeStudentsBeforeSave();
   try {
     const payload = {};
-    PERSIST_KEYS.forEach(k => { payload[k] = S[k]; });
+    PERSIST_KEYS.forEach(k => { payload[k] = _SF(k); });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   } catch (e) {}
 
@@ -15189,16 +15465,16 @@ function _tombAddStudents(ids) {
 /* 묘비가 있는 학생과 그 학생의 배정을 화면 데이터에서 뺀다. 뺀 게 있으면 true (저장하면 Firebase에서도 null로 지워짐) */
 function _tombPurge() {
   if (!_tombSt.size) return false;
-  const n1 = S.students.length, n2 = S.assigns.length;
-  S.students = S.students.filter(st => !(st && _tombSt.has(String(st.id))));
+  const n1 = S._allStudents().length, n2 = S.assigns.length;
+  S.students = S._allStudents().filter(st => !(st && _tombSt.has(String(st.id))));   // v503 퇴원생 포함 전체에서
   S.assigns = S.assigns.filter(a => !(a && _tombSt.has(String(a.studentId))));
-  return S.students.length !== n1 || S.assigns.length !== n2;
+  return S._allStudents().length !== n1 || S.assigns.length !== n2;
 }
 function _syncBaselineFromS() {
-  PERSIST_KEYS.forEach(k => { if (!RECORD_KEYS.includes(k)) _lastSyncedWhole[k] = _wj(S[k]); });
+  PERSIST_KEYS.forEach(k => { if (!RECORD_KEYS.includes(k)) _lastSyncedWhole[k] = _wj(_SF(k)); });
   RECORD_KEYS.forEach(key => {
     const map = {};
-    (S[key] || []).forEach(rec => { if (rec && rec.id != null) map[rec.id] = JSON.parse(JSON.stringify(rec)); });
+    (_SF(key) || []).forEach(rec => { if (rec && rec.id != null) map[rec.id] = JSON.parse(JSON.stringify(rec)); });
     _lastSyncedById[key] = map;
   });
 }
@@ -16350,15 +16626,15 @@ async function pullInitialFromFirebase() {
     //      "바뀐 게 없다"고 착각하고 Firebase 전송을 건너뛰는 버그가 생김
     RECORD_KEYS.forEach(key => {
       const map = {};
-      (S[key] || []).forEach(rec => { if (rec && rec.id != null) map[rec.id] = JSON.parse(JSON.stringify(rec)); });
+      (_SF(key) || []).forEach(rec => { if (rec && rec.id != null) map[rec.id] = JSON.parse(JSON.stringify(rec)); });
       _lastSyncedById[key] = map;
     });
     // ★ v449 통째 키 기준점 = 원격에 있던 값 (원격에 없던 키는 비어 있음으로 → 로컬에만 있는 값은 다음 저장 때 올라감)
-    PERSIST_KEYS.forEach(k => { if (!RECORD_KEYS.includes(k)) _lastSyncedWhole[k] = val[k] === undefined || val[k] === null ? 'null' : _wj(S[k]); });
+    PERSIST_KEYS.forEach(k => { if (!RECORD_KEYS.includes(k)) _lastSyncedWhole[k] = val[k] === undefined || val[k] === null ? 'null' : _wj(_SF(k)); });
 
     // nid 재계산
     const maxAssignId  = S.assigns.reduce ((m, a) => Math.max(m, a.id||0), 0);
-    const maxStudentId = S.students.reduce((m, s) => Math.max(m, s.id||0), 0);
+    const maxStudentId = S._allStudents().reduce((m, s) => Math.max(m, s.id||0), 0);
     S.nid = Math.max(S.nid, maxAssignId + 1, maxStudentId + 1);
 
     // 마이그레이션: accessKey 없는 학생에게 자동 부여
@@ -16433,7 +16709,7 @@ async function pullInitialFromFirebase() {
     // localStorage에도 반영
     try {
       const payload = {};
-      PERSIST_KEYS.forEach(k => { payload[k] = S[k]; });
+      PERSIST_KEYS.forEach(k => { payload[k] = _SF(k); });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch(e) {}
 
@@ -16455,12 +16731,12 @@ async function _doFirebaseWrite() {
     const _wholeSent = {};
     PERSIST_KEYS.forEach(k => {
       if (RECORD_KEYS.includes(k)) return; // ★ id 있는 배열은 아래에서 레코드 단위로 별도 처리
-      const wj = _wj(S[k]);
+      const wj = _wj(_SF(k));
       if (_lastSyncedWhole[k] === wj) return; // ★ v449 이 기기에서 안 바뀐 키는 올리지 않음 (다른 기기 변경을 옛 값으로 덮어쓰지 않게)
       _wholeSent[k] = wj;
       const path = `${FB_PATH}/${k}`;
       _validatePath(path);
-      const val = S[k];
+      const val = _SF(k);
       // 빈 배열은 null로 → Firebase에서 해당 키 삭제
       if (Array.isArray(val) && val.length === 0) {
         updates[path] = null;
@@ -16475,7 +16751,7 @@ async function _doFirebaseWrite() {
     const newSyncedById = {};
     RECORD_KEYS.forEach(key => {
       const currentById = {};
-      (S[key] || []).forEach(rec => { if (rec && rec.id != null) currentById[rec.id] = rec; });
+      (_SF(key) || []).forEach(rec => { if (rec && rec.id != null) currentById[rec.id] = rec; });
       const lastSynced = _lastSyncedById[key] || {};
 
       Object.keys(currentById).forEach(id => {
@@ -16574,19 +16850,19 @@ function subscribeToFirebase() {
       }
       if (!RECORD_KEYS.includes(k)) _lastSyncedWhole[k] = val === null ? 'null' : _wj(newVal); // ★ v449 원격 값 = 새 기준점
       // 실제 변경된 경우만 적용
-      if (JSON.stringify(S[k]) !== JSON.stringify(newVal)) {
+      if (JSON.stringify(_SF(k)) !== JSON.stringify(newVal)) {
         S[k] = newVal;
         // ★ id 있는 배열(assigns/books/students)이 원격에서 갱신됐으면 레코드 단위 저장 기준점도 최신으로 맞춤
         //   (다른 선생님의 변경분을 다시 덮어쓰지 않기 위해)
         if (RECORD_KEYS.includes(k)) {
           const map = {};
-          (_rawForBase || S[k] || []).forEach(rec => { if (rec && rec.id != null) map[rec.id] = JSON.parse(JSON.stringify(rec)); });
+          (_rawForBase || _SF(k) || []).forEach(rec => { if (rec && rec.id != null) map[rec.id] = JSON.parse(JSON.stringify(rec)); });
           _lastSyncedById[k] = map;
         }
         // localStorage도 갱신
         try {
           const payload = {};
-          PERSIST_KEYS.forEach(pk => { payload[pk] = S[pk]; });
+          PERSIST_KEYS.forEach(pk => { payload[pk] = _SF(pk); });
           localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
         } catch(e) {}
         if ((k === 'groups' || k === 'students') && _healGroups()) setTimeout(saveToFirebase, 800); // ★ v450
@@ -16670,7 +16946,7 @@ function save() {
   sanitizeStudentsBeforeSave(); // ★ 저장 전 정합성 정리 (undefined 저장 오류 방지)
   try {
     const payload = {};
-    PERSIST_KEYS.forEach(k => { payload[k] = S[k]; });
+    PERSIST_KEYS.forEach(k => { payload[k] = _SF(k); });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   } catch (e) {
     // QuotaExceededError 등 저장 실패 시 조용히 경고만
@@ -16732,7 +17008,7 @@ function load() {
     // assigns의 최대 id와 students의 최대 id 모두 고려
     // → 학생 추가도 S.nid 기반이므로 충돌 완전 방지
     const maxAssignId  = S.assigns.reduce((max, a)  => Math.max(max, a.id  || 0), 0);
-    const maxStudentId = S.students.reduce((max, s) => Math.max(max, s.id  || 0), 0);
+    const maxStudentId = S._allStudents().reduce((max, s) => Math.max(max, s.id  || 0), 0);
     S.nid = Math.max(S.nid, maxAssignId + 1, maxStudentId + 1);
 
     // ★ v176: classcardMappings 레코드 단위 동기화 전환 — id 없는 예전 레코드에 새 id 부여
@@ -17464,6 +17740,7 @@ function _vEditSave() {
       if (oldKey !== newKey) {
         if (st.bookDates[oldKey] != null) { st.bookDates[newKey] = st.bookDates[oldKey]; delete st.bookDates[oldKey]; }
         if (st.bookEndDates && st.bookEndDates[oldKey] != null) { st.bookEndDates[newKey] = st.bookEndDates[oldKey]; delete st.bookEndDates[oldKey]; }
+        if (st.pzEnd && st.pzEnd[oldKey]) { st.pzEnd[newKey] = st.pzEnd[oldKey]; delete st.pzEnd[oldKey]; }   // v502
       }
     }
   });
@@ -17513,7 +17790,7 @@ function downloadFullBackup() {
     toast('서버에서 최신 데이터를 불러오는 중이에요. 잠시 후 다시 눌러 주세요'); return;
   }
   const data = {};
-  PERSIST_KEYS.forEach(k => { data[k] = S[k]; });
+  PERSIST_KEYS.forEach(k => { data[k] = _SF(k); });
   const now = new Date();
   const pad = n => String(n).padStart(2, '0');
   const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
@@ -17682,7 +17959,9 @@ function chkExtendB(n, unit) {
   if (!picked.length) { toast('연장할 교재를 선택하세요'); return; }
   const end = _calcBookEndDate(getTodayStr(), { n, unit });
   if (!confirm(`${picked.length}건의 종료 예정일을 ${end}(으)로 연장할까요?\n교재완료는 하지 않아요.`)) return;
-  picked.forEach(r => { const st = S.students.find(s => s.id === r.sid); if (!st) return; if (!st.bookEndDates) st.bookEndDates = {}; st.bookEndDates[_bdKey(r.bookId, r.cohort)] = end; });
+  const _pp = [];
+  picked.forEach(r => { const st = S.students.find(s => s.id === r.sid); if (!st) return; if (!st.bookEndDates) st.bookEndDates = {}; const k = _bdKey(r.bookId, r.cohort); st.bookEndDates[k] = end; _shEndFresh(st, k); _pp.push({ st, key: k }); });
+  _shAfterEndSet(_pp);   // v502
   save(); renderCheckPage(); toast(`⏩ ${picked.length}건 예정일을 ${_rmMD(end)}로 연장했어요`);
 }
 /* ══ v414 점검 추가: F 로드맵↔교재 짝 · G 같은 이름 교재 · H 같은 카테고리 보카 동시 진행 · I 휴무일·주말 숙제 · J 종료 예정일 없음 ══ */
@@ -17750,7 +18029,7 @@ function _chkCollect2(group) {
   });
   const K = [...km.values()].sort((a, b) => b.ids.length - a.ids.length);
   // L (v416) 주인 없는 기록 — 학생/교재가 지워진 배정 · 반이 없는 학생의 남은 배정 (반 선택과 상관없이 전체)
-  const stIds = new Set(S.students.map(s => s && s.id));
+  const stIds = new Set(S._allStudents().map(s => s && s.id));   // v503 퇴원생 기록은 주인 있음
   const orphanSt = S.assigns.filter(a => a && !stIds.has(a.studentId));
   const orphanBk = S.assigns.filter(a => a && stIds.has(a.studentId) && !getBook(a.bookId));
   const grpSet = new Set(S.groups || []);
@@ -17901,7 +18180,9 @@ function chkFillEndDates() {
   const list = (window._chkJ || []).filter(x => x.book.defaultDuration && x.since);
   if (!list.length) return;
   if (!confirm(`${list.length}건의 종료 예정일을 '배부일 + 기본 사용기간'으로 채울까요?`)) return;
-  list.forEach(x => { if (!x.st.bookEndDates) x.st.bookEndDates = {}; const e = _calcBookEndDate(x.since, x.book.defaultDuration); if (e) x.st.bookEndDates[_bdKey(x.book.id, x.cohort)] = e; });
+  const _pp = [];
+  list.forEach(x => { if (!x.st.bookEndDates) x.st.bookEndDates = {}; const e = _calcBookEndDate(x.since, x.book.defaultDuration); if (e) { const k = _bdKey(x.book.id, x.cohort); x.st.bookEndDates[k] = e; _shEndFresh(x.st, k); _pp.push({ st: x.st, key: k }); } });
+  _shAfterEndSet(_pp);   // v502
   save(); renderCheckPage(); toast(`📅 ${list.length}건 종료 예정일을 채웠어요`);
 }
 function chkComplete(kind) {
@@ -18864,7 +19145,7 @@ function rmDoBookDistribute(sid, track, idx) {
   if (end && end < start) { toast('종료 예정일이 시작일보다 빨라요'); return; }
   const ids = [...document.querySelectorAll('.rm-d-sid:checked')].map(c => Number(c.value));
   if (!ids.length) { toast('배부할 학생을 선택하세요'); return; }
-  let n = 0;
+  let n = 0; window._rmNewPairs = [];
   ids.forEach(id => {
     const st = _rmStu(id); if (!st) return;
     const j = rmPlanSteps(st, track).findIndex(x => x.bookId === book.id);
@@ -18878,13 +19159,15 @@ function rmDoBookDistribute(sid, track, idx) {
     st.bookDates[_bdKey(book.id, cohort)] = start;
     if (!st.bookEndDates) st.bookEndDates = {};
     if (end) st.bookEndDates[_bdKey(book.id, cohort)] = end; else delete st.bookEndDates[_bdKey(book.id, cohort)];
+    _shEndFresh(st, _bdKey(book.id, cohort)); if (end && book.mode !== 'voca' && !book.extra) (window._rmNewPairs = window._rmNewPairs || []).push({ st, key: _bdKey(book.id, cohort) });   // v502
     _feeAdd(st, book, cohort, start); // ★ v428 교재비 목록 (보카는 _feeAdd가 걸러냄)
     n++;
   });
   _rmDist = null;
+  const extN = _shAfterEndSet(window._rmNewPairs || []); window._rmNewPairs = [];   // v502 이미 등록된 시험대비·휴무만큼 끝날 늘림
   save(); updateSidebar(); renderRoadmapPage();
   if ($('rm-next-pop')?.style.display !== 'none') rmRenderNextPop();
-  toast(`📘 ${n}명에게 '${book.name}' 배부 완료`);
+  toast(`📘 ${n}명에게 '${book.name}' 배부 완료${extN ? ` · 시험대비·휴무로 ${extN}명 끝 예정일 늘림` : ''}`);
 }
 
 /* ── 차수 칩: 상태 확인 · 교재완료 · 함께 완료 · 되돌리기 ── */
