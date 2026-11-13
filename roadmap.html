@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>학원 로드맵 기간표 v17</title>
+<title>학원 로드맵 기간표 v19</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style id="app-style">
@@ -42,13 +42,13 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family
 .mseg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#6b7785}
 .lane{position:relative;height:64px;background-color:#f4f5f7;border-bottom:3px solid #fff;
  background-image:repeating-linear-gradient(to right,transparent 0,transparent calc(var(--w)*12 - 2px),#55606b calc(var(--w)*12 - 2px),#55606b calc(var(--w)*12)),repeating-linear-gradient(to right,transparent 0,transparent calc(var(--w) - 1px),#e2e5e9 calc(var(--w) - 1px),#e2e5e9 var(--w));cursor:copy}
-.blk{position:absolute;top:3px;bottom:3px;border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:10.5px;font-weight:700;line-height:1.18;padding:2px 8px 2px 3px;overflow:hidden;cursor:grab;touch-action:none;user-select:none;box-shadow:0 1px 0 rgba(0,0,0,.08);transition:box-shadow .12s}
+.blk{position:absolute;top:3px;bottom:3px;border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:10.5px;font-weight:700;line-height:1.18;padding:2px 8px 2px 3px;overflow:hidden;cursor:grab;touch-action:pan-x pan-y;user-select:none;box-shadow:0 1px 0 rgba(0,0,0,.08);transition:box-shadow .12s}
 .blk:hover{box-shadow:0 2px 8px rgba(0,0,0,.18)}
 .blk.sel{outline:3px solid #ffb703;outline-offset:1px;z-index:3}
 .blk.dragging{opacity:.25}
 .blk .t{word-break:keep-all;overflow-wrap:break-word}
 .blk .n{font-size:10px;font-weight:600;opacity:.75;margin-top:1px}
-.blk .rh{position:absolute;right:0;top:0;bottom:0;width:9px;cursor:ew-resize;touch-action:none}
+.blk .rh{position:absolute;right:0;top:0;bottom:0;width:9px;cursor:ew-resize}
 .blk .rh::after{content:"";position:absolute;right:3px;top:30%;bottom:30%;width:2px;border-radius:2px;background:currentColor;opacity:.35}
 .ghost{position:absolute;z-index:20;border-radius:7px;pointer-events:none;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.28);outline:2px dashed #1f2933;outline-offset:1px}
 .cellhint{position:absolute;top:3px;bottom:3px;border-radius:7px;border:2px dashed var(--accent);background:rgba(42,111,176,.08);pointer-events:none}
@@ -145,7 +145,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family
 .sblk.exam{background:repeating-linear-gradient(135deg,#fde8d7 0 6px,#fbd3b4 6px 12px);color:#8a3b00;border:1px dashed #e08a4a;cursor:default;font-size:10px}
 .sblk.part1{border-top-right-radius:0;border-bottom-right-radius:0}.sblk.part2{border-top-left-radius:0;border-bottom-left-radius:0}
 .exb{display:inline-block;background:#fde8d7;color:#8a3b00;border:1px dashed #e08a4a;border-radius:6px;padding:0 6px;font-size:11px;font-weight:800}
-.sblk.mv{cursor:grab;touch-action:none;user-select:none}
+.sblk.mv{cursor:grab;touch-action:pan-x pan-y;user-select:none}
 .sblk.mv.on{outline:3px solid #ffb703;outline-offset:1px;z-index:3}
 .sblk.mv.drag{opacity:.75;box-shadow:0 6px 16px rgba(0,0,0,.25);z-index:5}
 .rh2{position:absolute;right:0;top:0;bottom:0;width:8px;cursor:ew-resize}
@@ -172,6 +172,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family
 .qhelp{display:inline-flex;width:20px;height:20px;border-radius:50%;background:#eef1f4;color:#5b6570;font-weight:800;font-size:12px;align-items:center;justify-content:center;cursor:help}
 .setbox{border:1px solid var(--line);border-radius:8px;margin-bottom:6px;overflow:hidden}
 .btn.sm.on{background:#e6f0fa;border-color:var(--accent);color:#1d4f80}
+.navb{display:inline-flex;gap:2px}
 .today{position:absolute;top:0;bottom:0;width:0;border-left:2px dashed #e5484d;z-index:4;pointer-events:none}
 .today span{position:absolute;top:0;left:3px;font-size:10px;font-weight:800;color:#e5484d;white-space:nowrap}
 .skips{font-size:12px;color:var(--sub);padding:6px 8px}
@@ -205,7 +206,7 @@ var FIREBASE_CONFIG = {           // 숙제관리 앱과 같은 Firebase 프로�
 var DB_PATH = 'roadmap_planner_v1';      // 이 프로그램 전용 저장 위치 — ⚠️ homework_v4(숙제관리), academy 와 절대 겹치지 않게
 var FB_APP_NAME = 'roadmap_planner';     // 별도 앱 인스턴스 이름 (다른 프로그램과 섞이지 않게)
 /* ★ 버전 — 고칠 때마다 숫자를 올리면 화면 왼쪽 위에 표시돼요 */
-var RM_VERSION = 'v17';
+var RM_VERSION = 'v19';
 var RM_DATE = '2026-11-13';
 var DEFAULT_LIB = [{"id": "L000", "cat": "main", "name": "Beginner Sentence build up", "dur": "1일"}, {"id": "L001", "cat": "main", "name": "Alphabet 1", "dur": "1개월"}, {"id": "L002", "cat": "main", "name": "Alphabet 2", "dur": "1개월"}, {"id": "L003", "cat": "main", "name": "Phonics 1", "dur": "5주"}, {"id": "L004", "cat": "main", "name": "Phonics 2", "dur": "5주"}, {"id": "L005", "cat": "main", "name": "Phonics 3", "dur": "5주"}, {"id": "L006", "cat": "main", "name": "Phonics 4", "dur": "5주"}, {"id": "L007", "cat": "main", "name": "Phonics 5", "dur": "5주"}, {"id": "L008", "cat": "main", "name": "Phonics 6", "dur": "5주"}, {"id": "L009", "cat": "main", "name": "Reading 1", "dur": "5주"}, {"id": "L010", "cat": "main", "name": "Reading 2", "dur": "5주"}, {"id": "L011", "cat": "main", "name": "Reading 3", "dur": "5주"}, {"id": "L012", "cat": "main", "name": "Reading 4", "dur": "5주"}, {"id": "L013", "cat": "main", "name": "Reading 5", "dur": "5주"}, {"id": "L014", "cat": "main", "name": "Reading 6", "dur": "5주"}, {"id": "L015", "cat": "main", "name": "Basic 1", "dur": "5주"}, {"id": "L016", "cat": "main", "name": "Basic 2", "dur": "5주"}, {"id": "L017", "cat": "main", "name": "Basic 3", "dur": "5주"}, {"id": "L018", "cat": "main", "name": "Basic 4", "dur": "5주"}, {"id": "L019", "cat": "main", "name": "Basic 5", "dur": "5주"}, {"id": "L020", "cat": "main", "name": "Basic 6", "dur": "5주"}, {"id": "L021", "cat": "main", "name": "Basic 7", "dur": "5주"}, {"id": "L022", "cat": "main", "name": "Basic 8", "dur": "5주"}, {"id": "L023", "cat": "main", "name": "Basic 9", "dur": "5주"}, {"id": "L024", "cat": "main", "name": "Basic 10", "dur": "5주"}, {"id": "L025", "cat": "main", "name": "Basic 11", "dur": "5주"}, {"id": "L026", "cat": "main", "name": "Basic 12", "dur": "5주"}, {"id": "L027", "cat": "main", "name": "Inter Sentence build up", "dur": "1일"}, {"id": "L028", "cat": "main", "name": "5형식 (주+동+시)", "dur": "2개월"}, {"id": "L029", "cat": "main", "name": "5형식 (부사구)", "dur": "1개월"}, {"id": "L030", "cat": "main", "name": "5형식 (준동사)", "dur": "1개월"}, {"id": "L031", "cat": "main", "name": "5형식 (분석/해석하기)", "dur": "3개월"}, {"id": "L032", "cat": "main", "name": "3800 (1단계)", "dur": "8개월"}, {"id": "L033", "cat": "main", "name": "3800 (2단계)", "dur": "8개월"}, {"id": "L034", "cat": "main", "name": "3800 (3단계)", "dur": "8개월"}, {"id": "L035", "cat": "main", "name": "천문장 입문(Test)", "dur": "8개월"}, {"id": "L036", "cat": "main", "name": "천문장 기본(Test)", "dur": "8개월"}, {"id": "L037", "cat": "sub", "name": "Alphabet 쓰기 1", "dur": "1개월"}, {"id": "L038", "cat": "sub", "name": "Alphabet 쓰기 2", "dur": "1개월"}, {"id": "L039", "cat": "sub", "name": "Ph 워크북 1", "dur": "5주"}, {"id": "L040", "cat": "sub", "name": "Ph 워크북 2", "dur": "5주"}, {"id": "L041", "cat": "sub", "name": "Ph 워크북 3", "dur": "5주"}, {"id": "L042", "cat": "sub", "name": "Ph 워크북 4", "dur": "5주"}, {"id": "L043", "cat": "sub", "name": "Ph 워크북 5", "dur": "5주"}, {"id": "L044", "cat": "sub", "name": "Ph 워크북 6", "dur": "5주"}, {"id": "L045", "cat": "sub", "name": "Ph S 워크북 1", "dur": "1개월"}, {"id": "L046", "cat": "sub", "name": "Ph S 워크북 2", "dur": "1개월"}, {"id": "L047", "cat": "sub", "name": "Ph S 워크북 3", "dur": "1개월"}, {"id": "LW01", "cat": "sub", "name": "Work Book 1", "dur": "1개월"}, {"id": "LW02", "cat": "sub", "name": "Work Book 2", "dur": "1개월"}, {"id": "LW03", "cat": "sub", "name": "Work Book 3", "dur": "1개월"}, {"id": "LW04", "cat": "sub", "name": "Work Book 4", "dur": "1개월"}, {"id": "LW05", "cat": "sub", "name": "Work Book 5", "dur": "1개월"}, {"id": "LW06", "cat": "sub", "name": "Work Book 6", "dur": "1개월"}, {"id": "L048", "cat": "sub", "name": "초등 1단계 (단어장)", "dur": "4개월"}, {"id": "L049", "cat": "sub", "name": "초등 2단계 (단어장)", "dur": "4개월"}, {"id": "L050", "cat": "sub", "name": "중등 1단계 (단어장)", "dur": "1주"}, {"id": "L051", "cat": "sub", "name": "중등 2단계 (단어장)", "dur": "3개월"}, {"id": "L052", "cat": "sub", "name": "3인칭 일반동사(단어장)", "dur": "1개월"}, {"id": "L053", "cat": "sub", "name": "과거 일반동사 (단어장)", "dur": "1개월"}, {"id": "L054", "cat": "sub", "name": "과거/과거분사(단어장)", "dur": "1개월"}, {"id": "L055", "cat": "sub", "name": "3800 해석 (1단계)", "dur": "4개월"}, {"id": "L056", "cat": "sub", "name": "3800 해석 (2단계)", "dur": "6개월"}, {"id": "L057", "cat": "sub", "name": "Prerequisite 초 (A)", "dur": "12개월"}, {"id": "L058", "cat": "sub", "name": "Prerequisite 초 (B)", "dur": "12개월"}, {"id": "L059", "cat": "sub", "name": "Prerequisite 중 intro (A)", "dur": "6개월"}, {"id": "L060", "cat": "sub", "name": "Prerequisite 중 intro (B)", "dur": "6개월"}, {"id": "L061", "cat": "sub", "name": "고등 미니 모의고사", "dur": "3개월"}, {"id": "L062", "cat": "short", "name": "중2. 1학기 중간", "dur": "5개월"}, {"id": "L063", "cat": "short", "name": "중2. 1학기 중간- 부교재", "dur": "5주"}, {"id": "L064", "cat": "short", "name": "중3. 1학기 중간", "dur": "5주"}, {"id": "L065", "cat": "short", "name": "중3. 1학기 중간- 부교재", "dur": "5주"}, {"id": "L066", "cat": "short", "name": "중2. 1학기 기말", "dur": "5주"}, {"id": "L067", "cat": "short", "name": "중2. 1학기 기말- 부교재", "dur": "5주"}, {"id": "L068", "cat": "short", "name": "중3. 1학기 기말", "dur": "5주"}, {"id": "L069", "cat": "short", "name": "중3. 1학기 기말- 부교재", "dur": "5주"}, {"id": "L070", "cat": "short", "name": "중1. 2학기 중간", "dur": "5주"}, {"id": "L071", "cat": "short", "name": "중1. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L072", "cat": "short", "name": "중2. 2학기 중간", "dur": "5주"}, {"id": "L073", "cat": "short", "name": "중2. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L074", "cat": "short", "name": "중3. 2학기 중간", "dur": "5주"}, {"id": "L075", "cat": "short", "name": "중3. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L076", "cat": "short", "name": "중1. 2학기 기말", "dur": "5주"}, {"id": "L077", "cat": "short", "name": "중1. 2학기 기말- 부교재", "dur": "5주"}, {"id": "L078", "cat": "short", "name": "중2. 2학기 기말", "dur": "5주"}, {"id": "L079", "cat": "short", "name": "중2. 2학기 기말- 부교재", "dur": "5주"}, {"id": "L080", "cat": "short", "name": "중3. 2학기 기말", "dur": "5주"}, {"id": "L081", "cat": "short", "name": "중3. 2학기 기말- 부교재", "dur": "5주"}, {"id": "L082", "cat": "voca", "name": "초등 주니어 20.65", "dur": "4개월"}, {"id": "L083", "cat": "voca", "name": "초등 1단계 40.70 (리콜)", "dur": "4개월"}, {"id": "L084", "cat": "voca", "name": "초등 1단계 40.70 (객관식)", "dur": "4개월"}, {"id": "L085", "cat": "voca", "name": "초등 1단계 40.70 (주관식)", "dur": "4개월"}, {"id": "L086", "cat": "voca", "name": "초등 2단계 40.70 (리콜)", "dur": "4개월"}, {"id": "L087", "cat": "voca", "name": "초등 2단계 40.70 (객관식)", "dur": "4개월"}, {"id": "L088", "cat": "voca", "name": "초등 2단계 40.70 (주관식)", "dur": "4개월"}, {"id": "L089", "cat": "voca", "name": "중등 1단계 100.50 (리콜)", "dur": "3개월"}, {"id": "L090", "cat": "voca", "name": "중등 1단계 100.50 (객관식)", "dur": "3개월"}, {"id": "L091", "cat": "voca", "name": "중등 1단계 100.50 (주관식)", "dur": "3개월"}, {"id": "L092", "cat": "voca", "name": "중등 2단계 100.50 (리콜)", "dur": "3개월"}, {"id": "L093", "cat": "voca", "name": "중등 2단계 100.50 (객관식)", "dur": "3개월"}, {"id": "L094", "cat": "voca", "name": "중등 2단계 100.50 (주관식)", "dur": "3개월"}, {"id": "L095", "cat": "voca", "name": "5형식 단어", "dur": "2개월"}, {"id": "L096", "cat": "voca", "name": "과거 과거분사 단어", "dur": "2개월"}, {"id": "L097", "cat": "voca", "name": "천문장 입문 단어 20.88", "dur": "5개월"}, {"id": "L098", "cat": "voca", "name": "천문장 기본 단어 25.88", "dur": "5개월"}, {"id": "L099", "cat": "voca", "name": "한끝 고등 기본", "dur": "2개월"}];
 var EMBED = document.getElementById('roadmap-data').textContent;   // 처음 한 번 넣을 기본 로드맵
@@ -402,7 +403,7 @@ function render(){
   h+='<button class="btn" data-a="redo" '+(hi<hist.length-1?'':'disabled')+' title="Ctrl+Y">↷ 다시</button>';
   if(view==='base'){h+='<button class="btn" data-a="addrow">＋ 줄 추가</button><button class="btn" data-a="lib">📚 교재 목록</button>';
   h+='<label class="tog"><input type="checkbox" id="chain" '+(chain?'checked':'')+'> 뒤 교재도 같이 이동</label>';
-  h+='<span class="zoom">칸 너비 <input type="range" id="zoom" min="30" max="120" value="'+W+'"></span>';}
+  h+='<span class="zoom">칸 너비 <input type="range" id="zoom" min="30" max="120" value="'+W+'"></span><span class="navb"><button class="btn sm" data-a="bl">◀◀</button><button class="btn sm" data-a="br">▶▶</button></span>';}
   h+='<span class="sp"></span>';
   h+=ONLINE?(connected?'<span class="clean" title="Firebase에 연결돼 있어요. 고친 내용이 바로 저장되고 다른 선생님 화면에도 바로 보여요.">● 실시간 공유 중</span>':'<span class="dirty">● 연결 중…</span>'):'<span class="dirty">● 이 컴퓨터에만 저장</span>';
   h+='<button class="btn" data-a="xlsx" title="학원 기본 로드맵을 색까지 그대로 엑셀 파일로 내려받아요">엑셀 내보내기</button>';
@@ -413,7 +414,14 @@ function render(){
   if(ONLINE&&!loaded)h+='<div class="banner">로드맵을 불러오는 중…</div>';
   if(ONLINE&&loaded&&localOld&&localOld.students.length&&!(S.students||[]).length)h+='<div class="banner">이 컴퓨터에만 저장돼 있던 학생 명단('+localOld.students.length+'명)이 있어요. <button class="btn primary" data-a="movelocal">공유 저장소로 옮기기</button><button class="btn" data-a="droplocal">무시</button></div>';
   if(false)h+='<div class="banner">이 브라우저에 저장하지 않은 수정 내용이 남아 있어요. <button class="btn" data-a="restore">이어서 작업</button><button class="btn" data-a="discard">버리기</button></div>';
-  if(view==='stu'){h+=stuHTML();var sy0=0,o0=document.getElementById('stuwrap');if(o0)sy0=o0.scrollTop;app.innerHTML=h;var n0=document.getElementById('stuwrap');if(n0)n0.scrollTop=sy0;var tl=document.getElementById('stl');if(tl&&stuScrollToday){tl.scrollLeft=Math.max(0,stuScrollToday);stuScrollToday=0}renderPanel();return}
+  if(view==='stu'){
+    // 같은 학생을 보고 있으면 고친 뒤에도 달력 가로 위치(보던 달)를 그대로 유지
+    var oTl=document.getElementById('stl'),keepM=null;
+    if(oTl&&stuSel&&lastScrollStu===stuSel)keepM=stuLo+oTl.scrollLeft/SW;
+    h+=stuHTML();var sy0=0,o0=document.getElementById('stuwrap');if(o0)sy0=o0.scrollTop;app.innerHTML=h;var n0=document.getElementById('stuwrap');if(n0)n0.scrollTop=sy0;
+    var tl=document.getElementById('stl');
+    if(tl){if(keepM!=null)tl.scrollLeft=Math.max(0,(keepM-stuLo)*SW);else if(stuScrollToday)tl.scrollLeft=Math.max(0,stuScrollToday)}
+    stuScrollToday=0;lastScrollStu=stuSel;renderPanel();return}
   h+='<div class="board" id="board"><div class="grid" id="grid" style="width:calc(var(--lab) + '+T+' * var(--w))">';
   // grade header
   h+='<div class="r hdr g"><div class="lab">구분</div><div class="hl" style="width:calc('+T+' * var(--w))">';
@@ -585,6 +593,7 @@ function act(a){
   case 'rpack':var c=0;inRow(selRow).forEach(function(x){x.start=c;c+=x.len});commit();break;
   case 'rdel':if(!confirmDel){confirmDel=true;renderPanel();return}
     S.blocks=S.blocks.filter(function(x){return x.row!==selRow});S.rows=S.rows.filter(function(r){return r.id!==selRow});selRow=null;confirmDel=false;commit();break;
+  case 'bl':case 'br':var bd=document.getElementById('board');if(bd)bd.scrollBy({left:(a==='bl'?-6:6)*W,behavior:'smooth'});break;
   case 'lib':panelMode='lib';sel=null;addAt=null;selRow=null;renderPanel();break;
   case 'libadd':S.library.push({id:uid('L'),cat:libCat,name:'새 교재',dur:'1개월'});commit();renderPanel();var ins=panel.querySelectorAll('[data-ln]');if(ins.length){ins[ins.length-1].focus();ins[ins.length-1].select()}break;
   case 'movelocal':if(localOld){S.students=localOld.students;if(localOld.exams&&localOld.exams.length&&!(S.exams||[]).length)S.exams=localOld.exams;localOld=null;commit();toast('학생 명단을 옮겼어요')}break;
@@ -650,6 +659,8 @@ function laneAt(y){var ls=app.querySelectorAll('.lane');for(var i=0;i<ls.length;
 app.addEventListener('pointerdown',function(e){
   if(e.button!==0||view!=='base')return;
   var rh=e.target.closest('[data-rh]'),bl=e.target.closest('[data-b]');
+  // 탭·휴대폰: 손가락으로 밀면 화면이 좌우로 움직이고, 살짝 누르면(탭) 선택·추가만 함
+  if(e.pointerType==='touch'){var ln0=e.target.closest('[data-lane]');if(bl||ln0)D={mode:'tap',bl:bl,ln:ln0,x:e.clientX,y:e.clientY,moved:false};return}
   if(rh){var b=blk(rh.getAttribute('data-rh'));D={mode:'resize',b:b,x:e.clientX,y:e.clientY,orig:b.len,el:rh.parentNode,moved:false};rh.setPointerCapture(e.pointerId);e.preventDefault();return}
   if(bl){var b2=blk(bl.getAttribute('data-b'));D={mode:'move',b:b2,x:e.clientX,y:e.clientY,el:bl,moved:false,row:b2.row,start:b2.start};bl.setPointerCapture(e.pointerId);e.preventDefault();return}
   var ln=e.target.closest('[data-lane]');
@@ -657,6 +668,7 @@ app.addEventListener('pointerdown',function(e){
 });
 app.addEventListener('pointermove',function(e){
   if(!D)return;
+  if(D.mode==='tap'){if(Math.abs(e.clientX-D.x)+Math.abs(e.clientY-D.y)>8)D=null;return}
   var dx=e.clientX-D.x,dy=e.clientY-D.y;
   if(!D.moved&&Math.abs(dx)+Math.abs(dy)<5)return;
   D.moved=true;
@@ -677,13 +689,17 @@ app.addEventListener('pointermove',function(e){
 });
 function endDrag(e){
   if(!D)return;var d=D;D=null;
+  if(d.mode==='tap'){
+    if(d.bl){sel=d.bl.getAttribute('data-b');selRow=null;addAt=null;panelMode=null;render();return}
+    if(d.ln){var r=d.ln.getBoundingClientRect(),m=Math.max(0,Math.floor((d.x-r.left)/W));sel=null;selRow=null;panelMode=null;pickCat=null;pickQ='';addAt={row:d.ln.getAttribute('data-lane'),start:m};render()}
+    return}
   if(pending){var pv=pending;pending=null;if(d.ghost)d.ghost.remove();applyRemote(pv);return}
   if(d.ghost)d.ghost.remove();
   if(!d.moved){if(d.mode==='move'){sel=d.b.id;selRow=null;addAt=null;panelMode=null;render()}return}
   if(d.mode==='resize'){var o=d.b.len;d.b.len=d.len||o;if(chain)shiftAfter(d.b,d.b.len-o,o);resolve(d.b.row,d.b.id);sel=d.b.id;commit()}
   else{if(d.row===d.b.row&&d.start===d.b.start){render();return}moveBlock(d.b,d.row,d.start);sel=d.b.id;commit()}
 }
-app.addEventListener('pointerup',endDrag);app.addEventListener('pointercancel',function(){if(D&&D.ghost)D.ghost.remove();D=null;if(pending){var pv=pending;pending=null;applyRemote(pv)}else render()});
+app.addEventListener('pointerup',endDrag);app.addEventListener('pointercancel',function(){if(D&&D.mode==='tap'){D=null;return}if(D&&D.ghost)D.ghost.remove();D=null;if(pending){var pv=pending;pending=null;applyRemote(pv)}else render()});
 
 // ---------- files / snapshots ----------
 function fmtT(t){var d=new Date(t);return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
@@ -896,7 +912,7 @@ function examHTML(){
   h+='<div class="note" style="margin-top:10px">시험대비 때 미는 줄: '+S.rows.map(function(r){return '<label style="margin-right:10px;white-space:nowrap"><input type="checkbox" data-pause="'+r.id+'"'+(r.pause!==false?' checked':'')+'> '+esc(r.name)+'</label>'}).join('')+'</div></div>';
   return h;
 }
-var stuSetOpen=null,stuChain=true,stuPick=null,stuAddOpen=false,stuResetConfirm=null;
+var lastScrollStu=null,stuSetOpen=null,stuChain=true,stuPick=null,stuAddOpen=false,stuResetConfirm=null;
 function itemColor(st,r,it,col){
   if(it.ref&&col[it.ref])return col[it.ref];
   var fi=famInfo(detect(it.title,r.kind),r.kind);return [fi.f[2],fi.f[3]];
@@ -913,7 +929,8 @@ function stuDetail(st){
   var setOpen=stuSetOpen==null?!anySet:stuSetOpen;
   h+='<button class="btn sm'+(setOpen?' on':'')+'" data-s="settog">⚙ 출발 칸 설정 '+(setOpen?'▴':'▾')+'</button>';
   h+='<label class="tog" title="켜면: 한 교재를 미루거나 늘리면 그 뒤 교재가 모두 같이 밀려요. 끄면: 그 교재만 움직이고 겹치는 교재만 비켜나요 (순서 바꿀 때)"><input type="checkbox" id="stuchain"'+(stuChain?' checked':'')+'> 뒤 교재도 같이 이동</label>';
-  h+='<span class="qhelp" title="① [출발 칸 설정]에서 줄마다 지금 하는 교재를 고르면 기본 로드맵대로 이어져요.&#10;② 달력에서 블록을 끌어 옮기고, 오른쪽 끝을 끌어 개월 수를 바꾸고, 눌러서 빼기·반복·추가를 해요.&#10;③ 고친 줄은 이 학생만의 개인 계획이 돼요.&#10;④ 점선 아래 회색은 장부의 지난 기록(보기만)이에요.">?</span>';
+  h+='<span class="navb"><button class="btn sm" data-s="scrl" data-d="-6" title="6개월 앞으로">◀◀</button><button class="btn sm" data-s="scrl" data-d="0">오늘</button><button class="btn sm" data-s="scrl" data-d="6" title="6개월 뒤로">▶▶</button></span>';
+  h+='<span class="qhelp" title="① [출발 칸 설정]에서 줄마다 지금 하는 교재를 고르면 기본 로드맵대로 이어져요.&#10;② 달력에서 블록을 끌어 옮기고, 오른쪽 끝을 끌어 개월 수를 바꾸고, 눌러서 빼기·반복·추가를 해요.&#10;③ 고친 줄은 이 학생만의 개인 계획이 돼요.&#10;④ 점선 아래 회색은 장부의 지난 기록(보기만)이에요.&#10;⑤ 탭·휴대폰: 손가락으로 밀면 달력이 좌우로 움직여요. 블록을 살짝 누르면 위에 버튼이 나와서 옮기기·개월 수를 바꿀 수 있어요 (끌어서 옮기기는 PC에서).">?</span>';
   h+='<span class="sp" style="flex:1"></span><button class="btn danger" data-s="del" data-id="'+st.id+'">'+(stuDelConfirm?'정말 삭제할까요? (한 번 더)':'학생 삭제')+'</button><button class="btn" data-s="close">닫기</button></div>';
   var ex=stuExams(st);
   if(st.school){var upc=ex.filter(function(o){return o.e+o.len>nowIdx()});h+='<div class="note" style="margin-bottom:6px">시험대비: '+(upc.length?upc.map(function(o){return '<b>'+esc(idxDate(o.e))+'부터 '+(o.x.weeks||4)+'주</b>'+(o.x.name?' ('+esc(o.x.name)+')':'')}).join(', ')+' — 이 기간만큼 '+S.rows.filter(function(r){return r.pause!==false}).map(function(r){return esc(r.name)}).join('·')+' 일정이 뒤로 밀려요':'예정된 시험대비 기간이 없어요 ('+esc(st.school)+')')+'</div>'}
@@ -1038,11 +1055,13 @@ app.addEventListener('pointerdown',function(e){
   if(view!=='stu'||e.button!==0)return;
   var el=e.target.closest('.sblk.mv');if(!el)return;
   var st=stuOf(stuSel);if(!st)return;
+  if(e.pointerType==='touch'){SD={tap:true,el:el,row:el.getAttribute('data-row'),id:el.getAttribute('data-ci'),x:e.clientX,y:e.clientY,moved:false};return}
   SD={el:el,row:el.getAttribute('data-row'),id:el.getAttribute('data-ci'),x:e.clientX,moved:false,resize:!!e.target.closest('[data-rh2]'),left:parseFloat(el.style.left),width:parseFloat(el.style.width)};
   el.setPointerCapture(e.pointerId);e.preventDefault();
 });
 app.addEventListener('pointermove',function(e){
-  if(!SD)return;var dx=e.clientX-SD.x;if(!SD.moved&&Math.abs(dx)<5)return;SD.moved=true;
+  if(!SD)return;if(SD.tap){if(Math.abs(e.clientX-SD.x)+Math.abs(e.clientY-SD.y)>8)SD=null;return}
+  var dx=e.clientX-SD.x;if(!SD.moved&&Math.abs(dx)<5)return;SD.moved=true;
   var d=Math.round(dx/SW);SD.d=d;
   if(SD.resize)SD.el.style.width=Math.max(SW-4,SD.width+d*SW)+'px';else{SD.el.style.left=(SD.left+d*SW)+'px';SD.el.classList.add('drag')}
 });
@@ -1058,11 +1077,13 @@ function stuEnd(){
   stuPick={row:s.row,id:s.id};
 }
 app.addEventListener('pointerup',stuEnd);
-app.addEventListener('pointercancel',function(){if(SD){SD=null;render()}});
+app.addEventListener('pointercancel',function(){if(SD){var t=SD.tap;SD=null;if(!t)render()}});
 function stuAct(a,el){
   var id=el.getAttribute('data-id'),st=id?stuOf(id):null;
   if(a==='open'){stuSetOpen=null;stuSel=id;stuDelConfirm=false;stuPick=null;stuAddOpen=false;stuResetConfirm=null;render();var w=document.getElementById('stuwrap');if(w)w.scrollTop=0;return}
   if(a==='close'){stuSel=null;render();return}
+  if(a==='scrl'){var tl=document.getElementById('stl');if(!tl)return;var d=+el.getAttribute('data-d');
+    if(d===0)tl.scrollTo({left:Math.max(0,(nowIdx()-stuLo-3)*SW),behavior:'smooth'});else tl.scrollBy({left:d*SW,behavior:'smooth'});return}
   if(a==='exams'){stuExamOpen=!stuExamOpen;render();return}
   if(a==='settog'){var st2=stuOf(stuSel);var any=st2&&S.rows.some(function(r){return (st2.starts&&st2.starts[r.id])||(st2.custom&&st2.custom[r.id]&&st2.custom[r.id].length)});var cur=stuSetOpen==null?!any:stuSetOpen;stuSetOpen=!cur;render();return}
   if(a==='histload'){var hf=document.getElementById('histfile');if(hf)hf.click();return}
