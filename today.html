@@ -22,6 +22,7 @@ button{cursor:pointer}
 .top{position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:1px solid var(--bd)}
 .top-in{max-width:980px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .top h1{font-size:16px;margin:0;font-weight:800;letter-spacing:-.02em}
+.top .ver{font-size:11px;font-weight:500;color:#0a4771;margin-left:-4px;white-space:nowrap}
 .date{display:flex;align-items:center;gap:4px;margin-left:auto}
 .date button{border:1px solid var(--bd);background:var(--surface);border-radius:8px;width:32px;height:32px}
 .date .d{font-weight:700;min-width:118px;text-align:center}
@@ -52,6 +53,8 @@ main{max-width:980px;margin:0 auto;padding:14px 16px 60px}
 .slot.past{opacity:.55}
 .slot[disabled]{cursor:default;opacity:.5}
 .empty-day{padding:22px;text-align:center;color:var(--mu);background:var(--surface);border:1px dashed var(--bd);border-radius:var(--r)}
+.off-day b{color:var(--tx);font-size:1rem}
+.off-peek{margin-top:12px;border:1px solid var(--bd);background:#fff;border-radius:8px;padding:6px 12px;font:inherit;font-size:.8rem;color:var(--mu);cursor:pointer}
 
 /* 요약 */
 .head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:18px 0 8px}
@@ -176,7 +179,7 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
 </head>
 <body>
 <div class="top"><div class="top-in">
-  <h1>더퍼스트</h1>
+  <h1>더퍼스트</h1><span class="ver" title="오늘 수업 화면 버전 — 숙제관리(index.html) 버전과 맞춰 올려 주세요">오늘수업 v517</span>
   <div class="tabs" id="modetabs" style="margin:0"></div>
   <div class="tabs" id="lvtabs" style="margin:0"></div>
   <button class="icon-btn" id="btn-set">차량</button>
@@ -219,7 +222,9 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
 const DB_URL  = 'https://sotong-academy-default-rtdb.asia-southeast1.firebasedatabase.app';
 const FB_PATH = 'homework_v4';
 const VIEW_PATH = FB_PATH + '/todayView/students';
-const READ_KEYS = ['students', 'books', 'assigns', 'schoolEvents', 'classDaysByGroup', 'attendance', '_tomb', 'groups', 'classPauses'];
+const READ_KEYS = ['students', 'books', 'assigns', 'schoolEvents', 'classDaysByGroup', 'attendance', '_tomb', 'groups', 'classPauses', 'vacations', 'vacationReasons'];
+/* 공휴일 (LMS index.html의 HOLIDAYS와 같은 목록 · LMS v504) */
+const HOLI = {"2025-01-01": "신정", "2025-01-28": "설 연휴", "2025-01-29": "설 연휴", "2025-01-30": "설 연휴", "2025-03-01": "삼일절", "2025-03-03": "대체공휴일", "2025-05-05": "어린이날(월) + 부처님오신날(같은 날)", "2025-05-06": "대체공휴일", "2025-06-06": "현충일", "2025-08-15": "광복절", "2025-10-03": "개천절", "2025-10-05": "추석 연휴", "2025-10-06": "추석 연휴", "2025-10-07": "추석 연휴", "2025-10-08": "대체공휴일", "2025-10-09": "한글날", "2025-12-25": "성탄절", "2026-01-01": "신정", "2026-02-16": "설 연휴", "2026-02-17": "설 연휴", "2026-02-18": "설 연휴", "2026-03-01": "삼일절", "2026-03-02": "대체공휴일", "2026-05-05": "어린이날", "2026-05-24": "부처님오신날", "2026-05-25": "대체공휴일", "2026-06-03": "지방선거 임시공휴일", "2026-06-06": "현충일(토, 대체 없음)", "2026-07-17": "제헌절(공휴일 부활)", "2026-08-15": "광복절", "2026-08-17": "대체공휴일", "2026-09-24": "추석 연휴", "2026-09-25": "추석 연휴", "2026-09-26": "추석 연휴", "2026-10-03": "개천절", "2026-10-05": "대체공휴일", "2026-10-09": "한글날", "2026-12-25": "성탄절", "2027-01-01": "신정", "2027-02-05": "설 연휴", "2027-02-06": "설 연휴", "2027-02-07": "설 연휴", "2027-02-08": "대체공휴일", "2027-03-01": "삼일절", "2027-05-05": "어린이날", "2027-05-13": "부처님오신날", "2027-06-06": "현충일", "2027-07-17": "제헌절", "2027-07-19": "대체공휴일", "2027-08-15": "광복절", "2027-08-16": "대체공휴일", "2027-09-14": "추석 연휴", "2027-09-15": "추석 연휴", "2027-09-16": "추석 연휴", "2027-10-03": "개천절", "2027-10-04": "대체공휴일", "2027-10-09": "한글날", "2027-10-11": "대체공휴일", "2027-12-25": "성탄절", "2027-12-27": "대체공휴일"};
 const MAP_PATH = FB_PATH + '/todayView/groupMap';   // 시간표 반 이름 → LMS 반 이름
 
 /* 시간표의 school 값('신탄'·'대청'·'중앙')은 LMS 학교 이름에 들어 있는 글자로 맞춘다 (예: '대청' → LMS '대청중') */
@@ -339,7 +344,7 @@ async function load() {
     Object.keys(PAT).forEach(g => { if (!dirty(g)) draft[g] = { ...PAT[g] }; });
     const raw = {}; READ_KEYS.forEach((k, i) => raw[k] = vals[i]);
     const tomb = new Set(Object.keys((raw._tomb && raw._tomb.students) || {}).map(String));
-    const students = toArr(raw.students).filter(s => s && s.id != null && !tomb.has(String(s.id)));
+    const students = toArr(raw.students).filter(s => s && s.id != null && !tomb.has(String(s.id)) && !s.left);   // 퇴원생 제외 (LMS v503)
     D = {
       students,
       books: toArr(raw.books).filter(b => b && b.id != null),
@@ -349,6 +354,9 @@ async function load() {
       attendance: toArr(raw.attendance),
       // LMS 학교 시험대비 기간 (classPauses 중 school 이 있는 것)
       prep: toArr(raw.classPauses).filter(p => p && p.school && p.start && p.end),
+      // 학원 휴무일 (LMS 📅 학원 일정 → 🗓 학원 휴무일)
+      vac: new Set(toArr(raw.vacations).filter(x => typeof x === 'string')),
+      vacWhy: (raw.vacationReasons && typeof raw.vacationReasons === 'object') ? raw.vacationReasons : {},
     };
     D.lmsGroups = [...new Set([...toArr(raw.groups).map(String), ...students.map(s => s.group).filter(Boolean)])];
     D.bookById = new Map(D.books.map(b => [Number(b.id), b]));
@@ -460,7 +468,7 @@ function bookInfo(st) {
 /* 시험대비 기간: LMS 📅 학원 일정 → 🏫 학교 시험대비 기간에 등록한 것 (그 학생 학교 + 반) */
 function examFor(st, date) {
   if (!st || !st.school) return null;
-  const p = D.prep.find(p => p.school === st.school && (!Array.isArray(p.groups) || !p.groups.length || p.groups.includes(st.group)) && date >= p.start && date <= p.end);
+  const p = D.prep.find(p => p.school === st.school && (Array.isArray(p.grades) && p.grades.length ? p.grades.includes(stGradeAt(st, p.start)) : (!Array.isArray(p.groups) || !p.groups.length || p.groups.includes(st.group))) && date >= p.start && date <= p.end);
   return p ? { p, left: daysBetween(date, p.end) } : null;
 }
 function attendOf(sid, date) {
@@ -473,7 +481,15 @@ function groupDays(g) {
 }
 
 /* ══ 화면 ══ */
-const isEl = g => /^초/.test(String(g));
+/* 초등·중등 판단 (LMS v517) — 학생은 학년으로, 반은 그 반 학생들 학년으로 (학년이 없으면 반 이름 '초…'로) */
+const isElGroupName = g => /^초/.test(String(g));
+const isEl = g => { const gs = (typeof D !== 'undefined' && D && D.students ? D.students : []).filter(st => st.group === g).map(st => stGradeAt(st)).filter(Boolean);
+  if (!gs.length) return isElGroupName(g); return gs.filter(n => n <= 6).length * 2 >= gs.length; };
+const isElSt = st => { const n = stGradeAt(st); return n ? n <= 6 : isElGroupName(st && st.group); };
+/* 학생 학년 (LMS v515~ : st.gr = { g, y } · 3월 1일에 한 학년 올라감) — 없으면 반 이름(중1 → 중1)으로 */
+const schoolYear = ds => { const d = ds ? new Date(ds + 'T00:00:00') : new Date(); return d.getMonth() >= 2 ? d.getFullYear() : d.getFullYear() - 1; };
+const grFromGroup = g => { const m = String(g || '').trim().match(/^([초중고])\s*([1-6])(?:\D|$)/); if (!m) return 0; const n = +m[2]; if (m[1] !== '초' && n > 3) return 0; return { 초: 0, 중: 6, 고: 9 }[m[1]] + n; };
+const stGradeAt = (st, ds) => (st && st.gr && st.gr.g ? st.gr.g + (schoolYear(ds) - (st.gr.y || schoolYear(ds))) : 0) || grFromGroup(st && st.group);
 const ttList = s => Array.isArray(s.g) ? s.g : [s.g];
 /* 시간표 반 → LMS 반 (LMS에 같은 이름이 있으면 그대로, 없으면 연결해 둔 반) */
 const gMap = g => (D && D.lmsGroups.includes(g)) ? [g] : (Array.isArray(GMAP[g]) ? GMAP[g] : GMAP[g] ? [GMAP[g]] : []);
@@ -529,6 +545,14 @@ function render() {
   if (on) { const box = $('slots'); box.scrollLeft = on.offsetLeft - box.offsetLeft - 8; }
 
   const v = $('view');
+  // 학원 휴무일·공휴일이면 먼저 알려 줌 (그래도 보기를 누르면 평소 화면)
+  const offWhy = D && D.vac.has(curDate) ? `학원 휴무일${D.vacWhy[curDate] ? ' · ' + D.vacWhy[curDate] : ''}` : HOLI[curDate] ? `공휴일 · ${HOLI[curDate]}` : '';
+  if (offWhy && !(window._offPeek && window._offPeek[curDate])) {
+    $('slots').style.display = 'none';
+    v.innerHTML = `<div class="empty-day off-day" style="margin-top:14px"><div style="font-size:1.6rem">🏖</div><b>${esc(offWhy)}</b><div style="margin-top:4px">${curDate === todayStr() ? '오늘은' : '이 날은'} 수업이 없어요. 숙제도 이 날은 피해서 잡혀요.</div>
+      <button class="off-peek" onclick="(window._offPeek = window._offPeek || {})[curDate] = true; render()">그래도 수업 화면 보기</button></div>`;
+    return;
+  }
   if (!slots.length) { v.innerHTML = `<div class="empty-day" style="margin-top:14px">${dn}요일에는 ${level === 'el' ? '초등' : '중등'} 영어 수업이 없어요.</div>`; return; }
   if (!D) { v.innerHTML = ''; return; }
   const s = slots.find(x => x.i === curSlot);
@@ -641,7 +665,7 @@ function card(r, s) {
   const { st, vc, bk, sv, ex, examMode, att, due } = r;
   const flag = due >= DUE_RED ? 'flag-red' : due > 0 ? 'flag-amb' : examMode ? 'flag-exam' : '';
   const chips = [];
-  if (isEl(st.group)) { if (bk.elMain) chips.push(`<span class="chip lv-el">${esc(bk.elMain)}</span>`); if (gList(s).length > 1) chips.push(`<span class="chip">${esc(st.group)}</span>`); }
+  if (isElSt(st)) { if (bk.elMain) chips.push(`<span class="chip lv-el">${esc(bk.elMain)}</span>`); if (gList(s).length > 1) chips.push(`<span class="chip">${esc(st.group)}</span>`); }
   else if (bk.level) chips.push(`<span class="chip lv-${bk.level.key}">${bk.level.label}</span>`);
   if (st.school) chips.push(`<span class="chip">${esc(st.school)}</span>`);
   if (att === 'absent') chips.push('<span class="chip abs">결석</span>');
@@ -871,7 +895,7 @@ async function savePatterns() {
 function openDlg(g) {
   if (!D) return;
   const groups = [...new Set(D.students.map(s => s.group).filter(Boolean))].sort((a, b) => {
-    const am = /^중/.test(a), bm = /^중/.test(b);
+    const am = !isEl(a), bm = !isEl(b);
     return am === bm ? a.localeCompare(b, 'ko') : am ? -1 : 1;
   });
   if (g) dlgGroup = g;
@@ -888,7 +912,7 @@ function renderDlg() {
     const sv = VIEW[st.id] || {};
     return `<div class="set-row">
       <span class="nm2">${esc(st.name)}</span>
-      ${isEl(st.group) ? '' : `<span class="chip" title="학교는 숙제관리 앱 👥 학생 관리에서 바꿔요">${st.school ? esc(st.school) : '<span style="color:#b45309">학교 미입력</span>'}</span>`}
+      ${isElSt(st) ? '' : `<span class="chip" title="학교는 숙제관리 앱 👥 학생 관리에서 바꿔요">${st.school ? esc(st.school) : '<span style="color:#b45309">학교 미입력</span>'}</span>`}
       <button class="van-t ${sv.van ? 'on' : ''}" data-van="${st.id}">${sv.van ? '🚐 차량' : '차량 아님'}</button>
     </div>`;
   }).join('') || '<p>학생이 없어요.</p>';
