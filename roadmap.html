@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>학원 로드맵 기간표 v24</title>
+<title>학원 로드맵 기간표 v25</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style id="app-style">
@@ -41,7 +41,13 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family
 .gseg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;border-left:2px solid #fff}
 .mseg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#6b7785}
 .lane{position:relative;height:64px;background-color:#f4f5f7;border-bottom:3px solid #fff;
- background-image:repeating-linear-gradient(to right,transparent 0,transparent calc(var(--w)*12 - 2px),#55606b calc(var(--w)*12 - 2px),#55606b calc(var(--w)*12)),repeating-linear-gradient(to right,transparent 0,transparent calc(var(--w) - 1px),#e2e5e9 calc(var(--w) - 1px),#e2e5e9 var(--w));cursor:copy}
+ background-image:repeating-linear-gradient(to right,transparent 0,transparent calc(var(--w) - 1px),#e8eaed calc(var(--w) - 1px),#e8eaed var(--w));cursor:copy}
+.r.dist .lane{height:30px;background-color:#fffaf2}
+.r.dist .lab{background:#b54708}
+.blk.dist{background:none!important;color:#b54708!important;box-shadow:none;overflow:visible;white-space:nowrap;justify-content:center;align-items:flex-start;padding:0;font-size:11px;z-index:2}
+.blk.dist .t{word-break:normal}
+.mseg.k{border-left:1px solid #fff}
+.gseg.stg{font-size:12px}
 .blk{position:absolute;top:3px;bottom:3px;border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:10.5px;font-weight:700;line-height:1.18;padding:2px 8px 2px 3px;overflow:hidden;cursor:grab;touch-action:pan-x pan-y;user-select:none;box-shadow:0 1px 0 rgba(0,0,0,.08);transition:box-shadow .12s}
 .blk:hover{box-shadow:0 2px 8px rgba(0,0,0,.18)}
 .blk.sel{outline:3px solid #ffb703;outline-offset:1px;z-index:3}
@@ -138,7 +144,13 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family
 .saxis{display:flex;position:relative;height:46px;background:#eceff2}
 .saxis .ym{position:absolute;top:0;bottom:0;font-size:10.5px;color:#5b6570;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;border-left:1px solid #fff}
 .saxis .ym.jan{border-left:2px solid #55606b}
-.slane{position:relative;height:42px;background-color:#f4f5f7;background-image:repeating-linear-gradient(to right,transparent 0,transparent calc(var(--sw) - 1px),#e2e5e9 calc(var(--sw) - 1px),#e2e5e9 var(--sw))}
+.slane{position:relative;height:42px;background-color:#f4f5f7;background-image:repeating-linear-gradient(to right,transparent 0,transparent calc(var(--sw) - 1px),#eaecef calc(var(--sw) - 1px),#eaecef var(--sw))}
+.slane.dl{height:22px;background:#fffaf2}
+.sdist{position:absolute;top:2px;font-size:11px;font-weight:800;color:#b54708;white-space:nowrap}
+.sblk.done{box-shadow:inset 0 0 0 2px rgba(29,107,58,.55)}
+.sblk .ck{display:block;font-size:10px;font-weight:800;color:#1d6b3a;background:rgba(255,255,255,.85);border-radius:6px;padding:0 4px;margin-top:1px}
+.donebar{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;padding-left:8px;border-left:2px solid #d5dae0;margin-left:4px}
+.uc{font-size:11px;color:#9a5300;font-weight:700}
 .sblk{position:absolute;top:3px;bottom:3px;border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:10.5px;font-weight:700;line-height:1.15;padding:2px 3px;overflow:hidden;cursor:pointer;word-break:keep-all;overflow-wrap:break-word}
 .sblk:hover{box-shadow:0 2px 8px rgba(0,0,0,.2)}
 .sblk.past{opacity:.45}
@@ -189,7 +201,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family
 </head>
 <body>
 <div id="app"></div>
-<script id="roadmap-data" type="application/json">{"title": "더퍼스트학원 학습 로드맵", "startGrade": 2, "years": 4, "rows": [{"id": "r0", "name": "수업 주교재", "kind": "class"}, {"id": "r1", "name": "수업 부교재", "kind": "class"}, {"id": "r2", "name": "홈보카", "kind": "vocab"}, {"id": "r3", "name": "수업보카", "kind": "vocab"}, {"id": "r4", "name": "단어시간", "kind": "vocab"}], "blocks": [{"id": "b0", "row": "r0", "start": 0, "len": 1, "title": "Alphabet 1", "fam": ""}, {"id": "b1", "row": "r0", "start": 1, "len": 1, "title": "Alphabet 2", "fam": ""}, {"id": "b2", "row": "r0", "start": 2, "len": 1, "title": "Phonics 1", "fam": ""}, {"id": "b3", "row": "r0", "start": 3, "len": 1, "title": "Phonics 2", "fam": ""}, {"id": "b4", "row": "r0", "start": 4, "len": 1, "title": "Phonics 3", "fam": ""}, {"id": "b5", "row": "r0", "start": 5, "len": 1, "title": "Phonics 4", "fam": ""}, {"id": "b6", "row": "r0", "start": 6, "len": 1, "title": "Phonics 5", "fam": ""}, {"id": "b7", "row": "r0", "start": 7, "len": 1, "title": "Phonics 6", "fam": ""}, {"id": "b8", "row": "r0", "start": 8, "len": 1, "title": "Reading 1", "fam": ""}, {"id": "b9", "row": "r0", "start": 9, "len": 1, "title": "Reading 2", "fam": ""}, {"id": "b10", "row": "r0", "start": 10, "len": 1, "title": "Reading 3", "fam": ""}, {"id": "b11", "row": "r0", "start": 11, "len": 1, "title": "Reading 4", "fam": ""}, {"id": "b12", "row": "r0", "start": 12, "len": 1, "title": "Reading 5", "fam": ""}, {"id": "b13", "row": "r0", "start": 13, "len": 1, "title": "Reading 6", "fam": ""}, {"id": "b14", "row": "r0", "start": 14, "len": 1, "title": "Basic 1", "fam": ""}, {"id": "b15", "row": "r0", "start": 15, "len": 1, "title": "Basic 2", "fam": ""}, {"id": "b16", "row": "r0", "start": 16, "len": 1, "title": "Basic 3", "fam": ""}, {"id": "b17", "row": "r0", "start": 17, "len": 1, "title": "Basic 4", "fam": ""}, {"id": "b18", "row": "r0", "start": 18, "len": 1, "title": "Basic 5", "fam": ""}, {"id": "b19", "row": "r0", "start": 19, "len": 1, "title": "Basic 6", "fam": ""}, {"id": "b20", "row": "r0", "start": 20, "len": 1, "title": "Basic 7", "fam": ""}, {"id": "b21", "row": "r0", "start": 21, "len": 1, "title": "Basic 8", "fam": ""}, {"id": "b22", "row": "r0", "start": 22, "len": 1, "title": "Basic 9", "fam": ""}, {"id": "b23", "row": "r0", "start": 23, "len": 1, "title": "Basic 10", "fam": ""}, {"id": "b24", "row": "r0", "start": 24, "len": 1, "title": "Basic 11", "fam": ""}, {"id": "b25", "row": "r0", "start": 25, "len": 1, "title": "Basic 12", "fam": ""}, {"id": "b26", "row": "r0", "start": 26, "len": 4, "title": "3800 해석 (1단계)", "fam": ""}, {"id": "b27", "row": "r0", "start": 30, "len": 5, "title": "3800 해석 (2단계)", "fam": ""}, {"id": "b28", "row": "r0", "start": 35, "len": 5, "title": "천문장 입문(Test)", "fam": ""}, {"id": "b29", "row": "r0", "start": 40, "len": 5, "title": "천문장 기본(Test)", "fam": ""}, {"id": "b30", "row": "r0", "start": 45, "len": 1, "title": "고등 미니 모의고사", "fam": ""}, {"id": "b31", "row": "r1", "start": 0, "len": 1, "title": "Alphabet 쓰기 1", "fam": ""}, {"id": "b32", "row": "r1", "start": 1, "len": 1, "title": "Alphabet 쓰기 2", "fam": ""}, {"id": "b33", "row": "r1", "start": 4, "len": 1, "title": "Phonics WB 1(a e i o u)", "fam": ""}, {"id": "b34", "row": "r1", "start": 5, "len": 1, "title": "Phonics WB 2", "fam": ""}, {"id": "b35", "row": "r1", "start": 6, "len": 1, "title": "Phonics WB 3", "fam": ""}, {"id": "b36", "row": "r1", "start": 7, "len": 1, "title": "Phonics WB 4", "fam": ""}, {"id": "b37", "row": "r1", "start": 8, "len": 1, "title": "Phonics WB 5", "fam": ""}, {"id": "b38", "row": "r1", "start": 9, "len": 1, "title": "Phonics WB 6", "fam": ""}, {"id": "b39", "row": "r1", "start": 10, "len": 1, "title": "Phonics SWB 1", "fam": ""}, {"id": "b40", "row": "r1", "start": 11, "len": 1, "title": "Phonics SWB 2", "fam": ""}, {"id": "b41", "row": "r1", "start": 12, "len": 1, "title": "Phonics SWB 3", "fam": ""}, {"id": "b42", "row": "r1", "start": 13, "len": 1, "title": "Work Book1", "fam": ""}, {"id": "b43", "row": "r1", "start": 14, "len": 1, "title": "Work Book2", "fam": ""}, {"id": "b44", "row": "r1", "start": 15, "len": 1, "title": "Work Book3", "fam": ""}, {"id": "b45", "row": "r1", "start": 16, "len": 1, "title": "Work Book4", "fam": ""}, {"id": "b46", "row": "r1", "start": 17, "len": 1, "title": "Work Book5", "fam": ""}, {"id": "b47", "row": "r1", "start": 18, "len": 1, "title": "Work Book6", "fam": ""}, {"id": "b48", "row": "r1", "start": 19, "len": 1, "title": "5형식 (주+동+시)", "fam": ""}, {"id": "b49", "row": "r1", "start": 20, "len": 1, "title": "5형식 (부사구)", "fam": ""}, {"id": "b50", "row": "r1", "start": 21, "len": 1, "title": "5형식 (준동사)", "fam": ""}, {"id": "b51", "row": "r1", "start": 22, "len": 2, "title": "5형식 (분석)", "fam": ""}, {"id": "b52", "row": "r1", "start": 24, "len": 2, "title": "5형식 (분석/해석)", "fam": ""}, {"id": "b53", "row": "r1", "start": 26, "len": 7, "title": "3800드릴 (1단계)", "fam": ""}, {"id": "b54", "row": "r1", "start": 33, "len": 7, "title": "3800드릴 (2단계)", "fam": ""}, {"id": "b55", "row": "r1", "start": 40, "len": 6, "title": "3800드릴 (3단계)", "fam": ""}, {"id": "b56", "row": "r2", "start": 1, "len": 3, "title": "초등 주니어", "fam": ""}, {"id": "b57", "row": "r2", "start": 4, "len": 8, "title": "초등1단계", "fam": ""}, {"id": "b58", "row": "r2", "start": 12, "len": 8, "title": "초등2단계", "fam": ""}, {"id": "b59", "row": "r2", "start": 20, "len": 6, "title": "중등1단계", "fam": ""}, {"id": "b60", "row": "r2", "start": 26, "len": 6, "title": "중등2단계", "fam": ""}, {"id": "b61", "row": "r3", "start": 4, "len": 8, "title": "초등1단계", "fam": ""}, {"id": "b62", "row": "r3", "start": 12, "len": 8, "title": "초등2단계", "fam": ""}, {"id": "b63", "row": "r3", "start": 20, "len": 6, "title": "중등1단계", "fam": ""}, {"id": "b64", "row": "r3", "start": 26, "len": 6, "title": "중등2단계", "fam": ""}, {"id": "b65", "row": "r3", "start": 35, "len": 5, "title": "천문장 입문단어", "fam": ""}, {"id": "b66", "row": "r3", "start": 40, "len": 5, "title": "천문장 기본단어", "fam": ""}, {"id": "b67", "row": "r4", "start": 4, "len": 8, "title": "초등1단계 (단어장)", "fam": ""}, {"id": "b68", "row": "r4", "start": 12, "len": 8, "title": "초등2단계 (단어장)", "fam": ""}, {"id": "b69", "row": "r4", "start": 20, "len": 2, "title": "3인칭 일반동사 (단어장) / 중등1단계 (단어장)", "fam": ""}, {"id": "b70", "row": "r4", "start": 22, "len": 2, "title": "과거 일반동사 (단어장) / 중등1단계 (단어장)", "fam": ""}, {"id": "b71", "row": "r4", "start": 24, "len": 1, "title": "과거/과거분사 (단어장) / 중등1단계 (단어장)", "fam": ""}, {"id": "b72", "row": "r4", "start": 25, "len": 1, "title": "중등1단계 (단어장)", "fam": ""}, {"id": "b73", "row": "r4", "start": 26, "len": 6, "title": "중등2단계 (단어장)", "fam": ""}], "mig": 9}</script>
+<script id="roadmap-data" type="application/json">{"title": "더퍼스트학원 학습 로드맵", "startGrade": 2, "years": 5, "mig": 25, "unit": "week", "rows": [{"id": "rd", "name": "배부 ◆", "kind": "dist"}, {"id": "r0", "name": "수업 주교재", "kind": "class"}, {"id": "r1", "name": "수업 부교재", "kind": "class"}, {"id": "r2", "name": "홈보카", "kind": "vocab"}, {"id": "r3", "name": "수업보카", "kind": "vocab"}, {"id": "r4", "name": "단어장", "kind": "vocab"}], "blocks": [{"id": "b000", "row": "rd", "start": 68, "len": 1, "title": "Beginner Sentence build up", "fam": ""}, {"id": "b001", "row": "rd", "start": 128, "len": 1, "title": "Inter Sentence build up", "fam": ""}, {"id": "b002", "row": "r0", "start": 0, "len": 4, "title": "Alphabet 1", "fam": ""}, {"id": "b003", "row": "r0", "start": 4, "len": 4, "title": "Alphabet 2", "fam": ""}, {"id": "b004", "row": "r0", "start": 8, "len": 5, "title": "Phonics 1", "fam": ""}, {"id": "b005", "row": "r0", "start": 13, "len": 5, "title": "Phonics 2", "fam": ""}, {"id": "b006", "row": "r0", "start": 18, "len": 5, "title": "Phonics 3", "fam": ""}, {"id": "b007", "row": "r0", "start": 23, "len": 5, "title": "Phonics 4", "fam": ""}, {"id": "b008", "row": "r0", "start": 28, "len": 5, "title": "Phonics 5", "fam": ""}, {"id": "b009", "row": "r0", "start": 33, "len": 5, "title": "Phonics 6", "fam": ""}, {"id": "b010", "row": "r0", "start": 38, "len": 5, "title": "Reading 1", "fam": ""}, {"id": "b011", "row": "r0", "start": 43, "len": 5, "title": "Reading 2", "fam": ""}, {"id": "b012", "row": "r0", "start": 48, "len": 5, "title": "Reading 3", "fam": ""}, {"id": "b013", "row": "r0", "start": 53, "len": 5, "title": "Reading 4", "fam": ""}, {"id": "b014", "row": "r0", "start": 58, "len": 5, "title": "Reading 5", "fam": ""}, {"id": "b015", "row": "r0", "start": 63, "len": 5, "title": "Reading 6", "fam": ""}, {"id": "b016", "row": "r0", "start": 68, "len": 5, "title": "Basic 1", "fam": ""}, {"id": "b017", "row": "r0", "start": 73, "len": 5, "title": "Basic 2", "fam": ""}, {"id": "b018", "row": "r0", "start": 78, "len": 5, "title": "Basic 3", "fam": ""}, {"id": "b019", "row": "r0", "start": 83, "len": 5, "title": "Basic 4", "fam": ""}, {"id": "b020", "row": "r0", "start": 88, "len": 5, "title": "Basic 5", "fam": ""}, {"id": "b021", "row": "r0", "start": 93, "len": 5, "title": "Basic 6", "fam": ""}, {"id": "b022", "row": "r0", "start": 98, "len": 5, "title": "Basic 7", "fam": ""}, {"id": "b023", "row": "r0", "start": 103, "len": 5, "title": "Basic 8", "fam": ""}, {"id": "b024", "row": "r0", "start": 108, "len": 5, "title": "Basic 9", "fam": ""}, {"id": "b025", "row": "r0", "start": 113, "len": 5, "title": "Basic 10", "fam": ""}, {"id": "b026", "row": "r0", "start": 118, "len": 5, "title": "Basic 11", "fam": ""}, {"id": "b027", "row": "r0", "start": 123, "len": 5, "title": "Basic 12", "fam": ""}, {"id": "b028", "row": "r0", "start": 128, "len": 4, "title": "5형식 (주+동+시)", "fam": ""}, {"id": "b029", "row": "r0", "start": 132, "len": 4, "title": "5형식 (부사구)", "fam": ""}, {"id": "b030", "row": "r0", "start": 136, "len": 4, "title": "5형식 (준동사)", "fam": ""}, {"id": "b031", "row": "r0", "start": 140, "len": 4, "title": "5형식 (분석/해석하기)", "fam": ""}, {"id": "b032", "row": "r0", "start": 144, "len": 17, "title": "3800 해석 (1단계)", "fam": ""}, {"id": "b033", "row": "r0", "start": 161, "len": 17, "title": "3800 해석 (2단계)", "fam": ""}, {"id": "b034", "row": "r0", "start": 178, "len": 22, "title": "천문장 입문(Test)", "fam": ""}, {"id": "b035", "row": "r0", "start": 200, "len": 22, "title": "천문장 기본(Test)", "fam": ""}, {"id": "b036", "row": "r0", "start": 222, "len": 13, "title": "고등 미니 모의고사", "fam": ""}, {"id": "b037", "row": "r1", "start": 0, "len": 4, "title": "Alphabet 쓰기 1", "fam": ""}, {"id": "b038", "row": "r1", "start": 4, "len": 4, "title": "Alphabet 쓰기 2", "fam": ""}, {"id": "b039", "row": "r1", "start": 18, "len": 8, "title": "Ph 워크북 1", "fam": ""}, {"id": "b040", "row": "r1", "start": 26, "len": 8, "title": "Ph 워크북 2", "fam": ""}, {"id": "b041", "row": "r1", "start": 34, "len": 8, "title": "Ph 워크북 3", "fam": ""}, {"id": "b042", "row": "r1", "start": 42, "len": 8, "title": "Ph 워크북 4", "fam": ""}, {"id": "b043", "row": "r1", "start": 50, "len": 8, "title": "Ph 워크북 5", "fam": ""}, {"id": "b044", "row": "r1", "start": 58, "len": 8, "title": "Ph 워크북 6", "fam": ""}, {"id": "b045", "row": "r1", "start": 66, "len": 8, "title": "Ph Speed 워크북 1", "fam": ""}, {"id": "b046", "row": "r1", "start": 74, "len": 8, "title": "Ph Speed 워크북 2", "fam": ""}, {"id": "b047", "row": "r1", "start": 82, "len": 8, "title": "Ph Speed 워크북 3", "fam": ""}, {"id": "b048", "row": "r1", "start": 90, "len": 8, "title": "워크북 E1", "fam": ""}, {"id": "b049", "row": "r1", "start": 98, "len": 8, "title": "워크북 E2", "fam": ""}, {"id": "b050", "row": "r1", "start": 106, "len": 8, "title": "워크북 E3", "fam": ""}, {"id": "b051", "row": "r1", "start": 114, "len": 8, "title": "워크북 E4", "fam": ""}, {"id": "b052", "row": "r1", "start": 122, "len": 8, "title": "워크북 E5", "fam": ""}, {"id": "b053", "row": "r1", "start": 130, "len": 8, "title": "워크북 E6", "fam": ""}, {"id": "b054", "row": "r1", "start": 138, "len": 5, "title": "워크북 M", "fam": ""}, {"id": "b055", "row": "r1", "start": 143, "len": 35, "title": "3800 드릴 (1단계)", "fam": ""}, {"id": "b056", "row": "r1", "start": 178, "len": 35, "title": "3800 드릴 (2단계)", "fam": ""}, {"id": "b057", "row": "r1", "start": 213, "len": 35, "title": "3800 드릴 (3단계)", "fam": ""}, {"id": "b058", "row": "r1", "start": 248, "len": 6, "title": "Prerequisite 초 (A)", "fam": ""}, {"id": "b059", "row": "r1", "start": 254, "len": 6, "title": "Prerequisite 중 intro (A)", "fam": ""}, {"id": "b060", "row": "r1", "start": 260, "len": 6, "title": "Prerequisite 초 (B)", "fam": ""}, {"id": "b061", "row": "r1", "start": 266, "len": 6, "title": "Prerequisite 중 intro (B)", "fam": ""}, {"id": "b062", "row": "r2", "start": 4, "len": 17, "title": "초등 주니어 20.65", "fam": ""}, {"id": "b063", "row": "r2", "start": 21, "len": 17, "title": "초등 1단계 40.70 (리콜)", "fam": ""}, {"id": "b064", "row": "r2", "start": 38, "len": 17, "title": "초등 1단계 40.70 (객관식)", "fam": ""}, {"id": "b065", "row": "r2", "start": 55, "len": 17, "title": "초등 1단계 40.70 (주관식)", "fam": ""}, {"id": "b066", "row": "r2", "start": 72, "len": 17, "title": "초등 2단계 40.70 (리콜)", "fam": ""}, {"id": "b067", "row": "r2", "start": 89, "len": 17, "title": "초등 2단계 40.70 (객관식)", "fam": ""}, {"id": "b068", "row": "r2", "start": 106, "len": 17, "title": "초등 2단계 40.70 (주관식)", "fam": ""}, {"id": "b069", "row": "r2", "start": 123, "len": 4, "title": "3인칭 일반동사", "fam": ""}, {"id": "b070", "row": "r2", "start": 127, "len": 4, "title": "과거 일반동사", "fam": ""}, {"id": "b071", "row": "r2", "start": 131, "len": 4, "title": "과거 과거분사", "fam": ""}, {"id": "b072", "row": "r2", "start": 139, "len": 13, "title": "중등 1단계 100.50 (리콜)", "fam": ""}, {"id": "b073", "row": "r2", "start": 152, "len": 13, "title": "중등 1단계 100.50 (객관식)", "fam": ""}, {"id": "b074", "row": "r2", "start": 165, "len": 13, "title": "중등 1단계 100.50 (주관식)", "fam": ""}, {"id": "b075", "row": "r2", "start": 178, "len": 13, "title": "중등 2단계 100.50 (리콜)", "fam": ""}, {"id": "b076", "row": "r2", "start": 191, "len": 13, "title": "중등 2단계 100.50 (객관식)", "fam": ""}, {"id": "b077", "row": "r2", "start": 204, "len": 13, "title": "중등 2단계 100.50 (주관식)", "fam": ""}, {"id": "b078", "row": "r2", "start": 217, "len": 9, "title": "한끝 고등 기본 30.42", "fam": ""}, {"id": "b079", "row": "r3", "start": 4, "len": 17, "title": "초등 주니어 20.65", "fam": ""}, {"id": "b080", "row": "r3", "start": 21, "len": 17, "title": "초등 1단계 40.70 (리콜)", "fam": ""}, {"id": "b081", "row": "r3", "start": 38, "len": 17, "title": "초등 1단계 40.70 (객관식)", "fam": ""}, {"id": "b082", "row": "r3", "start": 55, "len": 17, "title": "초등 1단계 40.70 (주관식)", "fam": ""}, {"id": "b083", "row": "r3", "start": 72, "len": 17, "title": "초등 2단계 40.70 (리콜)", "fam": ""}, {"id": "b084", "row": "r3", "start": 89, "len": 17, "title": "초등 2단계 40.70 (객관식)", "fam": ""}, {"id": "b085", "row": "r3", "start": 106, "len": 17, "title": "초등 2단계 40.70 (주관식)", "fam": ""}, {"id": "b086", "row": "r3", "start": 123, "len": 4, "title": "3인칭 일반동사", "fam": ""}, {"id": "b087", "row": "r3", "start": 127, "len": 4, "title": "과거 일반동사", "fam": ""}, {"id": "b088", "row": "r3", "start": 131, "len": 4, "title": "과거 과거분사", "fam": ""}, {"id": "b089", "row": "r3", "start": 135, "len": 4, "title": "5형식 단어", "fam": ""}, {"id": "b090", "row": "r3", "start": 139, "len": 13, "title": "중등 1단계 100.50 (리콜)", "fam": ""}, {"id": "b091", "row": "r3", "start": 152, "len": 13, "title": "중등 1단계 100.50 (객관식)", "fam": ""}, {"id": "b092", "row": "r3", "start": 165, "len": 13, "title": "중등 1단계 100.50 (주관식)", "fam": ""}, {"id": "b093", "row": "r3", "start": 178, "len": 13, "title": "중등 2단계 100.50 (리콜)", "fam": ""}, {"id": "b094", "row": "r3", "start": 191, "len": 13, "title": "중등 2단계 100.50 (객관식)", "fam": ""}, {"id": "b095", "row": "r3", "start": 204, "len": 13, "title": "중등 2단계 100.50 (주관식)", "fam": ""}, {"id": "b096", "row": "r3", "start": 217, "len": 22, "title": "천문장 입문 단어 20.88", "fam": ""}, {"id": "b097", "row": "r3", "start": 239, "len": 22, "title": "천문장 기본 단어 25.88", "fam": ""}, {"id": "b098", "row": "r3", "start": 261, "len": 9, "title": "한끝 고등 기본 30.42", "fam": ""}, {"id": "b099", "row": "r4", "start": 21, "len": 17, "title": "초등 1단계 (단어장)", "fam": ""}, {"id": "b100", "row": "r4", "start": 38, "len": 17, "title": "초등 1단계 (단어장)", "fam": ""}, {"id": "b101", "row": "r4", "start": 55, "len": 17, "title": "초등 1단계 (단어장)", "fam": ""}, {"id": "b102", "row": "r4", "start": 72, "len": 17, "title": "초등 2단계 (단어장)", "fam": ""}, {"id": "b103", "row": "r4", "start": 89, "len": 17, "title": "초등 2단계 (단어장)", "fam": ""}, {"id": "b104", "row": "r4", "start": 106, "len": 17, "title": "초등 2단계 (단어장)", "fam": ""}, {"id": "b105", "row": "r4", "start": 123, "len": 4, "title": "3인칭 일반동사 (단어장)", "fam": ""}, {"id": "b106", "row": "r4", "start": 127, "len": 4, "title": "과거 일반동사 (단어장)", "fam": ""}, {"id": "b107", "row": "r4", "start": 131, "len": 4, "title": "과거/과거분사 (단어장)", "fam": ""}, {"id": "b108", "row": "r4", "start": 139, "len": 13, "title": "중등 1단계 (단어장)", "fam": ""}, {"id": "b109", "row": "r4", "start": 152, "len": 13, "title": "중등 1단계 (단어장)", "fam": ""}, {"id": "b110", "row": "r4", "start": 165, "len": 13, "title": "중등 1단계 (단어장)", "fam": ""}, {"id": "b111", "row": "r4", "start": 178, "len": 13, "title": "중등 2단계 (단어장)", "fam": ""}, {"id": "b112", "row": "r4", "start": 191, "len": 13, "title": "중등 2단계 (단어장)", "fam": ""}, {"id": "b113", "row": "r4", "start": 204, "len": 13, "title": "중등 2단계 (단어장)", "fam": ""}]}</script>
 <script id="app-script">
 (function(){
 "use strict";
@@ -208,9 +220,9 @@ var FIREBASE_CONFIG = {           // 숙제관리 앱과 같은 Firebase 프로�
 var DB_PATH = 'roadmap_planner_v1';      // 이 프로그램 전용 저장 위치 — ⚠️ homework_v4(숙제관리), academy 와 절대 겹치지 않게
 var FB_APP_NAME = 'roadmap_planner';     // 별도 앱 인스턴스 이름 (다른 프로그램과 섞이지 않게)
 /* ★ 버전 — 고칠 때마다 숫자를 올리면 화면 왼쪽 위에 표시돼요 */
-var RM_VERSION = 'v24';
-var RM_DATE = '2026-11-13';
-var DEFAULT_LIB = [{"id": "L000", "cat": "main", "name": "Beginner Sentence build up", "dur": "1일"}, {"id": "L001", "cat": "main", "name": "Alphabet 1", "dur": "1개월"}, {"id": "L002", "cat": "main", "name": "Alphabet 2", "dur": "1개월"}, {"id": "L003", "cat": "main", "name": "Phonics 1", "dur": "5주"}, {"id": "L004", "cat": "main", "name": "Phonics 2", "dur": "5주"}, {"id": "L005", "cat": "main", "name": "Phonics 3", "dur": "5주"}, {"id": "L006", "cat": "main", "name": "Phonics 4", "dur": "5주"}, {"id": "L007", "cat": "main", "name": "Phonics 5", "dur": "5주"}, {"id": "L008", "cat": "main", "name": "Phonics 6", "dur": "5주"}, {"id": "L009", "cat": "main", "name": "Reading 1", "dur": "5주"}, {"id": "L010", "cat": "main", "name": "Reading 2", "dur": "5주"}, {"id": "L011", "cat": "main", "name": "Reading 3", "dur": "5주"}, {"id": "L012", "cat": "main", "name": "Reading 4", "dur": "5주"}, {"id": "L013", "cat": "main", "name": "Reading 5", "dur": "5주"}, {"id": "L014", "cat": "main", "name": "Reading 6", "dur": "5주"}, {"id": "L015", "cat": "main", "name": "Basic 1", "dur": "5주"}, {"id": "L016", "cat": "main", "name": "Basic 2", "dur": "5주"}, {"id": "L017", "cat": "main", "name": "Basic 3", "dur": "5주"}, {"id": "L018", "cat": "main", "name": "Basic 4", "dur": "5주"}, {"id": "L019", "cat": "main", "name": "Basic 5", "dur": "5주"}, {"id": "L020", "cat": "main", "name": "Basic 6", "dur": "5주"}, {"id": "L021", "cat": "main", "name": "Basic 7", "dur": "5주"}, {"id": "L022", "cat": "main", "name": "Basic 8", "dur": "5주"}, {"id": "L023", "cat": "main", "name": "Basic 9", "dur": "5주"}, {"id": "L024", "cat": "main", "name": "Basic 10", "dur": "5주"}, {"id": "L025", "cat": "main", "name": "Basic 11", "dur": "5주"}, {"id": "L026", "cat": "main", "name": "Basic 12", "dur": "5주"}, {"id": "L027", "cat": "main", "name": "Inter Sentence build up", "dur": "1일"}, {"id": "L028", "cat": "main", "name": "5형식 (주+동+시)", "dur": "2개월"}, {"id": "L029", "cat": "main", "name": "5형식 (부사구)", "dur": "1개월"}, {"id": "L030", "cat": "main", "name": "5형식 (준동사)", "dur": "1개월"}, {"id": "L031", "cat": "main", "name": "5형식 (분석/해석하기)", "dur": "3개월"}, {"id": "L032", "cat": "main", "name": "3800 (1단계)", "dur": "8개월"}, {"id": "L033", "cat": "main", "name": "3800 (2단계)", "dur": "8개월"}, {"id": "L034", "cat": "main", "name": "3800 (3단계)", "dur": "8개월"}, {"id": "L035", "cat": "main", "name": "천문장 입문(Test)", "dur": "8개월"}, {"id": "L036", "cat": "main", "name": "천문장 기본(Test)", "dur": "8개월"}, {"id": "L037", "cat": "sub", "name": "Alphabet 쓰기 1", "dur": "1개월"}, {"id": "L038", "cat": "sub", "name": "Alphabet 쓰기 2", "dur": "1개월"}, {"id": "L039", "cat": "sub", "name": "Ph 워크북 1", "dur": "5주"}, {"id": "L040", "cat": "sub", "name": "Ph 워크북 2", "dur": "5주"}, {"id": "L041", "cat": "sub", "name": "Ph 워크북 3", "dur": "5주"}, {"id": "L042", "cat": "sub", "name": "Ph 워크북 4", "dur": "5주"}, {"id": "L043", "cat": "sub", "name": "Ph 워크북 5", "dur": "5주"}, {"id": "L044", "cat": "sub", "name": "Ph 워크북 6", "dur": "5주"}, {"id": "L045", "cat": "sub", "name": "Ph S 워크북 1", "dur": "1개월"}, {"id": "L046", "cat": "sub", "name": "Ph S 워크북 2", "dur": "1개월"}, {"id": "L047", "cat": "sub", "name": "Ph S 워크북 3", "dur": "1개월"}, {"id": "LW01", "cat": "sub", "name": "Work Book 1", "dur": "1개월"}, {"id": "LW02", "cat": "sub", "name": "Work Book 2", "dur": "1개월"}, {"id": "LW03", "cat": "sub", "name": "Work Book 3", "dur": "1개월"}, {"id": "LW04", "cat": "sub", "name": "Work Book 4", "dur": "1개월"}, {"id": "LW05", "cat": "sub", "name": "Work Book 5", "dur": "1개월"}, {"id": "LW06", "cat": "sub", "name": "Work Book 6", "dur": "1개월"}, {"id": "L048", "cat": "sub", "name": "초등 1단계 (단어장)", "dur": "4개월"}, {"id": "L049", "cat": "sub", "name": "초등 2단계 (단어장)", "dur": "4개월"}, {"id": "L050", "cat": "sub", "name": "중등 1단계 (단어장)", "dur": "1주"}, {"id": "L051", "cat": "sub", "name": "중등 2단계 (단어장)", "dur": "3개월"}, {"id": "L052", "cat": "sub", "name": "3인칭 일반동사(단어장)", "dur": "1개월"}, {"id": "L053", "cat": "sub", "name": "과거 일반동사 (단어장)", "dur": "1개월"}, {"id": "L054", "cat": "sub", "name": "과거/과거분사(단어장)", "dur": "1개월"}, {"id": "L055", "cat": "sub", "name": "3800 해석 (1단계)", "dur": "4개월"}, {"id": "L056", "cat": "sub", "name": "3800 해석 (2단계)", "dur": "6개월"}, {"id": "L057", "cat": "sub", "name": "Prerequisite 초 (A)", "dur": "12개월"}, {"id": "L058", "cat": "sub", "name": "Prerequisite 초 (B)", "dur": "12개월"}, {"id": "L059", "cat": "sub", "name": "Prerequisite 중 intro (A)", "dur": "6개월"}, {"id": "L060", "cat": "sub", "name": "Prerequisite 중 intro (B)", "dur": "6개월"}, {"id": "L061", "cat": "sub", "name": "고등 미니 모의고사", "dur": "3개월"}, {"id": "L062", "cat": "short", "name": "중2. 1학기 중간", "dur": "5개월"}, {"id": "L063", "cat": "short", "name": "중2. 1학기 중간- 부교재", "dur": "5주"}, {"id": "L064", "cat": "short", "name": "중3. 1학기 중간", "dur": "5주"}, {"id": "L065", "cat": "short", "name": "중3. 1학기 중간- 부교재", "dur": "5주"}, {"id": "L066", "cat": "short", "name": "중2. 1학기 기말", "dur": "5주"}, {"id": "L067", "cat": "short", "name": "중2. 1학기 기말- 부교재", "dur": "5주"}, {"id": "L068", "cat": "short", "name": "중3. 1학기 기말", "dur": "5주"}, {"id": "L069", "cat": "short", "name": "중3. 1학기 기말- 부교재", "dur": "5주"}, {"id": "L070", "cat": "short", "name": "중1. 2학기 중간", "dur": "5주"}, {"id": "L071", "cat": "short", "name": "중1. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L072", "cat": "short", "name": "중2. 2학기 중간", "dur": "5주"}, {"id": "L073", "cat": "short", "name": "중2. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L074", "cat": "short", "name": "중3. 2학기 중간", "dur": "5주"}, {"id": "L075", "cat": "short", "name": "중3. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L076", "cat": "short", "name": "중1. 2학기 기말", "dur": "5주"}, {"id": "L077", "cat": "short", "name": "중1. 2학기 기말- 부교재", "dur": "5주"}, {"id": "L078", "cat": "short", "name": "중2. 2학기 기말", "dur": "5주"}, {"id": "L079", "cat": "short", "name": "중2. 2학기 기말- 부교재", "dur": "5주"}, {"id": "L080", "cat": "short", "name": "중3. 2학기 기말", "dur": "5주"}, {"id": "L081", "cat": "short", "name": "중3. 2학기 기말- 부교재", "dur": "5주"}, {"id": "L082", "cat": "voca", "name": "초등 주니어 20.65", "dur": "4개월"}, {"id": "L083", "cat": "voca", "name": "초등 1단계 40.70 (리콜)", "dur": "4개월"}, {"id": "L084", "cat": "voca", "name": "초등 1단계 40.70 (객관식)", "dur": "4개월"}, {"id": "L085", "cat": "voca", "name": "초등 1단계 40.70 (주관식)", "dur": "4개월"}, {"id": "L086", "cat": "voca", "name": "초등 2단계 40.70 (리콜)", "dur": "4개월"}, {"id": "L087", "cat": "voca", "name": "초등 2단계 40.70 (객관식)", "dur": "4개월"}, {"id": "L088", "cat": "voca", "name": "초등 2단계 40.70 (주관식)", "dur": "4개월"}, {"id": "L089", "cat": "voca", "name": "중등 1단계 100.50 (리콜)", "dur": "3개월"}, {"id": "L090", "cat": "voca", "name": "중등 1단계 100.50 (객관식)", "dur": "3개월"}, {"id": "L091", "cat": "voca", "name": "중등 1단계 100.50 (주관식)", "dur": "3개월"}, {"id": "L092", "cat": "voca", "name": "중등 2단계 100.50 (리콜)", "dur": "3개월"}, {"id": "L093", "cat": "voca", "name": "중등 2단계 100.50 (객관식)", "dur": "3개월"}, {"id": "L094", "cat": "voca", "name": "중등 2단계 100.50 (주관식)", "dur": "3개월"}, {"id": "L095", "cat": "voca", "name": "5형식 단어", "dur": "2개월"}, {"id": "L096", "cat": "voca", "name": "과거 과거분사 단어", "dur": "2개월"}, {"id": "L097", "cat": "voca", "name": "천문장 입문 단어 20.88", "dur": "5개월"}, {"id": "L098", "cat": "voca", "name": "천문장 기본 단어 25.88", "dur": "5개월"}, {"id": "L099", "cat": "voca", "name": "한끝 고등 기본", "dur": "2개월"}];
+var RM_VERSION = 'v25';
+var RM_DATE = '2026-11-14';
+var DEFAULT_LIB = [{"id": "L000", "cat": "main", "name": "Alphabet 1", "dur": "4주"}, {"id": "L001", "cat": "main", "name": "Alphabet 2", "dur": "4주"}, {"id": "L002", "cat": "main", "name": "Phonics 1", "dur": "5주"}, {"id": "L003", "cat": "main", "name": "Phonics 2", "dur": "5주"}, {"id": "L004", "cat": "main", "name": "Phonics 3", "dur": "5주"}, {"id": "L005", "cat": "main", "name": "Phonics 4", "dur": "5주"}, {"id": "L006", "cat": "main", "name": "Phonics 5", "dur": "5주"}, {"id": "L007", "cat": "main", "name": "Phonics 6", "dur": "5주"}, {"id": "L008", "cat": "main", "name": "Reading 1", "dur": "5주"}, {"id": "L009", "cat": "main", "name": "Reading 2", "dur": "5주"}, {"id": "L010", "cat": "main", "name": "Reading 3", "dur": "5주"}, {"id": "L011", "cat": "main", "name": "Reading 4", "dur": "5주"}, {"id": "L012", "cat": "main", "name": "Reading 5", "dur": "5주"}, {"id": "L013", "cat": "main", "name": "Reading 6", "dur": "5주"}, {"id": "L014", "cat": "main", "name": "Basic 1", "dur": "5주"}, {"id": "L015", "cat": "main", "name": "Basic 2", "dur": "5주"}, {"id": "L016", "cat": "main", "name": "Basic 3", "dur": "5주"}, {"id": "L017", "cat": "main", "name": "Basic 4", "dur": "5주"}, {"id": "L018", "cat": "main", "name": "Basic 5", "dur": "5주"}, {"id": "L019", "cat": "main", "name": "Basic 6", "dur": "5주"}, {"id": "L020", "cat": "main", "name": "Basic 7", "dur": "5주"}, {"id": "L021", "cat": "main", "name": "Basic 8", "dur": "5주"}, {"id": "L022", "cat": "main", "name": "Basic 9", "dur": "5주"}, {"id": "L023", "cat": "main", "name": "Basic 10", "dur": "5주"}, {"id": "L024", "cat": "main", "name": "Basic 11", "dur": "5주"}, {"id": "L025", "cat": "main", "name": "Basic 12", "dur": "5주"}, {"id": "L026", "cat": "main", "name": "5형식 (주+동+시)", "dur": "4주"}, {"id": "L027", "cat": "main", "name": "5형식 (부사구)", "dur": "4주"}, {"id": "L028", "cat": "main", "name": "5형식 (준동사)", "dur": "4주"}, {"id": "L029", "cat": "main", "name": "5형식 (분석/해석하기)", "dur": "4주"}, {"id": "L030", "cat": "main", "name": "3800 해석 (1단계)", "dur": "17주"}, {"id": "L031", "cat": "main", "name": "3800 해석 (2단계)", "dur": "17주"}, {"id": "L032", "cat": "main", "name": "천문장 입문(Test)", "dur": "22주"}, {"id": "L033", "cat": "main", "name": "천문장 기본(Test)", "dur": "22주"}, {"id": "L034", "cat": "main", "name": "고등 미니 모의고사", "dur": "13주"}, {"id": "L087", "cat": "main", "name": "Beginner Sentence build up", "dur": "1일"}, {"id": "L088", "cat": "main", "name": "Inter Sentence build up", "dur": "1일"}, {"id": "L035", "cat": "sub", "name": "Alphabet 쓰기 1", "dur": "4주"}, {"id": "L036", "cat": "sub", "name": "Alphabet 쓰기 2", "dur": "4주"}, {"id": "L037", "cat": "sub", "name": "Ph 워크북 1", "dur": "8주"}, {"id": "L038", "cat": "sub", "name": "Ph 워크북 2", "dur": "8주"}, {"id": "L039", "cat": "sub", "name": "Ph 워크북 3", "dur": "8주"}, {"id": "L040", "cat": "sub", "name": "Ph 워크북 4", "dur": "8주"}, {"id": "L041", "cat": "sub", "name": "Ph 워크북 5", "dur": "8주"}, {"id": "L042", "cat": "sub", "name": "Ph 워크북 6", "dur": "8주"}, {"id": "L043", "cat": "sub", "name": "Ph Speed 워크북 1", "dur": "8주"}, {"id": "L044", "cat": "sub", "name": "Ph Speed 워크북 2", "dur": "8주"}, {"id": "L045", "cat": "sub", "name": "Ph Speed 워크북 3", "dur": "8주"}, {"id": "L046", "cat": "sub", "name": "워크북 E1", "dur": "8주"}, {"id": "L047", "cat": "sub", "name": "워크북 E2", "dur": "8주"}, {"id": "L048", "cat": "sub", "name": "워크북 E3", "dur": "8주"}, {"id": "L049", "cat": "sub", "name": "워크북 E4", "dur": "8주"}, {"id": "L050", "cat": "sub", "name": "워크북 E5", "dur": "8주"}, {"id": "L051", "cat": "sub", "name": "워크북 E6", "dur": "8주"}, {"id": "L052", "cat": "sub", "name": "워크북 M", "dur": "5주"}, {"id": "L053", "cat": "sub", "name": "3800 드릴 (1단계)", "dur": "35주"}, {"id": "L054", "cat": "sub", "name": "3800 드릴 (2단계)", "dur": "35주"}, {"id": "L055", "cat": "sub", "name": "3800 드릴 (3단계)", "dur": "35주"}, {"id": "L056", "cat": "sub", "name": "Prerequisite 초 (A)", "dur": "6주"}, {"id": "L057", "cat": "sub", "name": "Prerequisite 중 intro (A)", "dur": "6주"}, {"id": "L058", "cat": "sub", "name": "Prerequisite 초 (B)", "dur": "6주"}, {"id": "L059", "cat": "sub", "name": "Prerequisite 중 intro (B)", "dur": "6주"}, {"id": "L060", "cat": "sub", "name": "초등 1단계 (단어장)", "dur": "17주"}, {"id": "L061", "cat": "sub", "name": "초등 2단계 (단어장)", "dur": "17주"}, {"id": "L062", "cat": "sub", "name": "3인칭 일반동사 (단어장)", "dur": "4주"}, {"id": "L063", "cat": "sub", "name": "과거 일반동사 (단어장)", "dur": "4주"}, {"id": "L064", "cat": "sub", "name": "과거/과거분사 (단어장)", "dur": "4주"}, {"id": "L065", "cat": "sub", "name": "중등 1단계 (단어장)", "dur": "13주"}, {"id": "L066", "cat": "sub", "name": "중등 2단계 (단어장)", "dur": "13주"}, {"id": "L067", "cat": "voca", "name": "초등 주니어 20.65", "dur": "17주"}, {"id": "L068", "cat": "voca", "name": "초등 1단계 40.70 (리콜)", "dur": "17주"}, {"id": "L069", "cat": "voca", "name": "초등 1단계 40.70 (객관식)", "dur": "17주"}, {"id": "L070", "cat": "voca", "name": "초등 1단계 40.70 (주관식)", "dur": "17주"}, {"id": "L071", "cat": "voca", "name": "초등 2단계 40.70 (리콜)", "dur": "17주"}, {"id": "L072", "cat": "voca", "name": "초등 2단계 40.70 (객관식)", "dur": "17주"}, {"id": "L073", "cat": "voca", "name": "초등 2단계 40.70 (주관식)", "dur": "17주"}, {"id": "L074", "cat": "voca", "name": "3인칭 일반동사", "dur": "4주"}, {"id": "L075", "cat": "voca", "name": "과거 일반동사", "dur": "4주"}, {"id": "L076", "cat": "voca", "name": "과거 과거분사", "dur": "4주"}, {"id": "L077", "cat": "voca", "name": "중등 1단계 100.50 (리콜)", "dur": "13주"}, {"id": "L078", "cat": "voca", "name": "중등 1단계 100.50 (객관식)", "dur": "13주"}, {"id": "L079", "cat": "voca", "name": "중등 1단계 100.50 (주관식)", "dur": "13주"}, {"id": "L080", "cat": "voca", "name": "중등 2단계 100.50 (리콜)", "dur": "13주"}, {"id": "L081", "cat": "voca", "name": "중등 2단계 100.50 (객관식)", "dur": "13주"}, {"id": "L082", "cat": "voca", "name": "중등 2단계 100.50 (주관식)", "dur": "13주"}, {"id": "L083", "cat": "voca", "name": "한끝 고등 기본 30.42", "dur": "9주"}, {"id": "L084", "cat": "voca", "name": "5형식 단어", "dur": "4주"}, {"id": "L085", "cat": "voca", "name": "천문장 입문 단어 20.88", "dur": "22주"}, {"id": "L086", "cat": "voca", "name": "천문장 기본 단어 25.88", "dur": "22주"}, {"id": "L089", "cat": "short", "name": "중2. 1학기 중간", "dur": "5주"}, {"id": "L090", "cat": "short", "name": "중2. 1학기 중간- 부교재", "dur": "5주"}, {"id": "L091", "cat": "short", "name": "중3. 1학기 중간", "dur": "5주"}, {"id": "L092", "cat": "short", "name": "중3. 1학기 중간- 부교재", "dur": "5주"}, {"id": "L093", "cat": "short", "name": "중2. 1학기 기말", "dur": "5주"}, {"id": "L094", "cat": "short", "name": "중2. 1학기 기말- 부교재", "dur": "5주"}, {"id": "L095", "cat": "short", "name": "중3. 1학기 기말", "dur": "5주"}, {"id": "L096", "cat": "short", "name": "중3. 1학기 기말- 부교재", "dur": "5주"}, {"id": "L097", "cat": "short", "name": "중1. 2학기 중간", "dur": "5주"}, {"id": "L098", "cat": "short", "name": "중1. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L099", "cat": "short", "name": "중2. 2학기 중간", "dur": "5주"}, {"id": "L100", "cat": "short", "name": "중2. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L101", "cat": "short", "name": "중3. 2학기 중간", "dur": "5주"}, {"id": "L102", "cat": "short", "name": "중3. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L103", "cat": "short", "name": "중1. 2학기 기말", "dur": "5주"}, {"id": "L104", "cat": "short", "name": "중1. 2학기 기말- 부교재", "dur": "5주"}, {"id": "L105", "cat": "short", "name": "중2. 2학기 기말", "dur": "5주"}, {"id": "L106", "cat": "short", "name": "중2. 2학기 기말- 부교재", "dur": "5주"}, {"id": "L107", "cat": "short", "name": "중3. 2학기 기말", "dur": "5주"}, {"id": "L108", "cat": "short", "name": "중3. 2학기 기말- 부교재", "dur": "5주"}];
 var EMBED = document.getElementById('roadmap-data').textContent;   // 처음 한 번 넣을 기본 로드맵
 var S = JSON.parse(EMBED);S.students=S.students||[];S.exams=S.exams||[];S.library=S.library&&S.library.length?S.library:JSON.parse(JSON.stringify(DEFAULT_LIB));
 var LS_KEY = 'roadmap-planner-local-v1';
@@ -230,9 +242,9 @@ function famList(kind){return kind==='vocab'?VOC:FAM}
 function detect(title,kind){
   var s=(title||'').toLowerCase().replace(/\s/g,'');
   if(kind==='vocab'){for(var i=VOC.length-1;i>=0;i--){if(s.indexOf(VOC[i][0])>=0)return VOC[i][0]}return 'etc'}
-  if(s.indexOf('ph워크북')>=0||s.indexOf('phs워크북')>=0)return 'phonics';
+  if(s.indexOf('ph워크북')>=0||s.indexOf('phs워크북')>=0||s.indexOf('phspeed')>=0)return 'phonics';
   if(s.indexOf('story')>=0)return 'reading';
-  if(s.indexOf('workbook')>=0||s.indexOf('wookbook')>=0||s.indexOf('sentencebuildup')>=0)return 'basic';
+  if(s.indexOf('workbook')>=0||s.indexOf('wookbook')>=0||s.indexOf('워크북e')>=0||s.indexOf('워크북m')>=0||s.indexOf('sentencebuildup')>=0)return 'basic';
   for(var j=0;j<FAM.length;j++){if(s.indexOf(FAM[j][0])>=0)return FAM[j][0]}
   return 'etc';
 }
@@ -244,7 +256,15 @@ var uid=function(p){return p+Math.random().toString(36).slice(2,8)+Date.now().to
 function rowOf(id){for(var i=0;i<S.rows.length;i++)if(S.rows[i].id===id)return S.rows[i]}
 function blk(id){for(var i=0;i<S.blocks.length;i++)if(S.blocks[i].id===id)return S.blocks[i]}
 function inRow(rid){return S.blocks.filter(function(b){return b.row===rid}).sort(function(a,b){return a.start-b.start})}
-function totalMonths(){var m=S.years*12;S.blocks.forEach(function(b){m=Math.max(m,b.start+b.len)});return Math.ceil(m/12)*12}
+// ★ v25부터 모든 칸은 '주' 단위 (1칸 = 1주, 1개월 ≈ 52/12주)
+var M2W=52/12;
+function totalMonths(){var m=0;S.blocks.forEach(function(b){m=Math.max(m,b.start+b.len)});return Math.ceil((m+8)/4)*4}
+function mainRow(){return S.rows.find(function(r){return r.name==='수업 주교재'})||S.rows.find(function(r){return r.kind==='class'})}
+function SR(){return S.rows.filter(function(r){return r.kind!=='dist'})}
+// 주교재 줄의 교재 계열로 '단계' 띠 만들기
+function stages(){var r=mainRow(),out=[];if(!r)return out;
+  inRow(r.id).forEach(function(b){var k=famOf(b);var L=out[out.length-1];if(L&&L.k===k)L.e=b.start+b.len;else out.push({k:k,s:b.start,e:b.start+b.len})});
+  return out.map(function(o){var fi=famInfo(o.k,'class');return {s:o.s,e:o.e,name:fi.f[1],bg:fi.f[2],fg:fi.f[3]}})}
 function famOf(b){var r=rowOf(b.row);return b.fam||detect(b.title,r?r.kind:'class')}
 function colors(){ // id -> [bg,fg]
   var out={};
@@ -258,7 +278,7 @@ function colors(){ // id -> [bg,fg]
   });
   return out;
 }
-function gradeLabel(m){var g=S.startGrade+Math.floor(m/12);return g<=6?('초등 '+g+'학년'):(g<=9?('중등 '+(g-6)+'학년'):('고등 '+(g-9)+'학년'))}
+function gradeLabel(m){return (m+1)+'주차'}
 
 // push overlaps right; fixed block keeps its spot (or snaps beside a block it mostly overlaps)
 function resolve(rid,fixedId){
@@ -289,10 +309,10 @@ function toStore(st){
   var o={meta:{title:st.title,startGrade:st.startGrade,years:st.years,mig:st.mig||0},rows:{},blocks:{},students:{},exams:{},library:{}};
   st.rows.forEach(function(r,i){o.rows[r.id]={name:r.name,kind:r.kind||'class',order:i,pause:r.pause===false?false:true}});
   o.library={};(st.library||[]).forEach(function(x,i){o.library[x.id]={cat:x.cat,name:x.name,dur:x.dur||'',order:i}});
-  o.exams={};(st.exams||[]).forEach(function(x){o.exams[x.id]={school:x.school||'',grade:x.grade||0,start:x.start||'',weeks:x.weeks||4,name:x.name||''}});
+  o.exams={};(st.exams||[]).forEach(function(x){o.exams[x.id]={school:x.school||'',grade:x.grade||0,start:x.start||'',weeks:x.weeks||5,name:x.name||''}});
   st.blocks.forEach(function(b){o.blocks[b.id]={row:b.row,start:b.start,len:b.len,title:b.title,fam:b.fam||''}});
   o.students={};
-  (st.students||[]).forEach(function(x){o.students[x.id]={name:x.name,group:x.group||'',school:x.school||'',grade:x.grade||0,gy:x.gy||0,from:x.from||'',starts:x.starts||{},skips:x.skips||{},custom:x.custom||{}}});
+  (st.students||[]).forEach(function(x){o.students[x.id]={name:x.name,group:x.group||'',school:x.school||'',grade:x.grade||0,gy:x.gy||0,from:x.from||'',starts:x.starts||{},skips:x.skips||{},custom:x.custom||{},done:x.done||{}}});
   // ⚠️ 깊은 복사 — 화면 데이터(S)와 '마지막 저장본'이 같은 객체를 공유하면 고친 내용이 저장되지 않음 (v11에서 고침)
   return JSON.parse(JSON.stringify(o));
 }
@@ -300,8 +320,8 @@ function fromStore(o){
   o=o||{};var m=o.meta||{};
   var rows=Object.keys(o.rows||{}).map(function(k){var r=o.rows[k];return {id:k,name:r.name,kind:r.kind||'class',order:r.order||0,pause:r.pause!==false}}).sort(function(a,b){return a.order-b.order}).map(function(r){return {id:r.id,name:r.name,kind:r.kind,pause:r.pause}});
   var blocks=Object.keys(o.blocks||{}).map(function(k){var b=o.blocks[k];return {id:k,row:b.row,start:+b.start||0,len:Math.max(1,+b.len||1),title:b.title||'',fam:b.fam||''}});
-  var students=Object.keys(o.students||{}).map(function(k){var x=o.students[k];return {id:k,name:x.name||'',group:x.group||'',school:x.school||'',grade:+x.grade||0,gy:+x.gy||0,from:x.from||'',starts:x.starts||{},skips:x.skips||{},custom:fixCustom(x.custom)}});
-  var exams=Object.keys(o.exams||{}).map(function(k){var x=o.exams[k];return {id:k,school:x.school||'',grade:+x.grade||0,start:x.start||'',weeks:+x.weeks||4,name:x.name||''}});
+  var students=Object.keys(o.students||{}).map(function(k){var x=o.students[k];return {id:k,name:x.name||'',group:x.group||'',school:x.school||'',grade:+x.grade||0,gy:+x.gy||0,from:x.from||'',starts:x.starts||{},skips:x.skips||{},custom:fixCustom(x.custom),done:x.done||{}}});
+  var exams=Object.keys(o.exams||{}).map(function(k){var x=o.exams[k];return {id:k,school:x.school||'',grade:+x.grade||0,start:x.start||'',weeks:+x.weeks||5,name:x.name||''}});
   var library=Object.keys(o.library||{}).map(function(k){var x=o.library[k];return {id:k,cat:x.cat||'main',name:x.name||'',dur:x.dur||'',order:+x.order||0}}).sort(function(a,b){return a.order-b.order}).map(function(x){return {id:x.id,cat:x.cat,name:x.name,dur:x.dur}});
   if(!library.length)library=JSON.parse(JSON.stringify(DEFAULT_LIB));
   return {title:m.title||'학습 로드맵',startGrade:+m.startGrade||2,years:+m.years||4,mig:+m.mig||0,rows:rows,blocks:blocks,students:students,exams:exams,library:library};
@@ -312,7 +332,7 @@ function describe(a,b){ // 바뀐 내용을 사람이 읽을 문장으로
   var out=[],moved=[];
   Object.keys(b.blocks).forEach(function(k){var x=a.blocks[k],y=b.blocks[k];
     if(!x)out.push('추가: '+y.title);
-    else if(!same(x,y)){var p=[];if(x.title!==y.title)p.push('이름 → '+y.title);if(x.len!==y.len)p.push(x.len+'→'+y.len+'개월');if(x.fam!==y.fam)p.push('색 계열');
+    else if(!same(x,y)){var p=[];if(x.title!==y.title)p.push('이름 → '+y.title);if(x.len!==y.len)p.push(x.len+'→'+y.len+'주');if(x.fam!==y.fam)p.push('색 계열');
       if(p.length)out.push(y.title+': '+p.join(', '));else moved.push(y.title)}});
   if(moved.length)out.push(moved.length===1?moved[0]+' 이동':(sel&&b.blocks[sel]&&moved.indexOf(b.blocks[sel].title)>=0?b.blocks[sel].title:moved[0])+' 등 '+moved.length+'개 위치 이동');
   Object.keys(a.blocks).forEach(function(k){if(!b.blocks[k])out.push('삭제: '+a.blocks[k].title)});
@@ -359,12 +379,47 @@ function applyRemote(val){
   S=st;synced=toStore(S);
   if(changedByOther||!loaded){hist=[JSON.stringify(S)];hi=0}   // 남이 고친 걸 되돌리기로 지우지 않도록
   loaded=true;fixSel();
-  if(fixRowNames()){commit();toast('줄 이름과 교재 목록을 정리했어요 (v9)');return}
+  if(migrate25()){commit();toast('v25: 주 단위 기본 로드맵·새 교재 목록으로 바꿨어요');return}
   render();
 }
 // v9: 한 번만 하는 데이터 정리 (mig 번호로 다시 안 함)
 //  1) Alphabet·Phonics·Basic 줄 = '수업 주교재'(위), Alphabet 쓰기·Phonics WB 줄 = '수업 부교재'(아래) — 교재 위치는 그대로
 //  2) 교재 목록: Story 1~6 → Reading 1~6, 부교재에 Work Book 1~6 추가
+// v25: 월 단위 → 주 단위 기본 로드맵으로 한 번 교체 (학생 출발 칸·개인 계획은 교재 이름으로 옮겨 줌)
+function migrate25(){
+  if((S.mig||0)>=25)return false;
+  var SEED=JSON.parse(EMBED);if(!SEED||SEED.unit!=='week')return false;
+  try{if(ONLINE&&db){db.ref(DB_PATH+'/backup_v24').transaction(function(c){return c?undefined:{t:Date.now(),data:JSON.stringify(toStore(S))}})}}catch(e){}
+  var oldRows={},oldBlk={};S.rows.forEach(function(r){oldRows[r.id]=r});S.blocks.forEach(function(b){oldBlk[b.id]=b});
+  var RN={'수업 주교재':'r0','수업 부교재':'r1','홈보카':'r2','수업보카':'r3','단어시간':'r4','단어장':'r4'};
+  var nb=SEED.blocks;
+  function nn(t){t=String(t||'').trim();var m;
+    if(/ \/ /.test(t))t=t.split(' / ')[0].trim();
+    if((m=t.match(/^Phonics WB ?(\d)/)))return 'Ph 워크북 '+m[1];
+    if((m=t.match(/^Phonics SWB ?(\d)/)))return 'Ph Speed 워크북 '+m[1];
+    if((m=t.match(/^Ph S 워크북 ?(\d)/)))return 'Ph Speed 워크북 '+m[1];
+    if((m=t.match(/^Work ?Book ?(\d)/)))return '워크북 E'+m[1];
+    if((m=t.match(/^3800드릴 \((\d)단계\)/)))return '3800 드릴 ('+m[1]+'단계)';
+    if(/^5형식 \(분석/.test(t))return '5형식 (분석/해석하기)';
+    var V={'초등 주니어':'초등 주니어 20.65','초등1단계':'초등 1단계 40.70 (리콜)','초등2단계':'초등 2단계 40.70 (리콜)','중등1단계':'중등 1단계 100.50 (리콜)','중등2단계':'중등 2단계 100.50 (리콜)','천문장 입문단어':'천문장 입문 단어 20.88','천문장 기본단어':'천문장 기본 단어 25.88'};
+    if(V[t])return V[t];
+    if((m=t.match(/^(초등|중등)(\d)단계 \(단어장\)$/)))return m[1]+' '+m[2]+'단계 (단어장)';
+    return t.replace('3인칭 일반동사(단어장)','3인칭 일반동사 (단어장)').replace('과거/과거분사(단어장)','과거/과거분사 (단어장)');}
+  function mapB(oldId){var b=oldBlk[oldId];if(!b)return null;var r=oldRows[b.row],rid=r&&RN[r.name];var t=nn(b.title).replace(/\s/g,'');
+    var c=nb.filter(function(x){return x.title.replace(/\s/g,'')===t});var same=c.filter(function(x){return x.row===rid});return (same[0]||c[0]||null)}
+  function newRowOf(oldRowId){var r=oldRows[oldRowId];return r?RN[r.name]:null}
+  var lost=0;
+  (S.students||[]).forEach(function(st){
+    var ns={};Object.keys(st.starts||{}).forEach(function(r){var x=mapB(st.starts[r]);if(x)ns[x.row]=x.id;else lost++});st.starts=ns;st.skips={};
+    var nc={};Object.keys(st.custom||{}).forEach(function(r){var rid=newRowOf(r);if(!rid)return;nc[rid]=(st.custom[r]||[]).map(function(it){
+      var y=Math.floor(it.cal/12),mo=Math.floor(it.cal%12)+1,d=1+Math.round((it.cal-Math.floor(it.cal))*30);var mx=it.ref?mapB(it.ref):null;
+      return {id:mx?mx.id:it.id,ref:mx?mx.id:'',title:mx?mx.title:nn(it.title),cal:wIdx(y,mo,d),len:Math.max(1,Math.round((+it.len||1)*M2W))}})});
+    st.custom=nc;st.done={};});
+  S.rows=SEED.rows;S.blocks=SEED.blocks;S.library=JSON.parse(JSON.stringify(DEFAULT_LIB));
+  (S.exams||[]).forEach(function(x){if(!x.weeks||x.weeks===4)x.weeks=5});
+  S.mig=25;if(lost)setTimeout(function(){toast('출발 칸 '+lost+'개는 새 로드맵에서 찾지 못했어요 — 다시 골라 주세요')},2500);
+  return true;
+}
 function fixRowNames(){
   if((S.mig||0)>=9)return false;
   var has=function(r,re){return inRow(r.id).some(function(x){return re.test(x.title)})};
@@ -383,8 +438,8 @@ function fixRowNames(){
 }
 
 // ---------- UI state ----------
-var W=68,chain=false,sel=null,selRow=null,addAt=null,confirmDel=false;
-try{var z=parseInt(localStorage.getItem(LS_KEY+'-zoom'),10);if(z>=30&&z<=120)W=z}catch(e){}
+var W=18,chain=false,sel=null,selRow=null,addAt=null,confirmDel=false;
+try{var z=parseInt(localStorage.getItem(LS_KEY+'-zoomw'),10);if(z>=8&&z<=40)W=z}catch(e){}
 function fixSel(){if(sel&&!blk(sel))sel=null;if(selRow&&!rowOf(selRow))selRow=null}
 
 var app=document.getElementById('app');
@@ -405,13 +460,13 @@ function render(){
   h+='<button class="btn ic" data-a="redo" '+(hi<hist.length-1?'':'disabled')+' title="다시 (Ctrl+Y)" aria-label="다시"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>';
   if(view==='base'){h+='<button class="btn" data-a="addrow">＋ 줄 추가</button><button class="btn" data-a="lib">📚 교재 목록</button>';
   h+='<label class="tog"><input type="checkbox" id="chain" '+(chain?'checked':'')+'> 뒤 교재도 같이 이동</label>';
-  h+='<span class="zoom">칸 너비 <input type="range" id="zoom" min="30" max="120" value="'+W+'"></span><span class="navb"><button class="btn sm" data-a="bl">◀◀</button><button class="btn sm" data-a="br">▶▶</button></span>';}
+  h+='<span class="zoom">칸 너비 <input type="range" id="zoom" min="8" max="40" value="'+W+'"></span><span class="navb"><button class="btn sm" data-a="bl">◀◀</button><button class="btn sm" data-a="br">▶▶</button></span>';}
   h+='<span class="sp"></span>';
   h+=ONLINE?(connected?'<span class="clean" title="Firebase에 연결돼 있어요. 고친 내용이 바로 저장되고 다른 선생님 화면에도 바로 보여요.">● 실시간 공유 중</span>':'<span class="dirty">● 연결 중…</span>'):'<span class="dirty">● 이 컴퓨터에만 저장</span>';
   h+='<button class="btn" data-a="xlsx" title="학원 기본 로드맵을 색까지 그대로 엑셀 파일로 내려받아요">엑셀 내보내기</button>';
   h+='<button class="btn" data-a="backup" title="로드맵·학생 데이터 전체를 파일(.json)로 내 컴퓨터에 받아 둬요. [백업 불러오기]로 되살릴 수 있어요">백업 파일</button>';
   h+='<button class="btn" data-a="import" title="[백업 파일]로 받아 둔 파일을 불러와 그 상태로 되돌려요">백업 불러오기</button><input type="file" id="file" accept=".json,application/json" hidden></div>';
-  if(view==='base')h+='<div class="help">블록을 끌어서 옮기기 · 오른쪽 끝을 끌어서 개월 수 조절 · 빈칸을 눌러 교재 추가 · 블록을 눌러 수정/삭제 · 선택 후 ←/→ 키로 한 달씩 이동</div>';
+  if(view==='base')h+='<div class="help">한 칸 = 1주 · 블록을 끌어서 옮기기(앞 교재 끝에 자석처럼 붙어요) · 오른쪽 끝을 끌어서 주 수 조절 · 빈칸을 눌러 교재 추가 · 블록을 눌러 수정/삭제 · 선택 후 ←/→ 키로 1주씩 이동</div>';
   if(!ONLINE)h+='<div class="banner">아직 공유 설정 전이라 이 컴퓨터(브라우저)에만 저장돼요. 파일 위쪽 FIREBASE_CONFIG를 채우면 선생님들끼리 실시간으로 함께 쓸 수 있어요.</div>';
   if(ONLINE&&!loaded)h+='<div class="banner">로드맵을 불러오는 중…</div>';
   if(ONLINE&&loaded&&localOld&&localOld.students.length&&!(S.students||[]).length)h+='<div class="banner">이 컴퓨터에만 저장돼 있던 학생 명단('+localOld.students.length+'명)이 있어요. <button class="btn primary" data-a="movelocal">공유 저장소로 옮기기</button><button class="btn" data-a="droplocal">무시</button></div>';
@@ -425,18 +480,19 @@ function render(){
     if(tl){if(keepM!=null)tl.scrollLeft=Math.max(0,(keepM-stuLo)*SW);else if(stuScrollToday)tl.scrollLeft=Math.max(0,stuScrollToday)}
     stuScrollToday=0;lastScrollStu=stuSel;renderPanel();return}
   h+='<div class="board" id="board"><div class="grid" id="grid" style="width:calc(var(--lab) + '+T+' * var(--w))">';
-  // grade header
-  h+='<div class="r hdr g"><div class="lab">구분</div><div class="hl" style="width:calc('+T+' * var(--w))">';
-  for(var y=0;y<T/12;y++)h+='<div class="gseg" style="left:calc('+(y*12)+' * var(--w));width:calc(12 * var(--w));background:#'+GRADE_COL[Math.min(y,GRADE_COL.length-1)]+'">'+esc(gradeLabel(y*12))+'</div>';
-  h+='</div></div><div class="r hdr m"><div class="lab"></div><div class="hl" style="width:calc('+T+' * var(--w))">';
-  for(var m=0;m<T;m++)h+='<div class="mseg" style="left:calc('+m+' * var(--w));width:var(--w)">'+(m%12+1)+'월</div>';
+  // 단계 띠 (학년 없음)
+  h+='<div class="r hdr g"><div class="lab">단계</div><div class="hl" style="width:calc('+T+' * var(--w))">';
+  stages().forEach(function(g){h+='<div class="gseg stg" title="'+esc(g.name)+' · '+(g.s+1)+'~'+g.e+'주차 ('+(g.e-g.s)+'주)" style="left:calc('+g.s+' * var(--w));width:calc('+(g.e-g.s)+' * var(--w));background:#'+g.bg+';color:#'+g.fg+'">'+esc(g.name)+'</div>'});
+  h+='</div></div><div class="r hdr m"><div class="lab">개월째</div><div class="hl" style="width:calc('+T+' * var(--w))">';
+  for(var m=0;Math.round(m*M2W)<T;m++){var a0=Math.round(m*M2W),a1=Math.min(T,Math.round((m+1)*M2W));h+='<div class="mseg k" title="'+(a0+1)+'주차부터" style="left:calc('+a0+' * var(--w));width:calc('+(a1-a0)+' * var(--w))">'+(m+1)+'</div>'}
   h+='</div></div>';
   S.rows.forEach(function(r){
-    h+='<div class="r '+(r.kind==='vocab'?'vocab':'')+(selRow===r.id?' sel':'')+'" data-row="'+r.id+'"><div class="lab" data-lab="'+r.id+'">'+esc(r.name)+'</div><div class="lane" data-lane="'+r.id+'" style="width:calc('+T+' * var(--w))">';
+    h+='<div class="r '+(r.kind==='vocab'?'vocab':(r.kind==='dist'?'dist':''))+(selRow===r.id?' sel':'')+'" data-row="'+r.id+'"><div class="lab" data-lab="'+r.id+'">'+esc(r.name)+'</div><div class="lane" data-lane="'+r.id+'" style="width:calc('+T+' * var(--w))">';
     inRow(r.id).forEach(function(b){
       var c=col[b.id]||[ETC[2],ETC[3]];
-      h+='<div class="blk'+(sel===b.id?' sel':'')+'" data-b="'+b.id+'" style="left:calc('+b.start+' * var(--w) + 2px);width:calc('+b.len+' * var(--w) - 4px);background:#'+c[0]+';color:#'+c[1]+'" title="'+esc(b.title)+' · '+b.len+'개월">';
-      h+='<span class="t">'+esc(b.title).replace(/ \/ /g,'<br>+ ')+'</span>'+(b.len>1?'<span class="n">'+b.len+'개월</span>':'')+'<div class="rh" data-rh="'+b.id+'"></div></div>';
+      if(r.kind==='dist'){h+='<div class="blk dist'+(sel===b.id?' sel':'')+'" data-b="'+b.id+'" style="left:calc('+b.start+' * var(--w) - 5px);width:calc(var(--w) + 6px)" title="'+esc(b.title)+' · '+(b.start+1)+'주차에 배부"><span class="t">◆ '+esc(b.title)+'</span></div>';return}
+      h+='<div class="blk'+(sel===b.id?' sel':'')+'" data-b="'+b.id+'" style="left:calc('+b.start+' * var(--w) + 2px);width:calc('+b.len+' * var(--w) - 4px);background:#'+c[0]+';color:#'+c[1]+'" title="'+esc(b.title)+' · '+b.len+'주 · '+(b.start+1)+'~'+(b.start+b.len)+'주차">';
+      h+='<span class="t">'+esc(b.title).replace(/ \/ /g,'<br>+ ')+'</span><span class="n">'+b.len+'주</span><div class="rh" data-rh="'+b.id+'"></div></div>';
     });
     if(addAt&&addAt.row===r.id)h+='<div class="cellhint" style="left:calc('+addAt.start+' * var(--w) + 2px);width:calc(var(--w) - 4px)"></div>';
     h+='</div></div>';
@@ -465,7 +521,7 @@ function famOptions(kind,cur){
   return o;
 }
 function rowOptions(cur){return S.rows.map(function(r){return '<option value="'+r.id+'"'+(r.id===cur?' selected':'')+'>'+esc(r.name)+'</option>'}).join('')}
-function posText(m){return gradeLabel(m)+' '+(m%12+1)+'월'}
+function posText(m){return (m+1)+'주차'}
 function renderPanel(){
   var h='';
   if(view==='stu'){panel.innerHTML='';panel.classList.remove('on');return}
@@ -474,7 +530,7 @@ function renderPanel(){
     var b=blk(sel),r=rowOf(b.row);
     h+='<div class="ph">교재 수정 <span style="font-weight:600;color:var(--sub);font-size:12px">'+esc(posText(b.start))+' ~ '+esc(posText(b.start+b.len-1))+'</span><button class="btn x" data-a="close">닫기</button></div>';
     h+='<div class="fr"><label class="f">교재명<input type="text" id="p-title" value="'+esc(b.title)+'"></label>';
-    h+='<div class="f">개월 수<div class="num"><button class="btn" data-a="len-">−</button><input type="number" id="p-len" min="1" value="'+b.len+'"><button class="btn" data-a="len+">＋</button></div></div>';
+    h+='<div class="f">주 수<div class="num"><button class="btn" data-a="len-">−</button><input type="number" id="p-len" min="1" value="'+b.len+'"><button class="btn" data-a="len+">＋</button></div></div>';
     h+='<div class="f">시작<div class="num"><button class="btn" data-a="st-">◀</button><button class="btn" data-a="st+">▶</button></div></div></div>';
     h+='<div class="fr"><label class="f">색 계열<select id="p-fam">'+famOptions(r.kind,b.fam)+'</select></label><label class="f">줄<select id="p-row">'+rowOptions(b.row)+'</select></label></div>';
     h+='<div class="acts"><button class="btn" data-a="dup">복제해서 뒤에 붙이기</button><button class="btn" data-a="split">반으로 나누기</button><button class="btn danger" data-a="del">삭제 (빈칸 남기기)</button><button class="btn danger" data-a="delpull">삭제하고 뒤 당기기</button></div>';
@@ -483,13 +539,13 @@ function renderPanel(){
     h+='<div class="ph">새 교재 추가 <span style="font-weight:600;color:var(--sub);font-size:12px">'+esc(rr.name)+' · '+esc(posText(addAt.start))+'부터</span><button class="btn x" data-a="close">닫기</button></div>';
     h+=libPicker(rr);
     h+='<div class="fr"><label class="f">교재명<input type="text" id="n-title" placeholder="위 목록에서 고르거나 직접 입력"></label>';
-    h+='<label class="f">개월 수<input type="number" id="n-len" min="1" value="1" style="width:70px"></label>';
+    h+='<label class="f">주 수<input type="number" id="n-len" min="1" value="4" style="width:70px"></label>';
     h+='<label class="f">색 계열<select id="n-fam">'+famOptions(rr.kind,'')+'</select></label></div>';
     h+='<div class="acts"><button class="btn primary" data-a="add">추가</button><span style="font-size:12px;color:var(--sub);align-self:center">자리에 다른 교재가 있으면 뒤로 밀려나요.</span></div>';
   }else if(panelMode==='lib'){
     h+='<div class="ph">교재 목록 <span style="font-weight:600;color:var(--sub);font-size:12px">새 교재를 넣을 때 고르는 목록이에요</span><button class="btn x" data-a="close">닫기</button></div>';
     h+='<div class="libtabs">'+LIBCATS.map(function(c){return '<button class="chipb'+(libCat===c[0]?' on':'')+'" data-lc="'+c[0]+'">'+c[1]+' '+S.library.filter(function(x){return x.cat===c[0]}).length+'</button>'}).join('')+'</div><div class="list">';
-    S.library.filter(function(x){return x.cat===libCat}).forEach(function(x){h+='<div class="li librow"><input data-ln="'+x.id+'" value="'+esc(x.name)+'"><input data-ld="'+x.id+'" value="'+esc(x.dur)+'" style="width:70px" title="예: 5주, 2개월"><span class="tm">→ '+durMonths(x.dur)+'개월</span><button class="btn sm danger" data-ldel="'+x.id+'">삭제</button></div>'});
+    S.library.filter(function(x){return x.cat===libCat}).forEach(function(x){h+='<div class="li librow"><input data-ln="'+x.id+'" value="'+esc(x.name)+'"><input data-ld="'+x.id+'" value="'+esc(x.dur)+'" style="width:70px" title="예: 5주, 2개월"><span class="tm">→ '+durMonths(x.dur)+'주</span><button class="btn sm danger" data-ldel="'+x.id+'">삭제</button></div>'});
     h+='</div><div class="acts" style="margin-top:8px"><button class="btn" data-a="libadd">＋ 이 분류에 교재 추가</button></div>';
   }else if(panelMode==='log'){
     h+='<div class="ph">수정 기록 <span style="font-weight:600;color:var(--sub);font-size:12px">최근 50건</span><button class="btn x" data-a="close">닫기</button></div><div class="list">';
@@ -506,7 +562,7 @@ function renderPanel(){
     var R=rowOf(selRow);
     h+='<div class="ph">줄 설정<button class="btn x" data-a="close">닫기</button></div>';
     h+='<div class="fr"><label class="f">줄 이름<input type="text" id="r-name" value="'+esc(R.name)+'"></label>';
-    h+='<label class="f">종류<select id="r-kind"><option value="class"'+(R.kind!=='vocab'?' selected':'')+'>수업 교재</option><option value="vocab"'+(R.kind==='vocab'?' selected':'')+'>단어</option></select></label></div>';
+    h+='<label class="f">종류<select id="r-kind"><option value="class"'+(R.kind==='class'||!R.kind?' selected':'')+'>수업 교재</option><option value="vocab"'+(R.kind==='vocab'?' selected':'')+'>단어</option><option value="dist"'+(R.kind==='dist'?' selected':'')+'>배부 ◆ (기간 없음)</option></select></label></div>';
     h+='<div class="acts"><button class="btn" data-a="rup">▲ 위로</button><button class="btn" data-a="rdown">▼ 아래로</button><button class="btn" data-a="rpack">빈칸 없이 앞으로 모으기</button><button class="btn danger" data-a="rdel">'+(confirmDel?'정말 삭제할까요? (한 번 더 누르기)':'줄 삭제')+'</button></div>';
   }
   panel.innerHTML=h;panel.classList.toggle('on',!!h);
@@ -514,7 +570,7 @@ function renderPanel(){
 
 // ---------- 교재 목록 ----------
 var LIBCATS=[['main','주교재'],['sub','부교재'],['voca','보카교재'],['short','단기교재']],libCat='main',pickCat=null,pickQ='';
-function durMonths(d){d=String(d||'');var m=d.match(/(\d+(?:\.\d+)?)\s*개월/);if(m)return Math.max(1,Math.round(+m[1]));m=d.match(/(\d+)\s*주/);if(m)return Math.max(1,Math.round(+m[1]/4));return 1}
+function durMonths(d){d=String(d||'');var m=d.match(/(\d+)\s*주/);if(m)return Math.max(1,+m[1]);m=d.match(/(\d+(?:\.\d+)?)\s*개월/);if(m)return Math.max(1,Math.round(+m[1]*M2W));return 1} // 이름은 그대로지만 '주' 수를 돌려줌
 function defaultCat(row){var n=(row.name||'').replace(/\s/g,'');if(row.kind==='vocab'&&n.indexOf('단어시간')<0)return 'voca';if(n.indexOf('단어시간')>=0)return 'sub';
   // 이 줄에 이미 있는 교재 이름으로 가장 많이 겹치는 분류
   var cnt={};inRow(row.id).forEach(function(b){var t=b.title.replace(/\s/g,'').toLowerCase();S.library.forEach(function(x){if(x.name.replace(/\s/g,'').toLowerCase()===t)cnt[x.cat]=(cnt[x.cat]||0)+1})});
@@ -566,7 +622,7 @@ panel.addEventListener('click',function(e){
   var lc=e.target.closest('[data-lc]');if(lc){libCat=lc.getAttribute('data-lc');renderPanel();return}
   var ld=e.target.closest('[data-ldel]');if(ld){S.library=S.library.filter(function(o){return o.id!==ld.getAttribute('data-ldel')});commit();renderPanel();return}
 });
-function keepNew(fn){var t=document.getElementById('n-title'),l=document.getElementById('n-len'),f=document.getElementById('n-fam');var v=[t&&t.value,l&&l.value,f&&f.value];fn();t=document.getElementById('n-title');l=document.getElementById('n-len');f=document.getElementById('n-fam');if(t)t.value=v[0]||'';if(l)l.value=v[1]||1;if(f)f.value=v[2]||''}
+function keepNew(fn){var t=document.getElementById('n-title'),l=document.getElementById('n-len'),f=document.getElementById('n-fam');var v=[t&&t.value,l&&l.value,f&&f.value];fn();t=document.getElementById('n-title');l=document.getElementById('n-len');f=document.getElementById('n-fam');if(t)t.value=v[0]||'';if(l)l.value=v[1]||4;if(f)f.value=v[2]||''}
 panel.addEventListener('input',function(e){if(e.target.id==='pick-q'){pickQ=e.target.value;var p=e.target.selectionStart;keepNew(renderPanel);var n=document.getElementById('pick-q');if(n){n.focus();try{n.setSelectionRange(p,p)}catch(x){}}}});
 panel.addEventListener('change',function(e){var t=e.target,id;
   if((id=t.getAttribute('data-ln'))){var x=S.library.find(function(o){return o.id===id});if(x&&t.value.trim()){x.name=t.value.trim();commit();renderPanel()}}
@@ -584,20 +640,20 @@ function act(a){
   case 'st-':if(b&&b.start>0){moveBlock(b,b.row,b.start-1);commit()}break;
   case 'st+':if(b){moveBlock(b,b.row,b.start+1);commit()}break;
   case 'dup':if(b){var n={id:uid('b'),row:b.row,start:b.start+b.len,len:b.len,title:b.title,fam:b.fam};S.blocks.push(n);resolve(b.row,n.id);sel=n.id;commit()}break;
-  case 'split':if(b&&b.len>1){var h1=Math.ceil(b.len/2),n2={id:uid('b'),row:b.row,start:b.start+h1,len:b.len-h1,title:b.title,fam:b.fam};b.len=h1;S.blocks.push(n2);commit()}else toast('1개월짜리는 나눌 수 없어요');break;
+  case 'split':if(b&&b.len>1){var h1=Math.ceil(b.len/2),n2={id:uid('b'),row:b.row,start:b.start+h1,len:b.len-h1,title:b.title,fam:b.fam};b.len=h1;S.blocks.push(n2);commit()}else toast('1주짜리는 나눌 수 없어요');break;
   case 'del':if(b){S.blocks=S.blocks.filter(function(x){return x.id!==b.id});sel=null;commit();toast('삭제했어요 (되돌리기 가능)')}break;
   case 'delpull':if(b){S.blocks=S.blocks.filter(function(x){return x.id!==b.id});inRow(b.row).forEach(function(x){if(x.start>=b.start+b.len)x.start-=b.len});sel=null;commit();toast('삭제하고 뒤 교재를 당겼어요')}break;
   case 'add':var t=(document.getElementById('n-title').value||'').trim();if(!t){toast('교재명을 입력해 주세요');return}
-    var L=Math.max(1,parseInt(document.getElementById('n-len').value,10)||1);
+    var L=Math.max(1,parseInt(document.getElementById('n-len').value,10)||4);
     var nb={id:uid('b'),row:addAt.row,start:addAt.start,len:L,title:t,fam:document.getElementById('n-fam').value};
-    S.blocks.push(nb);resolve(nb.row,nb.id);addAt=null;sel=nb.id;commit();break;
+    S.blocks.push(nb);magnet(nb);resolve(nb.row,nb.id);addAt=null;sel=nb.id;commit();break;
   case 'rup':case 'rdown':var i=S.rows.findIndex(function(r){return r.id===selRow}),j=i+(a==='rup'?-1:1);if(j>=0&&j<S.rows.length){var tmp=S.rows[i];S.rows[i]=S.rows[j];S.rows[j]=tmp;commit()}break;
   case 'rpack':var c=0;inRow(selRow).forEach(function(x){x.start=c;c+=x.len});commit();break;
   case 'rdel':if(!confirmDel){confirmDel=true;renderPanel();return}
     S.blocks=S.blocks.filter(function(x){return x.row!==selRow});S.rows=S.rows.filter(function(r){return r.id!==selRow});selRow=null;confirmDel=false;commit();break;
-  case 'bl':case 'br':var bd=document.getElementById('board');if(bd)bd.scrollBy({left:(a==='bl'?-6:6)*W,behavior:'smooth'});break;
+  case 'bl':case 'br':var bd=document.getElementById('board');if(bd)bd.scrollBy({left:(a==='bl'?-26:26)*W,behavior:'smooth'});break;
   case 'lib':panelMode='lib';sel=null;addAt=null;selRow=null;renderPanel();break;
-  case 'libadd':S.library.push({id:uid('L'),cat:libCat,name:'새 교재',dur:'1개월'});commit();renderPanel();var ins=panel.querySelectorAll('[data-ln]');if(ins.length){ins[ins.length-1].focus();ins[ins.length-1].select()}break;
+  case 'libadd':S.library.push({id:uid('L'),cat:libCat,name:'새 교재',dur:'4주'});commit();renderPanel();var ins=panel.querySelectorAll('[data-ln]');if(ins.length){ins[ins.length-1].focus();ins[ins.length-1].select()}break;
   case 'movelocal':if(localOld){S.students=localOld.students;if(localOld.exams&&localOld.exams.length&&!(S.exams||[]).length)S.exams=localOld.exams;localOld=null;commit();toast('학생 명단을 옮겼어요')}break;
   case 'droplocal':localOld=null;render();break;
   case 'log':panelMode='log';sel=null;addAt=null;selRow=null;renderPanel();break;
@@ -613,8 +669,12 @@ function moveBlock(b,newRow,newStart){
   var oldRow=b.row,oldStart=b.start,d=newStart-oldStart;
   if(chain&&newRow===oldRow){inRow(oldRow).forEach(function(x){if(x.id!==b.id&&x.start>oldStart)x.start=Math.max(0,x.start+d)})}
   b.row=newRow;b.start=Math.max(0,newStart);
-  resolve(newRow,b.id);
+  magnet(b);resolve(newRow,b.id);
 }
+// 자석: 앞 교재와 3주 이하로 떨어져 있으면 앞 교재 끝에 바로 붙임 (일부러 비운 긴 빈칸은 그대로)
+function magnet(b){var r=rowOf(b.row);if(!r||r.kind==='dist')return;var pe=-1;
+  inRow(b.row).forEach(function(x){if(x.id!==b.id&&x.start+x.len<=b.start)pe=Math.max(pe,x.start+x.len)});
+  if(pe>=0&&b.start-pe>0&&b.start-pe<=3)b.start=pe}
 
 app.addEventListener('click',function(e){
   var a=e.target.closest('[data-a]');if(a&&!a.disabled){act(a.getAttribute('data-a'));return}
@@ -632,7 +692,7 @@ panel.addEventListener('change',function(e){
 });
 panel.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.id==='n-title')act('add')});
 app.addEventListener('input',function(e){
-  if(e.target.id==='zoom'){W=parseInt(e.target.value,10);document.documentElement.style.setProperty('--w',W+'px');try{localStorage.setItem(LS_KEY+'-zoom',W)}catch(x){}}
+  if(e.target.id==='zoom'){W=parseInt(e.target.value,10);document.documentElement.style.setProperty('--w',W+'px');try{localStorage.setItem(LS_KEY+'-zoomw',W)}catch(x){}}
 });
 app.addEventListener('change',function(e){
   if(e.target.id==='me'){me=e.target.value.trim();try{localStorage.setItem(LS_KEY+'-me',me)}catch(x){}}
@@ -676,7 +736,7 @@ app.addEventListener('pointermove',function(e){
   D.moved=true;
   if(D.mode==='resize'){
     var L=Math.max(1,D.orig+Math.round(dx/W));D.len=L;D.el.style.width='calc('+L+' * var(--w) - 4px)';
-    var n=D.el.querySelector('.n');if(n)n.textContent=L+'개월';
+    var n=D.el.querySelector('.n');if(n)n.textContent=L+'주';
   }else{
     var lane=laneAt(e.clientY)||D.el.parentNode,grid=document.getElementById('grid');
     var st=Math.max(0,D.b.start+Math.round(dx/W));D.row=lane.getAttribute('data-lane');D.start=st;
@@ -727,29 +787,24 @@ function exportXlsx(){
   toast('엑셀 파일 만드는 중…');
   (window.ExcelJS?Promise.resolve():loadScript('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js')).then(function(){
     var wb=new ExcelJS.Workbook(),ws=wb.addWorksheet('로드맵',{views:[{state:'frozen',xSplit:1,ySplit:3,showGridLines:false}],pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0}});
-    var T=totalMonths(),col=colors(),F='맑은 고딕',wh={style:'thin',color:{argb:'FFFFFFFF'}},gl={style:'medium',color:{argb:'FF4A4A4A'}};
+    var T=totalMonths(),col=colors(),F='맑은 고딕',gl={style:'medium',color:{argb:'FF4A4A4A'}},th={style:'thin',color:{argb:'FFD9DDE2'}};
     var C=function(r,c){return ws.getCell(r,c)},ctr={horizontal:'center',vertical:'middle',wrapText:true},fill=function(h){return {type:'pattern',pattern:'solid',fgColor:{argb:'FF'+h}}};
-    ws.getColumn(1).width=13;for(var c=2;c<=T+1;c++)ws.getColumn(c).width=11.5;
-    ws.mergeCells(1,1,1,12);C(1,1).value=S.title;C(1,1).font={name:F,size:16,bold:true};ws.getRow(1).height=32;
-    C(2,1).value='구분';C(2,1).fill=fill('1F2933');C(2,1).font={name:F,bold:true,color:{argb:'FFFFFFFF'}};C(2,1).alignment=ctr;C(3,1).fill=fill('ECEFF2');
-    for(var y=0;y<T/12;y++){var s=2+y*12;ws.mergeCells(2,s,2,s+11);var g=C(2,s);g.value=gradeLabel(y*12);g.font={name:F,size:12,bold:true,color:{argb:'FFFFFFFF'}};g.alignment=ctr;
-      for(var k=0;k<12;k++){C(2,s+k).fill=fill(GRADE_COL[Math.min(y,GRADE_COL.length-1)]);var mc=C(3,s+k);mc.value=(k+1)+'월';mc.font={name:F,size:9,bold:true,color:{argb:'FF555555'}};mc.alignment=ctr;mc.fill=fill('ECEFF2');mc.border={left:k===0?gl:wh}}}
-    ws.getRow(2).height=24;ws.getRow(3).height=18;
+    ws.getColumn(1).width=13;for(var c=2;c<=T+1;c++)ws.getColumn(c).width=2.8;
+    ws.mergeCells(1,1,1,40);C(1,1).value=S.title+' (한 칸 = 1주)';C(1,1).font={name:F,size:16,bold:true};ws.getRow(1).height=32;
+    C(2,1).value='단계';C(3,1).value='개월째';[2,3].forEach(function(r){C(r,1).font={name:F,bold:true,size:10};C(r,1).alignment=ctr});
+    stages().forEach(function(g){var c0=2+g.s,c1=1+g.e;if(c1>c0)ws.mergeCells(2,c0,2,c1);var x=C(2,c0);x.value=g.name;x.font={name:F,size:11,bold:true,color:{argb:'FF'+g.fg}};x.alignment=ctr;for(var k=c0;k<=c1;k++){C(2,k).fill=fill(g.bg);C(2,k).border={left:k===c0?gl:undefined}}});
+    for(var m=0;Math.round(m*M2W)<T;m++){var a0=Math.round(m*M2W),a1=Math.min(T,Math.round((m+1)*M2W));if(a1-a0>1)ws.mergeCells(3,2+a0,3,1+a1);var q=C(3,2+a0);q.value=m+1;q.font={name:F,size:8,bold:true,color:{argb:'FF555555'}};q.alignment=ctr;for(var k2=a0;k2<a1;k2++)C(3,2+k2).fill=fill(m%2?'F7F8FA':'ECEFF2')}
+    ws.getRow(2).height=22;ws.getRow(3).height=16;
     S.rows.forEach(function(r,i){
-      var R=4+i;ws.getRow(R).height=46;var lc=C(R,1);lc.value=r.name;lc.font={name:F,bold:true,color:{argb:'FFFFFFFF'}};lc.alignment=ctr;lc.fill=fill(r.kind==='vocab'?'5A5A5A':'3A3A3A');
-      for(var m=0;m<T;m++){var e=C(R,2+m);e.fill=fill('F5F6F7');e.border={left:m%12===0?gl:wh,bottom:{style:'medium',color:{argb:'FFFFFFFF'}}}}
+      var R=4+i;ws.getRow(R).height=r.kind==='dist'?20:42;var lc=C(R,1);lc.value=r.name;lc.font={name:F,bold:true,color:{argb:'FFFFFFFF'}};lc.alignment=ctr;lc.fill=fill(r.kind==='dist'?'B54708':(r.kind==='vocab'?'5A5A5A':'3A3A3A'));
+      for(var w=0;w<T;w++){var e=C(R,2+w);e.fill=fill(r.kind==='dist'?'FFFAF2':'F5F6F7');e.border={left:th,bottom:{style:'medium',color:{argb:'FFFFFFFF'}}}}
       inRow(r.id).forEach(function(b){
+        if(r.kind==='dist'){var d=C(R,2+b.start);d.value='◆ '+b.title;d.font={name:F,size:9,bold:true,color:{argb:'FFB54708'}};d.alignment={vertical:'middle'};return}
         var c0=2+b.start,c1=c0+b.len-1,cc=col[b.id]||[ETC[2],ETC[3]];
-        for(var x=c0;x<=c1;x++){var z=C(R,x);z.fill=fill(cc[0]);z.border={left:(x-2)%12===0?gl:(x===c0?{style:'medium',color:{argb:'FFFFFFFF'}}:undefined),bottom:{style:'medium',color:{argb:'FFFFFFFF'}}}}
+        for(var x=c0;x<=c1;x++){var z=C(R,x);z.fill=fill(cc[0]);z.border={left:x===c0?{style:'medium',color:{argb:'FFFFFFFF'}}:undefined,bottom:{style:'medium',color:{argb:'FFFFFFFF'}}}}
         if(c1>c0)ws.mergeCells(R,c0,R,c1);
-        var a=C(R,c0);a.value=b.title.replace(/ \/ /g,'\n+ ');a.font={name:F,size:9,bold:true,color:{argb:'FF'+cc[1]}};a.alignment=ctr;
+        var a=C(R,c0);a.value=b.title.replace(/ \/ /g,'\n+ ')+'\n'+b.len+'주';a.font={name:F,size:8,bold:true,color:{argb:'FF'+cc[1]}};a.alignment=ctr;
       });
-    });
-    var lr=4+S.rows.length+1;
-    [['수업 흐름',FAM],['단어 흐름',VOC]].forEach(function(L,li){
-      var R=lr+li;C(R,1).value=L[0];C(R,1).font={name:F,size:10,bold:true};C(R,1).alignment=ctr;ws.getRow(R).height=24;var c=2;
-      L[1].forEach(function(f,j){ws.mergeCells(R,c,R,c+1);var q=C(R,c);q.value=f[1];q.font={name:F,size:9,bold:true,color:{argb:'FF'+f[3]}};q.alignment=ctr;C(R,c).fill=fill(f[2]);C(R,c+1).fill=fill(f[2]);
-        if(j<L[1].length-1){var ar=C(R,c+2);ar.value='▶';ar.font={name:F,color:{argb:'FF999999'}};ar.alignment=ctr}c+=3});
     });
     return wb.xlsx.writeBuffer();
   }).then(function(buf){if(buf)return dl('학원로드맵_'+stamp()+'.xlsx',new Blob([buf]))}).catch(function(){toast('엑셀 파일을 만들지 못했어요')});
@@ -760,22 +815,28 @@ var GR_OPTS=[[1,'초1'],[2,'초2'],[3,'초3'],[4,'초4'],[5,'초5'],[6,'초6'],[
 function grName(g){for(var i=0;i<GR_OPTS.length;i++)if(GR_OPTS[i][0]===g)return GR_OPTS[i][1];return ''}
 function parseGrade(v){v=String(v||'').replace(/\s/g,'');var m=v.match(/^(초|중|고)?(\d)/);if(!m)return 0;var n=+m[2];if(m[1]==='중')n+=6;else if(m[1]==='고')n+=9;else if(!m[1]&&n>6)return 0;return n>=1&&n<=12?n:0}
 function nowYM(){var d=new Date();return {y:d.getFullYear(),m:d.getMonth()+1}}
-function ymIdx(y,m){return y*12+(m-1)}
-function ymStr(i){var y=Math.floor(i/12),m=i%12+1;return y+'-'+(m<10?'0':'')+m}
-function ymParse(s){var m=String(s||'').match(/^(\d{4})-(\d{1,2})/);return m?ymIdx(+m[1],+m[2]):null}
+// ★ v25: 학생 달력도 '주' 단위 — 2000-01-03(월)부터 몇 번째 주인지 (소수 = 주 안의 날)
+var EPOCH=Date.UTC(2000,0,3);
+function wIdx(y,m,d){return (Date.UTC(y,m-1,d||1)-EPOCH)/864e5/7}
+function idxDateObj(i){return new Date(EPOCH+i*7*864e5)}
+function ymIdx(y,m){return wIdx(y,m,1)}
+function ymStr(i){var d=idxDateObj(i);var m=d.getUTCMonth()+1;return d.getUTCFullYear()+'-'+(m<10?'0':'')+m}
+function ymdStr(i){var d=idxDateObj(i);var m=d.getUTCMonth()+1,dd=d.getUTCDate();return d.getUTCFullYear()+'-'+(m<10?'0':'')+m+'-'+(dd<10?'0':'')+dd}
+function ymParse(s){var m=String(s||'').match(/^(\d{4})-(\d{1,2})(?:-(\d{1,2}))?/);return m?wIdx(+m[1],+m[2],m[3]?+m[3]:1):null}
+function todayStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function stuOf(id){return (S.students||[]).find(function(x){return x.id===id})}
 // 이 학생의 학년 (로드맵이 1월~12월이라 1월에 한 학년 올라가는 것으로 계산)
-function gradeAtIdx(st,idx){if(!st.grade||!st.gy)return 0;return st.grade+(Math.floor(idx/12)-st.gy)}
+function gradeAtIdx(st,idx){if(!st.grade||!st.gy)return 0;return st.grade+(idxDateObj(idx).getUTCFullYear()-st.gy)}
 // 그 학년·월이 기본 로드맵의 몇 번째 달인지
-function stdMonth(st,idx){var g=gradeAtIdx(st,idx);if(!g)return null;return (g-S.startGrade)*12+(idx%12)}
+
 function blockAt(rowId,m){var L=inRow(rowId);for(var i=0;i<L.length;i++)if(m>=L[i].start&&m<L[i].start+L[i].len)return L[i];return null}
-function dateIdx(str){var m=String(str||'').match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);if(!m)return null;return ymIdx(+m[1],+m[2])+(+m[3]-1)/30}
-function nowIdx(){var d=new Date();return ymIdx(d.getFullYear(),d.getMonth()+1)+(d.getDate()-1)/30}
-function idxDate(i){var y=Math.floor(i/12),m=Math.floor(i%12)+1,d=Math.round((i-Math.floor(i))*30)+1;return m+'/'+d}
+function dateIdx(str){return ymParse(str)}
+function nowIdx(){var d=new Date();return wIdx(d.getFullYear(),d.getMonth()+1,d.getDate())}
+function idxDate(i){var d=idxDateObj(Math.round(i*7)/7);return (d.getUTCMonth()+1)+'/'+d.getUTCDate()}
 // 이 학생에게 해당하는 시험대비 기간 (중등 · 학교와 학년이 맞는 것)
 function stuExams(st){
   if(!st.school)return [];
-  return (S.exams||[]).map(function(x){var e=dateIdx(x.start);return e==null?null:{x:x,e:e,len:(x.weeks||4)/4}}).filter(function(o){
+  return (S.exams||[]).map(function(x){var e=dateIdx(x.start);return e==null?null:{x:x,e:e,len:(x.weeks||5)}}).filter(function(o){
     if(!o||o.x.school!==st.school)return false;
     if(o.x.grade&&gradeAtIdx(st,Math.floor(o.e))!==o.x.grade)return false;
     return true;
@@ -784,7 +845,8 @@ function stuExams(st){
 // ---- 한 줄의 '원래 계획' (시험대비 적용 전) ----
 //  · 개인 편집(st.custom[row])이 있으면 그것을 그대로 씀 (달력 위치·개월 수·순서 모두 학생 전용)
 //  · 없으면 출발 칸부터 기본 로드맵 순서·간격대로, 건너뛴 교재는 빼고 당김
-function rawItems(st,rowId){
+function rawItems(st,rowId,noDone){var R0=rawItems0(st,rowId);if(R0&&!noDone)applyDone(st,rowId,R0);return R0}
+function rawItems0(st,rowId){
   var cu=st.custom&&st.custom[rowId];
   if(cu&&cu.length){
     var items=cu.map(function(x){return {id:x.id,ref:x.ref||'',title:x.title,cal:+x.cal,len:Math.max(1,+x.len||1)}}).sort(function(a,b){return a.cal-b.cal});
@@ -793,7 +855,7 @@ function rawItems(st,rowId){
   }
   var sb=st.starts&&st.starts[rowId]?blk(st.starts[rowId]):null;
   if(!sb||sb.row!==rowId)return null;
-  var from=ymParse(st.from);if(from==null){var n=nowYM();from=ymIdx(n.y,n.m)}
+  var from=ymParse(st.from);if(from==null)from=Math.floor(nowIdx())
   var shift=0,items=[],skipped=[];
   inRow(rowId).filter(function(b){return b.start>=sb.start}).forEach(function(b){
     if(b.id!==sb.id&&st.skips&&st.skips[b.id]){skipped.push({b:b});shift+=b.len;return}
@@ -801,21 +863,36 @@ function rawItems(st,rowId){
   });
   return {custom:false,from:from,items:items,skipped:skipped,sb:sb};
 }
+// ★ 완료 표시: 마지막으로 완료한 교재의 완료일부터 뒤 교재를 다시 이어 붙임 (완료한 교재까지는 실제 기록으로 고정)
+function doneOf(st,rowId){return (st.done&&st.done[rowId])||{}}
+function applyDone(st,rowId,R){
+  var D=doneOf(st,rowId),L=R.items,j=-1;
+  L.forEach(function(it,i){if(D[it.id])j=i});
+  if(j<0)return;
+  var oe=L[j].cal+L[j].len;
+  for(var i=0;i<=j;i++){var it=L[i];it.fixed=true;if(D[it.id]){var e=dateIdx(D[it.id]);if(e!=null){if(e<=it.cal)it.cal=e-0.4;it.len=e-it.cal}}}
+  var ne=dateIdx(D[L[j].id]),d=ne-oe;
+  for(var k=j+1;k<L.length;k++)L[k].cal+=d;
+  R.reFrom=ne;
+}
 // ---- 시험대비 기간만큼 밀기까지 적용한 계획 ----
-function stuPlan(st,rowId){
-  var R=rawItems(st,rowId);if(!R)return null;
+function stuPlan(st,rowId,noDone){
+  var R=rawItems(st,rowId,noDone);if(!R)return null;var from0=R.reFrom!=null?R.reFrom:R.from;
   var segs=R.items.map(function(it){return {item:it,cal:it.cal,len:it.len,done:0}}),exams=[];
   var row=rowOf(rowId);
   if(!row||row.pause!==false){
     stuExams(st).forEach(function(o){
-      if(o.e+o.len<=R.from)return;
+      if(o.e+o.len<=from0)return;
       var out=[];
       segs.forEach(function(g){
-        if(g.exam){if(g.cal>=o.e)g.cal+=o.len;out.push(g);return}
+        if(g.exam||g.item.fixed){if(g.exam&&g.cal>=o.e)g.cal+=o.len;out.push(g);return}
         var end=g.cal+g.len;
         if(end<=o.e)out.push(g);
         else if(g.cal>=o.e){g.cal+=o.len;out.push(g)}
-        else{var a=o.e-g.cal;out.push({item:g.item,cal:g.cal,len:a,done:g.done,part:1});out.push({item:g.item,cal:o.e+o.len,len:g.len-a,done:g.done+a,part:2})}
+        else{var a=o.e-g.cal; // 시험대비 직전·직후 반 주 미만 조각은 나누지 않음
+          if(a<0.5)out.push({item:g.item,cal:o.e+o.len,len:g.len-a,done:g.done+a});
+          else if(g.len-a<0.5)out.push({item:g.item,cal:g.cal,len:a,done:g.done});
+          else{out.push({item:g.item,cal:g.cal,len:a,done:g.done,part:1});out.push({item:g.item,cal:o.e+o.len,len:g.len-a,done:g.done+a,part:2})}}
       });
       out.push({exam:o.x,cal:o.e,len:o.len});exams.push(o);
       segs=out.sort(function(a,b){return a.cal-b.cal});
@@ -823,43 +900,29 @@ function stuPlan(st,rowId){
   }
   return {custom:R.custom,sb:R.sb,from:R.from,items:R.items,segs:segs,skipped:R.skipped,exams:exams};
 }
-// 개인 교재 하나를 몇 개월(progress) 했을 때 기본 로드맵의 몇 번째 달에 와 있는지
-function refBase(P,it,progress){
-  var b=it.ref?blk(it.ref):null;
-  if(b)return b.start+Math.min(b.len,Math.max(0,progress)*b.len/it.len);
-  var i=P.items.indexOf(it);
-  for(var k=i-1;k>=0;k--){var p=P.items[k].ref&&blk(P.items[k].ref);if(p)return p.start+p.len}
-  for(var j=i+1;j<P.items.length;j++){var q=P.items[j].ref&&blk(P.items[j].ref);if(q)return q.start}
-  return null;
-}
-// 오늘 기준: 실제로 와 있는 '기본 로드맵 달' 과 학년 기준 달의 차이
+// ★ 계획 대비: 완료일 − (완료 표시 전 원래 계획의 끝나는 날) → +면 늦음, −면 빠름 (주)
+function planEnd(st,rowId,itemId){var P=stuPlan(st,rowId,true);if(!P)return null;var e=null;P.segs.forEach(function(g){if(!g.exam&&g.item.id===itemId)e=g.cal+g.len});return e}
+function doneDiff(st,rowId,itemId){var d=doneOf(st,rowId)[itemId];if(!d)return null;var pe=planEnd(st,rowId,itemId),de=dateIdx(d);if(pe==null||de==null)return null;return Math.round(de-pe)}
 function stuStatus(st,rowId){
-  var P=stuPlan(st,rowId),now=nowIdx(),std=stdMonth(st,Math.floor(now));
-  var stdB=std!=null?blockAt(rowId,std):null;
-  var out={plan:P,std:std,stdB:stdB,cur:null,diff:null,exam:null};
-  var endM0=0;S.blocks.forEach(function(b){if(b.row===rowId)endM0=Math.max(endM0,b.start+b.len)});
-  if(std!=null&&std>=endM0){out.oor=true;out.stdB=null}
+  var P=stuPlan(st,rowId),now=nowIdx();
+  var out={plan:P,cur:null,diff:null,exam:null,unconf:0,lastDone:null};
   if(!P||!P.items.length)return out;
-  var books=P.segs.filter(function(g){return !g.exam}),baseM=null;
-  P.segs.forEach(function(g){if(now>=g.cal&&now<g.cal+g.len){
-    if(g.exam){out.exam=g.exam;out.examEnd=g.cal+g.len}
-    else{out.cur={title:g.item.title};baseM=refBase(P,g.item,g.done+(now-g.cal))}}});
-  if(baseM==null){
-    var prev=null,next=null;books.forEach(function(g){if(g.cal+g.len<=now)prev=g;else if(!next&&g.cal>now)next=g});
-    if(next)out.next={title:next.item.title};
-    if(prev)baseM=refBase(P,prev.item,prev.done+prev.len)+(next||out.exam?0:(now-(prev.cal+prev.len)));
-    else if(next){var nb=refBase(P,next.item,next.done);baseM=nb==null?null:nb-(next.cal-now)}
-  }
-  out.baseM=baseM;
-  if(std!=null&&!out.oor&&baseM!=null)out.diff=Math.round(baseM-std);
+  var books=P.segs.filter(function(g){return !g.exam});
+  P.segs.forEach(function(g){if(now>=g.cal&&now<g.cal+g.len){if(g.exam){out.exam=g.exam;out.examEnd=g.cal+g.len}else out.cur={title:g.item.title,id:g.item.id}}});
+  if(!out.cur&&!out.exam){var next=null;books.forEach(function(g){if(!next&&g.cal>now)next=g});if(next)out.next={title:next.item.title}}
+  var D=doneOf(st,rowId),last=null;Object.keys(D).forEach(function(k){if(P.items.some(function(it){return it.id===k})&&(!last||D[k]>D[last]))last=k});
+  if(last){out.lastDone=last;out.diff=doneDiff(st,rowId,last)}
+  // 계획상 이미 끝났는데 완료 표시를 안 한 교재 수
+  var seen={};books.forEach(function(g){if(!g.item.fixed&&g.cal+g.len<=now&&!seen[g.item.id]){var more=books.some(function(h){return h.item===g.item&&h.cal+h.len>now});if(!more){seen[g.item.id]=1;out.unconf++}}});
   var up=P.exams.filter(function(o){return o.e>now})[0];if(up)out.upExam=up;
   return out;
 }
-function dgHTML(d,oor){if(oor)return '<span class="dg n" title="이 학년은 학원 기본 로드맵 기간 밖이라 비교할 기준이 없어요">로드맵 밖</span>';if(d==null)return '<span class="dg n">학년 없음</span>';if(d>0)return '<span class="dg p">+'+d+'개월</span>';if(d===0)return '<span class="dg z">기준</span>';return '<span class="dg '+(d>=-2?'m1':'m3')+'">'+d+'개월</span>'}
+function dgHTML(d,unc){var u=unc?' <span class="uc" title="계획상 끝났는데 완료 표시가 없는 교재">확인 '+unc+'</span>':'';
+  if(d==null)return '<span class="dg n">완료 기록 없음</span>'+u;if(d>0)return '<span class="dg '+(d>=4?'m3':'m1')+'">'+d+'주 늦음</span>'+u;if(d===0)return '<span class="dg z">계획대로</span>'+u;return '<span class="dg p">'+(-d)+'주 빠름</span>'+u}
 function stuList(){
   var f=stuFilter,q=f.q.trim();
   var L=(S.students||[]).filter(function(x){return (!f.group||x.group===f.group)&&(!f.school||x.school===f.school)&&(!q||x.name.indexOf(q)>=0)});
-  if(f.sort==='late'){var w={};L.forEach(function(x){var m=0;S.rows.forEach(function(r){var d=stuStatus(x,r.id).diff;if(d!=null&&d<m)m=d});w[x.id]=m});L.sort(function(a,b){return w[a.id]-w[b.id]||a.name.localeCompare(b.name,'ko')})}
+  if(f.sort==='late'){var w={};L.forEach(function(x){var m=-999;SR().forEach(function(r){var d=stuStatus(x,r.id).diff;if(d!=null&&d>m)m=d});w[x.id]=m});L.sort(function(a,b){return w[b.id]-w[a.id]||a.name.localeCompare(b.name,'ko')})}
   else if(f.sort==='grade')L.sort(function(a,b){return (a.grade||99)-(b.grade||99)||a.name.localeCompare(b.name,'ko')});
   else if(f.sort==='group'){var gm={};(S.students||[]).forEach(function(x){var k=x.group||'~';gm[k]=Math.min(gm[k]==null?99:gm[k],x.grade||99)});L.sort(function(a,b){var ka=a.group||'~',kb=b.group||'~';return (ka==='~')-(kb==='~')||gm[ka]-gm[kb]||ka.localeCompare(kb,'ko')||(a.school||'').localeCompare(b.school||'','ko')||a.name.localeCompare(b.name,'ko')})}
   else L.sort(function(a,b){return a.name.localeCompare(b.name,'ko')});
@@ -882,36 +945,36 @@ function stuHTML(){
   h+='<div class="sbar"><button class="btn primary" data-s="paste">＋ 학생 명단 붙여 넣기</button><button class="btn" data-s="add1">＋ 한 명 추가</button><button class="btn" data-s="exams">📅 시험대비 기간 <span class="cnt">'+(S.exams||[]).length+'</span></button><button class="btn" data-s="histload" title="장부로 만든 지난기록 파일(.json)을 불러와요. 이미 있으면 통째로 바뀌어요">📒 지난 기록 불러오기'+(hn?' <span class="cnt">'+hn+'명</span>':'')+'</button><input type="file" id="histfile" accept=".json,application/json" hidden>'+(hn?'<label class="tog"><input type="checkbox" id="histon"'+(histOn?' checked':'')+'> 지난 기록 보기</label>':'');
   h+='<select data-sf="group"><option value="">반 전체</option>'+uniq('group').map(function(g){return '<option'+(stuFilter.group===g?' selected':'')+'>'+esc(g)+'</option>'}).join('')+'</select>';
   h+='<select data-sf="school"><option value="">학교 전체</option>'+uniq('school').map(function(g){return '<option'+(stuFilter.school===g?' selected':'')+'>'+esc(g)+'</option>'}).join('')+'</select>';
-  h+='<select data-sf="sort"><option value="name"'+(stuFilter.sort==='name'?' selected':'')+'>이름순</option><option value="group"'+(stuFilter.sort==='group'?' selected':'')+'>반순</option><option value="grade"'+(stuFilter.sort==='grade'?' selected':'')+'>학년순</option></select>';
+  h+='<select data-sf="sort"><option value="name"'+(stuFilter.sort==='name'?' selected':'')+'>이름순</option><option value="group"'+(stuFilter.sort==='group'?' selected':'')+'>반순</option><option value="grade"'+(stuFilter.sort==='grade'?' selected':'')+'>학년순</option><option value="late"'+(stuFilter.sort==='late'?' selected':'')+'>늦은 순</option></select>';
   h+='<input data-sf="q" placeholder="이름 검색" value="'+esc(stuFilter.q)+'" style="width:110px"><span class="note">'+L.length+'명</span></div>';
   if(!(S.students||[]).length){h+='<div class="sdet note">아직 학생이 없어요. <b>학생 명단 붙여 넣기</b>로 LMS 학생 목록을 한 번에 넣어 주세요.</div></div>';return h}
   h+='<div style="overflow:auto"><table class="stbl"><thead><tr><th>이름</th><th>반</th><th>학교</th><th>학년</th>';
-  S.rows.forEach(function(r){h+='<th>'+esc(r.name)+'</th>'});
+  SR().forEach(function(r){h+='<th>'+esc(r.name)+'</th>'});
   h+='</tr></thead><tbody>';
   L.forEach(function(x){
     h+='<tr><td><span class="nm" data-s="open" data-id="'+x.id+'">'+esc(x.name)+'</span></td><td>'+esc(x.group)+'</td><td>'+(x.school?esc(x.school):'<span style="color:#b0b8c1">—</span>')+'</td><td>'+grSelect(x,'data-sg="'+x.id+'"')+'</td>';
-    S.rows.forEach(function(r){var t=stuStatus(x,r.id);
+    SR().forEach(function(r){var t=stuStatus(x,r.id);
       if(!t.plan)h+='<td><span class="dg n" data-s="open" data-id="'+x.id+'" style="cursor:pointer">출발 칸 정하기</span></td>';
-      else h+='<td><div class="cellp"><span class="cur" title="'+esc(t.cur?t.cur.title:'')+'">'+(t.exam?'<span class="exb">시험대비</span>':esc(t.cur?t.cur.title:''))+'</span>'+'</div></td>'});
+      else h+='<td><div class="cellp"><span class="cur" title="'+esc(t.cur?t.cur.title:'')+'">'+(t.exam?'<span class="exb">시험대비</span>':esc(t.cur?t.cur.title:(t.next?'→ '+t.next.title:'')))+'</span>'+dgHTML(t.diff,t.unconf)+'</div></td>'});
     h+='</tr>';
   });
   h+='</tbody></table></div></div>';
   return h;
 }
-var SW=46,stuExamOpen=false;
+var SW=12,stuExamOpen=false;
 function examHTML(){
   var schools=uniq('school'),h='<div class="sdet"><div class="sdh"><h2>시험대비 기간</h2><span class="meta">중등만 · 학교·학년별로 정해요. 기간 동안 아래에서 고른 줄의 일정이 그만큼 뒤로 밀려요.</span><button class="btn" data-s="examclose" style="margin-left:auto">닫기</button></div>';
   h+='<div class="fr"><label class="f">학교<select id="ex-school">'+schools.map(function(x){return '<option>'+esc(x)+'</option>'}).join('')+'</select></label>';
   h+='<label class="f">학년<select id="ex-grade"><option value="0">전 학년</option><option value="7">중1</option><option value="8">중2</option><option value="9">중3</option></select></label>';
-  h+='<label class="f">시작일<input type="date" id="ex-start"></label><label class="f">기간(주)<input type="number" id="ex-weeks" value="4" min="1" max="12" style="width:70px"></label>';
+  h+='<label class="f">시작일<input type="date" id="ex-start"></label><label class="f">기간(주)<input type="number" id="ex-weeks" value="5" min="1" max="12" style="width:70px"></label>';
   h+='<label class="f">이름 (선택)<input type="text" id="ex-name" placeholder="예: 2학기 기말" style="width:140px"></label><button class="btn primary" data-s="examadd">추가</button></div>';
   var L=(S.exams||[]).slice().sort(function(a,b){return (a.start||'').localeCompare(b.start||'')||a.school.localeCompare(b.school,'ko')});
   if(!L.length)h+='<div class="note">아직 정한 기간이 없어요.</div>';
   else{h+='<table class="stbl" style="min-width:0"><thead><tr><th>시작일</th><th>학교</th><th>학년</th><th>기간</th><th>이름</th><th>해당 학생</th><th></th></tr></thead><tbody>';
     L.forEach(function(x){var e=dateIdx(x.start),n=(S.students||[]).filter(function(st){return st.school===x.school&&(!x.grade||gradeAtIdx(st,Math.floor(e))===x.grade)}).length;
-      h+='<tr><td>'+esc(x.start)+'</td><td>'+esc(x.school)+'</td><td>'+(x.grade?grName(x.grade):'전 학년')+'</td><td>'+(x.weeks||4)+'주</td><td>'+esc(x.name)+'</td><td>'+n+'명</td><td><button class="btn sm danger" data-s="examdel" data-id="'+x.id+'">삭제</button></td></tr>'});
+      h+='<tr><td>'+esc(x.start)+'</td><td>'+esc(x.school)+'</td><td>'+(x.grade?grName(x.grade):'전 학년')+'</td><td>'+(x.weeks||5)+'주</td><td>'+esc(x.name)+'</td><td>'+n+'명</td><td><button class="btn sm danger" data-s="examdel" data-id="'+x.id+'">삭제</button></td></tr>'});
     h+='</tbody></table>'}
-  h+='<div class="note" style="margin-top:10px">시험대비 때 미는 줄: '+S.rows.map(function(r){return '<label style="margin-right:10px;white-space:nowrap"><input type="checkbox" data-pause="'+r.id+'"'+(r.pause!==false?' checked':'')+'> '+esc(r.name)+'</label>'}).join('')+'</div></div>';
+  h+='<div class="note" style="margin-top:10px">시험대비 때 미는 줄: '+SR().map(function(r){return '<label style="margin-right:10px;white-space:nowrap"><input type="checkbox" data-pause="'+r.id+'"'+(r.pause!==false?' checked':'')+'> '+esc(r.name)+'</label>'}).join('')+'</div></div>';
   return h;
 }
 var lastScrollStu=null,stuSetOpen=null,stuChain=true,stuPick=null,stuAddOpen=false,stuResetConfirm=null;
@@ -923,62 +986,75 @@ function libOptions(){
   return LIBCATS.map(function(c){return '<optgroup label="'+c[1]+'">'+S.library.filter(function(x){return x.cat===c[0]}).map(function(x){return '<option value="'+x.id+'">'+esc(x.name)+' ('+esc(x.dur)+')</option>'}).join('')+'</optgroup>'}).join('');
 }
 function stuDetail(st){
-  var n=nowYM(),nowM=ymIdx(n.y,n.m),now=nowIdx(),col=colors();
+  var now=nowIdx(),col=colors(),rows=SR();
   var h='<div class="sdet"><div class="sdh"><h2>'+esc(st.name)+'</h2><span class="meta">'+esc([st.group,st.school].filter(Boolean).join(' · '))+'</span>';
-  h+='<label class="f" style="flex-direction:row;align-items:center;gap:6px">학년 '+grSelect(st,'data-sg="'+st.id+'"')+'</label>';
-  h+='<label class="f" style="flex-direction:row;align-items:center;gap:6px" title="아래 출발 칸에 있던(있을) 달">출발 칸 기준 달 <input type="month" data-sd="'+st.id+'" value="'+esc(st.from||ymStr(nowM))+'"></label>';
-  var anySet=S.rows.some(function(r){return (st.starts&&st.starts[r.id])||(st.custom&&st.custom[r.id]&&st.custom[r.id].length)});
+  h+='<label class="f" style="flex-direction:row;align-items:center;gap:6px" title="시험대비 기간(중등)을 맞출 때만 써요">학년 '+grSelect(st,'data-sg="'+st.id+'"')+'</label>';
+  var fv=st.from?(/^\d{4}-\d{1,2}$/.test(st.from)?st.from+'-01':st.from):todayStr();
+  h+='<label class="f" style="flex-direction:row;align-items:center;gap:6px" title="아래 출발 칸 교재를 시작한(시작할) 날">출발 날짜 <input type="date" data-sd="'+st.id+'" value="'+esc(fv)+'"></label>';
+  var anySet=rows.some(function(r){return (st.starts&&st.starts[r.id])||(st.custom&&st.custom[r.id]&&st.custom[r.id].length)});
   var setOpen=stuSetOpen==null?!anySet:stuSetOpen;
   h+='<button class="btn sm'+(setOpen?' on':'')+'" data-s="settog">⚙ 출발 칸 설정 '+(setOpen?'▴':'▾')+'</button>';
   h+='<label class="tog" title="켜면: 한 교재를 미루거나 늘리면 그 뒤 교재가 모두 같이 밀려요. 끄면: 그 교재만 움직이고 겹치는 교재만 비켜나요 (순서 바꿀 때)"><input type="checkbox" id="stuchain"'+(stuChain?' checked':'')+'> 뒤 교재도 같이 이동</label>';
-  h+='<span class="navb"><button class="btn sm" data-s="scrl" data-d="-6" title="6개월 앞으로">◀◀</button><button class="btn sm" data-s="scrl" data-d="0">오늘</button><button class="btn sm" data-s="scrl" data-d="6" title="6개월 뒤로">▶▶</button></span>';
-  h+='<span class="qhelp" title="① [출발 칸 설정]에서 줄마다 지금 하는 교재를 고르면 기본 로드맵대로 이어져요.&#10;② 달력에서 블록을 끌어 옮기고, 오른쪽 끝을 끌어 개월 수를 바꾸고, 눌러서 빼기·반복·추가를 해요.&#10;③ 고친 줄은 이 학생만의 개인 계획이 돼요.&#10;④ 점선 아래 회색은 장부의 지난 기록(보기만)이에요.&#10;⑤ 탭·휴대폰: 손가락으로 밀면 달력이 좌우로 움직여요. 블록을 살짝 누르면 위에 버튼이 나와서 옮기기·개월 수를 바꿀 수 있어요 (끌어서 옮기기는 PC에서).">?</span>';
+  h+='<span class="navb"><button class="btn sm" data-s="scrl" data-d="-26" title="반년 앞으로">◀◀</button><button class="btn sm" data-s="scrl" data-d="0">오늘</button><button class="btn sm" data-s="scrl" data-d="26" title="반년 뒤로">▶▶</button></span>';
+  h+='<span class="qhelp" title="① [출발 칸 설정]에서 줄마다 지금 하는 교재를 고르고, 출발 날짜를 넣으면 기본 로드맵대로 날짜가 이어져요 (한 칸 = 1주).&#10;② 교재 블록을 누르면 아래에 버튼이 나와요: 1주씩 옮기기·늘리기, 반복, 추가, 빼기, ✓ 완료 표시.&#10;③ 완료를 표시하면 계획보다 몇 주 빠른지/늦은지 보이고, 뒤 교재 날짜가 완료일에 맞춰 다시 이어져요.&#10;④ 고친 줄은 이 학생만의 개인 계획이 돼요. 점선 아래 회색은 장부의 지난 기록(보기만)이에요.">?</span>';
   h+='<span class="sp" style="flex:1"></span><button class="btn danger" data-s="del" data-id="'+st.id+'">'+(stuDelConfirm?'정말 삭제할까요? (한 번 더)':'학생 삭제')+'</button><button class="btn" data-s="close">닫기</button></div>';
   var ex=stuExams(st);
-  if(st.school){var upc=ex.filter(function(o){return o.e+o.len>nowIdx()});h+='<div class="note" style="margin-bottom:6px">시험대비: '+(upc.length?upc.map(function(o){return '<b>'+esc(idxDate(o.e))+'부터 '+(o.x.weeks||4)+'주</b>'+(o.x.name?' ('+esc(o.x.name)+')':'')}).join(', ')+' — 이 기간만큼 '+S.rows.filter(function(r){return r.pause!==false}).map(function(r){return esc(r.name)}).join('·')+' 일정이 뒤로 밀려요':'예정된 시험대비 기간이 없어요 ('+esc(st.school)+')')+'</div>'}
-  var lo=nowM-3,hi=nowM+24,HI=histOn?histOf(st):null;
-  if(HI&&HI.length){HI.forEach(function(x){var a=ymParse(x.m);if(a!=null){lo=Math.min(lo,Math.floor(a/12)*12)}})}
-  S.rows.forEach(function(r){var P=stuPlan(st,r.id);if(P){lo=Math.min(lo,Math.floor(P.from));P.segs.forEach(function(g){hi=Math.max(hi,Math.ceil(g.cal+g.len)+2)})}});
-  hi=Math.min(hi,lo+132);var span=hi-lo;stuLo=lo;
-  var axis='<div class="saxis" style="width:'+(span*SW)+'px">';
-  var curM=ymIdx(nowYM().y,nowYM().m);
-  for(var i=lo;i<hi;i++){var m=i%12+1,g=gradeAtIdx(st,i),yy=Math.floor(i/12);axis+='<div class="ym'+(m===1?' jan':'')+(i===curM?' cur':'')+'" title="'+yy+'년 '+m+'월'+(g?' · '+grName(g):'')+'" style="left:'+((i-lo)*SW)+'px;width:'+SW+'px">'+(m===1||i===lo?'<span class="yr">'+yy+'년</span><span class="gr">'+(g?grName(g):'&nbsp;')+'</span>':'<span class="yr">&nbsp;</span><span class="gr">&nbsp;</span>')+'<span>'+m+'월</span></div>'}
+  if(st.school){var upc=ex.filter(function(o){return o.e+o.len>now});h+='<div class="note" style="margin-bottom:6px">시험대비: '+(upc.length?upc.map(function(o){return '<b>'+esc(idxDate(o.e))+'부터 '+(o.x.weeks||5)+'주</b>'+(o.x.name?' ('+esc(o.x.name)+')':'')}).join(', ')+' — 이 기간만큼 '+rows.filter(function(r){return r.pause!==false}).map(function(r){return esc(r.name)}).join('·')+' 일정이 뒤로 밀려요':'예정된 시험대비 기간이 없어요 ('+esc(st.school)+')')+'</div>'}
+  var lo=Math.floor(now)-13,hi=Math.ceil(now)+104,HI=histOn?histOf(st):null;
+  if(HI&&HI.length){HI.forEach(function(x){var a=ymParse(x.m);if(a!=null)lo=Math.min(lo,Math.floor(a)-2)})}
+  rows.forEach(function(r){var P=stuPlan(st,r.id);if(P){lo=Math.min(lo,Math.floor(P.from)-2);P.segs.forEach(function(g){hi=Math.max(hi,Math.ceil(g.cal+g.len)+8)})}});
+  hi=Math.min(hi,lo+572);var span=hi-lo;stuLo=lo;
+  // 달력 머리: 달마다 한 칸 (안쪽 세로줄 = 주)
+  var axis='<div class="saxis" style="width:'+(span*SW)+'px">',d0=idxDateObj(lo),yy=d0.getUTCFullYear(),mm=d0.getUTCMonth()+1,first=true,nd=new Date();
+  while(true){var a=ymIdx(yy,mm),b=ymIdx(mm===12?yy+1:yy,mm===12?1:mm+1);if(a>=hi)break;var L0=Math.max(a,lo),L1=Math.min(b,hi);
+    if(L1>L0){var isCur=(yy===nd.getFullYear()&&mm===nd.getMonth()+1);axis+='<div class="ym'+(mm===1?' jan':'')+(isCur?' cur':'')+'" title="'+yy+'년 '+mm+'월" style="left:'+((L0-lo)*SW)+'px;width:'+((L1-L0)*SW)+'px">'+(mm===1||first?'<span class="yr">'+yy+'년</span>':'<span class="yr">&nbsp;</span>')+'<span>'+mm+'월</span></div>';first=false}
+    mm++;if(mm>12){mm=1;yy++}}
   axis+='</div>';
+  // 배부 ◆ (기본 로드맵 배부 줄의 교재가 학생 주교재 계획에서 시작하는 날)
+  var distL='',mr=mainRow(),DR=S.rows.filter(function(r){return r.kind==='dist'});
+  if(mr&&DR.length){var MP=stuPlan(st,mr.id);if(MP){DR.forEach(function(dr){inRow(dr.id).forEach(function(db){
+    var an=inRow(mr.id).find(function(b){return b.start===db.start});if(!an)return;var g=MP.segs.find(function(x){return !x.exam&&x.item.ref===an.id});if(!g||g.cal<lo||g.cal>=hi)return;
+    distL+='<div class="sdist" style="left:'+((g.cal-lo)*SW)+'px" title="'+esc(db.title)+' — '+esc(idxDate(g.cal))+' 무렵 배부">◆ '+esc(db.title)+'</div>'})})}}
   var lanes='';
-  S.rows.forEach(function(r){
-    var P=stuPlan(st,r.id);
+  if(distL)lanes+='<div class="slane dl" style="width:'+(span*SW)+'px">'+distL+'</div>';
+  rows.forEach(function(r,ri){
+    var P=stuPlan(st,r.id),D=doneOf(st,r.id);
     lanes+='<div class="slane" data-srow="'+r.id+'" style="--sw:'+SW+'px;width:'+(span*SW)+'px">';
     if(P)P.segs.forEach(function(g){if(g.cal+g.len<=lo||g.cal>=hi)return;var past=g.cal+g.len<=now;
-      if(g.exam){lanes+='<div class="sblk exam'+(past?' past':'')+'" title="시험대비 '+esc(g.exam.name||'')+' · '+(g.exam.weeks||4)+'주" style="left:'+((g.cal-lo)*SW+2)+'px;width:'+Math.max(8,g.len*SW-4)+'px">시험<br>대비</div>';return}
-      var it=g.item,c=itemColor(st,r,it,col),on=stuPick&&stuPick.row===r.id&&stuPick.id===it.id;
-      lanes+='<div class="sblk mv'+(past?' past':'')+(g.part?' part'+g.part:'')+(on?' on':'')+'" data-ci="'+esc(it.id)+'" data-row="'+r.id+'" title="'+esc(it.title)+' · '+it.len+'개월'+(g.part?' (시험대비로 나뉨)':'')+' · 끌어서 옮기기 / 눌러서 고치기" style="left:'+((g.cal-lo)*SW+2)+'px;width:'+Math.max(8,g.len*SW-4)+'px;background:#'+c[0]+';color:#'+c[1]+'">'+(g.len*SW>30?esc(it.title).replace(/ \/ /g,'<br>+ '):'')+(g.part===1?'':'<div class="rh2" data-rh2="1"></div>')+'</div>'});
-    lanes+='<div class="today" style="left:'+((now-lo)*SW)+'px">'+(r===S.rows[0]?'<span>오늘</span>':'')+'</div></div>';
+      if(g.exam){lanes+='<div class="sblk exam'+(past?' past':'')+'" title="시험대비 '+esc(g.exam.name||'')+' · '+(g.exam.weeks||5)+'주" style="left:'+((g.cal-lo)*SW+2)+'px;width:'+Math.max(8,g.len*SW-4)+'px">시험<br>대비</div>';return}
+      var it=g.item,c=itemColor(st,r,it,col),on=stuPick&&stuPick.row===r.id&&stuPick.id===it.id,dn=D[it.id],df=dn?doneDiff(st,r.id,it.id):null;
+      var wl=Math.round(it.len*10)/10;
+      var badge=dn&&g.part!==1?'<span class="ck">✓ '+(df==null?'완료':(df>0?df+'주 늦음':(df<0?(-df)+'주 빠름':'계획대로')))+'</span>':'';
+      lanes+='<div class="sblk mv'+(past&&!dn?' past':'')+(dn?' done':'')+(g.part?' part'+g.part:'')+(on?' on':'')+'" data-ci="'+esc(it.id)+'" data-row="'+r.id+'" title="'+esc(it.title)+' · '+wl+'주 · '+esc(idxDate(g.cal))+'~'+esc(idxDate(g.cal+g.len-1/7))+(dn?' · 완료 '+esc(dn):'')+(g.part?' (시험대비로 나뉨)':'')+' · 끌어서 옮기기 / 눌러서 고치기·완료" style="left:'+((g.cal-lo)*SW+2)+'px;width:'+Math.max(8,g.len*SW-4)+'px;background:#'+c[0]+';color:#'+c[1]+'">'+(g.len*SW>34?esc(it.title).replace(/ \/ /g,'<br>+ '):'')+badge+(g.part===1||dn?'':'<div class="rh2" data-rh2="1"></div>')+'</div>'});
+    lanes+='<div class="today" style="left:'+((now-lo)*SW)+'px">'+(ri===0&&!distL?'<span>오늘</span>':'')+'</div></div>';
   });
   var rowsH='';
-  S.rows.forEach(function(r){
+  rows.forEach(function(r){
     var t=stuStatus(st,r.id),P=t.plan,custom=!!(st.custom&&st.custom[r.id]&&st.custom[r.id].length);
     rowsH+='<div class="sinfo"><b style="min-width:84px">'+esc(r.name)+'</b>';
     if(custom)rowsH+='<span class="cust">개인 계획</span><button class="btn sm" data-s="reset" data-id="'+st.id+'" data-row="'+r.id+'">'+(stuResetConfirm===r.id?'정말 기본으로 되돌릴까요? (한 번 더)':'기본 로드맵으로 되돌리기')+'</button>';
     else{var opts='<option value="">출발 칸 고르기</option>';inRow(r.id).forEach(function(b){opts+='<option value="'+b.id+'"'+(P&&P.sb&&P.sb.id===b.id?' selected':'')+'>'+esc(b.title)+' ('+esc(posText(b.start))+')</option>'});
       rowsH+='<select data-ss="'+st.id+'" data-row="'+r.id+'" style="max-width:260px">'+opts+'</select>'}
-    rowsH+='<span>지금: <b>'+(t.exam?'<span class="exb">시험대비</span> ~'+esc(idxDate(t.examEnd)):esc(t.cur?t.cur.title:'—'))+'</b></span><span>학년 기준: <b>'+esc(t.stdB?t.stdB.title:'—')+'</b></span>';
+    rowsH+='<span>지금: <b>'+(t.exam?'<span class="exb">시험대비</span> ~'+esc(idxDate(t.examEnd)):esc(t.cur?t.cur.title:(t.next?'(다음) '+t.next.title:'—')))+'</b></span><span>계획 대비: '+dgHTML(t.diff,t.unconf)+'</span>';
     if(P&&P.skipped.length)rowsH+='<span class="skips">건너뜀: '+P.skipped.map(function(k){return esc(k.b.title)+' <button class="btn sm" data-s="unskip" data-id="'+st.id+'" data-b="'+k.b.id+'">되살리기</button>'}).join(' ')+'</span>';
     rowsH+='</div>';
   });
   if(setOpen)h+='<div class="setbox">'+rowsH+'</div>';
   // 선택한 블록 편집 막대
-  var pk=stuPick&&rawItems(st,stuPick.row),pit=pk&&pk.items.find(function(x){return x.id===stuPick.id});
-  if(pit)h+='<div class="sbar2">';
+  var pk=stuPick&&rawItems(st,stuPick.row,true),pit=pk&&pk.items.find(function(x){return x.id===stuPick.id});
   if(pit){
-    h+='<span class="selname">'+esc(rowOf(stuPick.row).name)+' · <b>'+esc(pit.title)+'</b> '+pit.len+'개월</span>';
-    h+='<button class="btn sm" data-s="ci" data-op="left">◀ 한 달 앞</button><button class="btn sm" data-s="ci" data-op="right">한 달 뒤 ▶</button>';
-    h+='<button class="btn sm" data-s="ci" data-op="dec">− 1개월</button><button class="btn sm" data-s="ci" data-op="inc">＋ 1개월</button>';
+    var dn=doneOf(st,stuPick.row)[pit.id],df=dn?doneDiff(st,stuPick.row,pit.id):null;
+    h+='<div class="sbar2"><span class="selname">'+esc(rowOf(stuPick.row).name)+' · <b>'+esc(pit.title)+'</b> '+Math.round(pit.len*10)/10+'주</span>';
+    h+='<button class="btn sm" data-s="ci" data-op="left">◀ 1주 앞</button><button class="btn sm" data-s="ci" data-op="right">1주 뒤 ▶</button>';
+    h+='<button class="btn sm" data-s="ci" data-op="dec">− 1주</button><button class="btn sm" data-s="ci" data-op="inc">＋ 1주</button>';
     h+='<button class="btn sm" data-s="ci" data-op="dup">반복(n차) 추가</button><button class="btn sm" data-s="ci" data-op="addafter">＋ 뒤에 교재 추가</button>';
-    h+='<button class="btn sm danger" data-s="ci" data-op="del">이 학생만 빼기</button><button class="btn sm" data-s="ci" data-op="unpick">선택 해제</button>';
-    h+='</div>';
+    h+='<button class="btn sm danger" data-s="ci" data-op="del">이 학생만 빼기</button>';
+    h+='<span class="donebar">'+(dn?'<b style="color:#1d6b3a">✓ '+esc(dn)+' 완료</b> '+dgHTML(df)+' <button class="btn sm" data-s="ci" data-op="undone">완료 취소</button>'
+      :'<button class="btn sm primary" data-s="ci" data-op="done">✓ 오늘 완료</button><input type="date" id="done-date" value="'+todayStr()+'"><button class="btn sm" data-s="ci" data-op="donedate">이 날짜로 완료</button>')+'</span>';
+    h+='<button class="btn sm" data-s="ci" data-op="unpick">선택 해제</button></div>';
   }
   if(stuAddOpen&&pit){
-    h+='<div class="sbar2 addf"><b>'+esc(pit.title)+'</b> 뒤에 추가: <select id="sa-lib"><option value="">교재 목록에서 고르기</option>'+libOptions()+'</select> 또는 <input id="sa-title" placeholder="직접 입력" style="width:130px"> <input id="sa-len" type="number" min="1" value="1" style="width:56px">개월 <button class="btn sm primary" data-s="ci" data-op="addgo">추가</button><button class="btn sm" data-s="ci" data-op="addcancel">취소</button></div>';
+    h+='<div class="sbar2 addf"><b>'+esc(pit.title)+'</b> 뒤에 추가: <select id="sa-lib"><option value="">교재 목록에서 고르기</option>'+libOptions()+'</select> 또는 <input id="sa-title" placeholder="직접 입력" style="width:130px"> <input id="sa-len" type="number" min="1" value="4" style="width:56px">주 <button class="btn sm primary" data-s="ci" data-op="addgo">추가</button><button class="btn sm" data-s="ci" data-op="addcancel">취소</button></div>';
   }
   var hLab='',hLanes='';
   if(HI&&HI.length){
@@ -988,16 +1064,16 @@ function stuDetail(st){
     HR.forEach(function(nm,k){
       hLab+='<div class="hlab">'+esc(nm)+'</div>';
       hLanes+='<div class="slane hist" style="--sw:'+SW+'px;width:'+(span*SW)+'px">';
-      HI.filter(function(x){return x.r===k}).forEach(function(x){var a=ymParse(x.m);if(a==null||a+x.n<=lo||a>=hi)return;
-        var hc=histColor(x.t,k);hLanes+='<div class="hblk h'+k+'" title="'+esc(x.m)+' · '+esc(x.t)+'" style="left:'+((a-lo)*SW+2)+'px;width:'+Math.max(8,x.n*SW-4)+'px;background:#'+hc[0]+';color:#'+hc[1]+';border-color:#'+blend(hc[0],'000000',0.12)+'">'+(x.n*SW>30?esc(x.t):'')+'</div>'});
+      HI.filter(function(x){return x.r===k}).forEach(function(x){var a=ymParse(x.m);if(a==null)return;var wn=x.n*M2W;if(a+wn<=lo||a>=hi)return;
+        var hc=histColor(x.t,k);hLanes+='<div class="hblk h'+k+'" title="'+esc(x.m)+' · '+esc(x.t)+'" style="left:'+((a-lo)*SW+2)+'px;width:'+Math.max(8,wn*SW-4)+'px;background:#'+hc[0]+';color:#'+hc[1]+';border-color:#'+blend(hc[0],'000000',0.12)+'">'+(wn*SW>30?esc(x.t):'')+'</div>'});
       hLanes+='<div class="today" style="left:'+((now-lo)*SW)+'px"></div></div>';
     });
   }
-  h+='<div style="display:grid;grid-template-columns:max-content minmax(0,1fr);margin-top:8px"><div>'+'<div style="height:46px"></div>'+S.rows.map(function(r){var t=stuStatus(st,r.id);var cu=st.custom&&st.custom[r.id]&&st.custom[r.id].length;return '<div class="plab'+(r.kind==='vocab'?' v':'')+'" title="지금: '+esc(t.exam?'시험대비':(t.cur?t.cur.title:'—'))+' · 학년 기준: '+esc(t.oor?'로드맵 밖':(t.stdB?t.stdB.title:'—'))+'"><span>'+esc(r.name)+(cu?' <i class=\'cdot\' title=\'개인 계획\'>●</i>':'')+'</span></div>'}).join('')+hLab+'</div>';
+  h+='<div style="display:grid;grid-template-columns:max-content minmax(0,1fr);margin-top:8px"><div>'+'<div style="height:46px"></div>'+(distL?'<div class="hlab" style="height:22px;background:#fffaf2;color:#b54708">배부 ◆</div>':'')+rows.map(function(r){var t=stuStatus(st,r.id);var cu=st.custom&&st.custom[r.id]&&st.custom[r.id].length;return '<div class="plab'+(r.kind==='vocab'?' v':'')+'" title="지금: '+esc(t.exam?'시험대비':(t.cur?t.cur.title:'—'))+'"><span>'+esc(r.name)+(cu?' <i class=\'cdot\' title=\'개인 계획\'>●</i>':'')+'</span>'+(t.diff!=null?dgHTML(t.diff):'')+'</div>'}).join('')+hLab+'</div>';
   h+='<div class="stl" id="stl"><div class="stlin" style="width:'+(span*SW)+'px">'+axis+lanes+hLanes+'</div></div></div>';
   if(!(HI&&HI.length)&&Object.keys(HIST.students||{}).length)h+='<div class="note" style="margin-top:6px">이 학생은 지난 기록(장부)에 이름이 없어요.</div>';
   h+='</div>';
-  if(!stuKeepScroll)stuScrollToday=Math.max(0,(now-lo-3)*SW);
+  if(!stuKeepScroll)stuScrollToday=Math.max(0,(now-lo-6)*SW);
   return h;
 }
 var stuLo=0,stuKeepScroll=false;
@@ -1023,7 +1099,7 @@ function saveHist(obj){
 function ensureCustom(st,rowId){
   st.custom=st.custom||{};
   if(st.custom[rowId]&&st.custom[rowId].length)return st.custom[rowId];
-  var R=rawItems(st,rowId);if(!R)return null;
+  var R=rawItems(st,rowId,true);if(!R)return null;
   st.custom[rowId]=R.items.map(function(x){return {id:x.id,ref:x.ref,title:x.title,cal:x.cal,len:x.len}});
   return st.custom[rowId];
 }
@@ -1044,6 +1120,11 @@ function ciOp(op){
   if(op==='unpick'){stuPick=null;stuAddOpen=false;render();return}
   if(op==='addafter'){stuAddOpen=true;render();return}
   if(op==='addcancel'){stuAddOpen=false;render();return}
+  if(op==='done'||op==='donedate'||op==='undone'){var dt=op==='done'?todayStr():((document.getElementById('done-date')||{}).value||'');
+    if(op!=='undone'&&!dt){toast('완료한 날짜를 골라 주세요');return}
+    st.done=st.done||{};st.done[row]=st.done[row]||{};
+    if(op==='undone')delete st.done[row][id];else st.done[row][id]=dt;
+    commitKeep();toast(op==='undone'?'완료 표시를 지웠어요':'완료로 표시했어요 — 뒤 교재 날짜를 다시 맞췄어요');return}
   ciEdit(st,row,id,function(it,L){
     var after=function(){return L.filter(function(x){return x!==it&&x.cal>=it.cal})};
     if(op==='left'){if(stuChain)after().forEach(function(x){x.cal-=1});it.cal-=1;resolveItems(L,it)}
@@ -1055,7 +1136,7 @@ function ciOp(op){
       if(stuChain)after().forEach(function(x){x.cal+=c.len});L.push(c);resolveItems(L,c);stuPick={row:row,id:c.id}}
     else if(op==='del'){var i=L.indexOf(it);L.splice(i,1);if(stuChain)L.forEach(function(x){if(x.cal>it.cal)x.cal-=it.len});stuPick=null}
     else if(op==='addgo'){var lid=(document.getElementById('sa-lib')||{}).value,tt=((document.getElementById('sa-title')||{}).value||'').trim(),ln=Math.max(1,parseInt((document.getElementById('sa-len')||{}).value,10)||1);
-      var lx=lid&&S.library.find(function(o){return o.id===lid});if(lx){tt=lx.name}if(!tt){toast('교재를 고르거나 입력해 주세요');return}
+      var lx=lid&&S.library.find(function(o){return o.id===lid});if(lx){tt=lx.name;if(!(document.getElementById('sa-len')||{}).dataset.touched)ln=durMonths(lx.dur)}if(!tt){toast('교재를 고르거나 입력해 주세요');return}
       var refb=S.blocks.find(function(b){return b.row===row&&b.title.replace(/\s/g,'').toLowerCase()===tt.replace(/\s/g,'').toLowerCase()});
       var nw={id:uid('c'),ref:refb?refb.id:'',title:tt,cal:it.cal+it.len,len:ln};
       if(stuChain)after().forEach(function(x){x.cal+=ln});L.push(nw);resolveItems(L,nw);stuAddOpen=false;stuPick={row:row,id:nw.id}}
@@ -1095,19 +1176,19 @@ function stuAct(a,el){
   if(a==='open'){stuSetOpen=null;stuSel=id;stuDelConfirm=false;stuPick=null;stuAddOpen=false;stuResetConfirm=null;render();var w=document.getElementById('stuwrap');if(w)w.scrollTop=0;return}
   if(a==='close'){stuSel=null;render();return}
   if(a==='scrl'){var tl=document.getElementById('stl');if(!tl)return;var d=+el.getAttribute('data-d');
-    if(d===0)tl.scrollTo({left:Math.max(0,(nowIdx()-stuLo-3)*SW),behavior:'smooth'});else tl.scrollBy({left:d*SW,behavior:'smooth'});return}
+    if(d===0)tl.scrollTo({left:Math.max(0,(nowIdx()-stuLo-6)*SW),behavior:'smooth'});else tl.scrollBy({left:d*SW,behavior:'smooth'});return}
   if(a==='exams'){stuExamOpen=!stuExamOpen;render();return}
-  if(a==='settog'){var st2=stuOf(stuSel);var any=st2&&S.rows.some(function(r){return (st2.starts&&st2.starts[r.id])||(st2.custom&&st2.custom[r.id]&&st2.custom[r.id].length)});var cur=stuSetOpen==null?!any:stuSetOpen;stuSetOpen=!cur;render();return}
+  if(a==='settog'){var st2=stuOf(stuSel);var any=st2&&SR().some(function(r){return (st2.starts&&st2.starts[r.id])||(st2.custom&&st2.custom[r.id]&&st2.custom[r.id].length)});var cur=stuSetOpen==null?!any:stuSetOpen;stuSetOpen=!cur;render();return}
   if(a==='histload'){var hf=document.getElementById('histfile');if(hf)hf.click();return}
   if(a==='examclose'){stuExamOpen=false;render();return}
   if(a==='examadd'){var sc=(document.getElementById('ex-school')||{}).value,sd=(document.getElementById('ex-start')||{}).value;
     if(!sc){toast('중등 학생의 학교가 먼저 있어야 해요');return}if(!sd){toast('시작일을 골라 주세요');return}
-    S.exams.push({id:uid('e'),school:sc,grade:+document.getElementById('ex-grade').value,start:sd,weeks:Math.max(1,parseInt(document.getElementById('ex-weeks').value,10)||4),name:(document.getElementById('ex-name').value||'').trim()});commit();toast('시험대비 기간을 넣었어요');return}
+    S.exams.push({id:uid('e'),school:sc,grade:+document.getElementById('ex-grade').value,start:sd,weeks:Math.max(1,parseInt(document.getElementById('ex-weeks').value,10)||5),name:(document.getElementById('ex-name').value||'').trim()});commit();toast('시험대비 기간을 넣었어요');return}
   if(a==='examdel'){S.exams=S.exams.filter(function(x){return x.id!==id});commit();return}
   if(a==='paste'){stuPaste=true;render();setTimeout(function(){var t=document.getElementById('pastebox');if(t)t.focus()},30);return}
   if(a==='pasteclose'){stuPaste=false;render();return}
   if(a==='pastego'){pasteStudents((document.getElementById('pastebox')||{}).value||'');return}
-  if(a==='add1'){var x={id:uid('s'),name:'새 학생',group:'',school:'',grade:0,gy:0,from:'',starts:{},skips:{}};S.students.push(x);stuSel=x.id;commit();return}
+  if(a==='add1'){var x={id:uid('s'),name:'새 학생',group:'',school:'',grade:0,gy:0,from:'',starts:{},skips:{},done:{}};S.students.push(x);stuSel=x.id;commit();return}
   if(a==='del'&&st){if(!stuDelConfirm){stuDelConfirm=true;render();return}S.students=S.students.filter(function(x){return x.id!==id});stuSel=null;stuDelConfirm=false;commit();toast('학생을 삭제했어요 (되돌리기 가능)');return}
   if(a==='ci'){ciOp(el.getAttribute('data-op'));return}
   if(a==='reset'&&st){var rw=el.getAttribute('data-row');if(stuResetConfirm!==rw){stuResetConfirm=rw;render();return}if(st.custom)delete st.custom[rw];stuResetConfirm=null;stuPick=null;commitKeep();toast('기본 로드맵 계획으로 되돌렸어요');return}
@@ -1138,7 +1219,7 @@ app.addEventListener('click',function(e){
 app.addEventListener('change',function(e){
   var t=e.target,y=nowYM().y;
   if(t.hasAttribute('data-sg')){var st=stuOf(t.getAttribute('data-sg'));if(st){st.grade=+t.value;st.gy=st.grade?y:0;commit()}}
-  else if(t.hasAttribute('data-ss')){stuSetOpen=true;var s2=stuOf(t.getAttribute('data-ss'));if(s2){s2.starts=s2.starts||{};var r=t.getAttribute('data-row');if(t.value)s2.starts[r]=t.value;else delete s2.starts[r];if(!s2.from){var n=nowYM();s2.from=ymStr(ymIdx(n.y,n.m))}commit()}}
+  else if(t.hasAttribute('data-ss')){stuSetOpen=true;var s2=stuOf(t.getAttribute('data-ss'));if(s2){s2.starts=s2.starts||{};var r=t.getAttribute('data-row');if(t.value)s2.starts[r]=t.value;else delete s2.starts[r];if(!s2.from)s2.from=todayStr();commit()}}
   else if(t.hasAttribute('data-sd')){var s3=stuOf(t.getAttribute('data-sd'));if(s3&&t.value){s3.from=t.value;commit()}}
   else if(t.hasAttribute('data-sf')){stuFilter[t.getAttribute('data-sf')]=t.value;render()}
   else if(t.id==='stuchain'){stuChain=t.checked}
@@ -1146,7 +1227,7 @@ app.addEventListener('change',function(e){
   else if(t.id==='histfile'){var f=t.files&&t.files[0];if(!f)return;f.text().then(function(txt){try{var o=JSON.parse(txt);if(!o||!o.students)throw 0;saveHist({rows:o.rows||[],students:o.students,made:o.made||''})}catch(x){toast('지난 기록 파일이 아니에요')}})}
   else if(t.hasAttribute('data-pause')){var rr=rowOf(t.getAttribute('data-pause'));if(rr){rr.pause=t.checked;commit()}}
 });
-app.addEventListener('input',function(e){var t=e.target;if(t.getAttribute('data-sf')==='q'){stuFilter.q=t.value;var p=t.selectionStart;render();var n=app.querySelector('[data-sf=q]');if(n){n.focus();try{n.setSelectionRange(p,p)}catch(x){}}}});
+app.addEventListener('input',function(e){var t=e.target;if(t.id==='sa-len')t.dataset.touched='1';if(t.getAttribute('data-sf')==='q'){stuFilter.q=t.value;var p=t.selectionStart;render();var n=app.querySelector('[data-sf=q]');if(n){n.focus();try{n.setSelectionRange(p,p)}catch(x){}}}});
 
 // ---------- 탭·휴대폰 손가락 밀기 (가로·세로) ----------
 // 앱 안 액자 화면 등에서 브라우저 기본 스크롤이 막히는 경우가 있어, 손가락 움직임을 직접 받아 화면을 움직임
@@ -1189,7 +1270,7 @@ app.addEventListener('input',function(e){var t=e.target;if(t.getAttribute('data-
 if(!ONLINE){
   try{var loc=localStorage.getItem(LS_KEY);if(loc){var emb=S.students;S=fromStore(JSON.parse(loc));if(!S.students.length&&emb&&emb.length)S.students=emb}}catch(e){}
   try{var hh=localStorage.getItem(LS_KEY+'-history');if(hh)HIST=JSON.parse(hh)}catch(e){}
-  synced=toStore(S);if(fixRowNames())push();hist=[JSON.stringify(S)];hi=0;synced=toStore(S);render();
+  synced=toStore(S);if(migrate25())push();hist=[JSON.stringify(S)];hi=0;synced=toStore(S);render();
 }else{
   render();
   try{
