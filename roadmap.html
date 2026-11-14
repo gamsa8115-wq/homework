@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>학원 로드맵 기간표 v25</title>
+<title>학원 로드맵 기간표 v27</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style id="app-style">
@@ -220,7 +220,7 @@ var FIREBASE_CONFIG = {           // 숙제관리 앱과 같은 Firebase 프로�
 var DB_PATH = 'roadmap_planner_v1';      // 이 프로그램 전용 저장 위치 — ⚠️ homework_v4(숙제관리), academy 와 절대 겹치지 않게
 var FB_APP_NAME = 'roadmap_planner';     // 별도 앱 인스턴스 이름 (다른 프로그램과 섞이지 않게)
 /* ★ 버전 — 고칠 때마다 숫자를 올리면 화면 왼쪽 위에 표시돼요 */
-var RM_VERSION = 'v25';
+var RM_VERSION = 'v27';
 var RM_DATE = '2026-11-14';
 var DEFAULT_LIB = [{"id": "L000", "cat": "main", "name": "Alphabet 1", "dur": "4주"}, {"id": "L001", "cat": "main", "name": "Alphabet 2", "dur": "4주"}, {"id": "L002", "cat": "main", "name": "Phonics 1", "dur": "5주"}, {"id": "L003", "cat": "main", "name": "Phonics 2", "dur": "5주"}, {"id": "L004", "cat": "main", "name": "Phonics 3", "dur": "5주"}, {"id": "L005", "cat": "main", "name": "Phonics 4", "dur": "5주"}, {"id": "L006", "cat": "main", "name": "Phonics 5", "dur": "5주"}, {"id": "L007", "cat": "main", "name": "Phonics 6", "dur": "5주"}, {"id": "L008", "cat": "main", "name": "Reading 1", "dur": "5주"}, {"id": "L009", "cat": "main", "name": "Reading 2", "dur": "5주"}, {"id": "L010", "cat": "main", "name": "Reading 3", "dur": "5주"}, {"id": "L011", "cat": "main", "name": "Reading 4", "dur": "5주"}, {"id": "L012", "cat": "main", "name": "Reading 5", "dur": "5주"}, {"id": "L013", "cat": "main", "name": "Reading 6", "dur": "5주"}, {"id": "L014", "cat": "main", "name": "Basic 1", "dur": "5주"}, {"id": "L015", "cat": "main", "name": "Basic 2", "dur": "5주"}, {"id": "L016", "cat": "main", "name": "Basic 3", "dur": "5주"}, {"id": "L017", "cat": "main", "name": "Basic 4", "dur": "5주"}, {"id": "L018", "cat": "main", "name": "Basic 5", "dur": "5주"}, {"id": "L019", "cat": "main", "name": "Basic 6", "dur": "5주"}, {"id": "L020", "cat": "main", "name": "Basic 7", "dur": "5주"}, {"id": "L021", "cat": "main", "name": "Basic 8", "dur": "5주"}, {"id": "L022", "cat": "main", "name": "Basic 9", "dur": "5주"}, {"id": "L023", "cat": "main", "name": "Basic 10", "dur": "5주"}, {"id": "L024", "cat": "main", "name": "Basic 11", "dur": "5주"}, {"id": "L025", "cat": "main", "name": "Basic 12", "dur": "5주"}, {"id": "L026", "cat": "main", "name": "5형식 (주+동+시)", "dur": "4주"}, {"id": "L027", "cat": "main", "name": "5형식 (부사구)", "dur": "4주"}, {"id": "L028", "cat": "main", "name": "5형식 (준동사)", "dur": "4주"}, {"id": "L029", "cat": "main", "name": "5형식 (분석/해석하기)", "dur": "4주"}, {"id": "L030", "cat": "main", "name": "3800 해석 (1단계)", "dur": "17주"}, {"id": "L031", "cat": "main", "name": "3800 해석 (2단계)", "dur": "17주"}, {"id": "L032", "cat": "main", "name": "천문장 입문(Test)", "dur": "22주"}, {"id": "L033", "cat": "main", "name": "천문장 기본(Test)", "dur": "22주"}, {"id": "L034", "cat": "main", "name": "고등 미니 모의고사", "dur": "13주"}, {"id": "L087", "cat": "main", "name": "Beginner Sentence build up", "dur": "1일"}, {"id": "L088", "cat": "main", "name": "Inter Sentence build up", "dur": "1일"}, {"id": "L035", "cat": "sub", "name": "Alphabet 쓰기 1", "dur": "4주"}, {"id": "L036", "cat": "sub", "name": "Alphabet 쓰기 2", "dur": "4주"}, {"id": "L037", "cat": "sub", "name": "Ph 워크북 1", "dur": "8주"}, {"id": "L038", "cat": "sub", "name": "Ph 워크북 2", "dur": "8주"}, {"id": "L039", "cat": "sub", "name": "Ph 워크북 3", "dur": "8주"}, {"id": "L040", "cat": "sub", "name": "Ph 워크북 4", "dur": "8주"}, {"id": "L041", "cat": "sub", "name": "Ph 워크북 5", "dur": "8주"}, {"id": "L042", "cat": "sub", "name": "Ph 워크북 6", "dur": "8주"}, {"id": "L043", "cat": "sub", "name": "Ph Speed 워크북 1", "dur": "8주"}, {"id": "L044", "cat": "sub", "name": "Ph Speed 워크북 2", "dur": "8주"}, {"id": "L045", "cat": "sub", "name": "Ph Speed 워크북 3", "dur": "8주"}, {"id": "L046", "cat": "sub", "name": "워크북 E1", "dur": "8주"}, {"id": "L047", "cat": "sub", "name": "워크북 E2", "dur": "8주"}, {"id": "L048", "cat": "sub", "name": "워크북 E3", "dur": "8주"}, {"id": "L049", "cat": "sub", "name": "워크북 E4", "dur": "8주"}, {"id": "L050", "cat": "sub", "name": "워크북 E5", "dur": "8주"}, {"id": "L051", "cat": "sub", "name": "워크북 E6", "dur": "8주"}, {"id": "L052", "cat": "sub", "name": "워크북 M", "dur": "5주"}, {"id": "L053", "cat": "sub", "name": "3800 드릴 (1단계)", "dur": "35주"}, {"id": "L054", "cat": "sub", "name": "3800 드릴 (2단계)", "dur": "35주"}, {"id": "L055", "cat": "sub", "name": "3800 드릴 (3단계)", "dur": "35주"}, {"id": "L056", "cat": "sub", "name": "Prerequisite 초 (A)", "dur": "6주"}, {"id": "L057", "cat": "sub", "name": "Prerequisite 중 intro (A)", "dur": "6주"}, {"id": "L058", "cat": "sub", "name": "Prerequisite 초 (B)", "dur": "6주"}, {"id": "L059", "cat": "sub", "name": "Prerequisite 중 intro (B)", "dur": "6주"}, {"id": "L060", "cat": "sub", "name": "초등 1단계 (단어장)", "dur": "17주"}, {"id": "L061", "cat": "sub", "name": "초등 2단계 (단어장)", "dur": "17주"}, {"id": "L062", "cat": "sub", "name": "3인칭 일반동사 (단어장)", "dur": "4주"}, {"id": "L063", "cat": "sub", "name": "과거 일반동사 (단어장)", "dur": "4주"}, {"id": "L064", "cat": "sub", "name": "과거/과거분사 (단어장)", "dur": "4주"}, {"id": "L065", "cat": "sub", "name": "중등 1단계 (단어장)", "dur": "13주"}, {"id": "L066", "cat": "sub", "name": "중등 2단계 (단어장)", "dur": "13주"}, {"id": "L067", "cat": "voca", "name": "초등 주니어 20.65", "dur": "17주"}, {"id": "L068", "cat": "voca", "name": "초등 1단계 40.70 (리콜)", "dur": "17주"}, {"id": "L069", "cat": "voca", "name": "초등 1단계 40.70 (객관식)", "dur": "17주"}, {"id": "L070", "cat": "voca", "name": "초등 1단계 40.70 (주관식)", "dur": "17주"}, {"id": "L071", "cat": "voca", "name": "초등 2단계 40.70 (리콜)", "dur": "17주"}, {"id": "L072", "cat": "voca", "name": "초등 2단계 40.70 (객관식)", "dur": "17주"}, {"id": "L073", "cat": "voca", "name": "초등 2단계 40.70 (주관식)", "dur": "17주"}, {"id": "L074", "cat": "voca", "name": "3인칭 일반동사", "dur": "4주"}, {"id": "L075", "cat": "voca", "name": "과거 일반동사", "dur": "4주"}, {"id": "L076", "cat": "voca", "name": "과거 과거분사", "dur": "4주"}, {"id": "L077", "cat": "voca", "name": "중등 1단계 100.50 (리콜)", "dur": "13주"}, {"id": "L078", "cat": "voca", "name": "중등 1단계 100.50 (객관식)", "dur": "13주"}, {"id": "L079", "cat": "voca", "name": "중등 1단계 100.50 (주관식)", "dur": "13주"}, {"id": "L080", "cat": "voca", "name": "중등 2단계 100.50 (리콜)", "dur": "13주"}, {"id": "L081", "cat": "voca", "name": "중등 2단계 100.50 (객관식)", "dur": "13주"}, {"id": "L082", "cat": "voca", "name": "중등 2단계 100.50 (주관식)", "dur": "13주"}, {"id": "L083", "cat": "voca", "name": "한끝 고등 기본 30.42", "dur": "9주"}, {"id": "L084", "cat": "voca", "name": "5형식 단어", "dur": "4주"}, {"id": "L085", "cat": "voca", "name": "천문장 입문 단어 20.88", "dur": "22주"}, {"id": "L086", "cat": "voca", "name": "천문장 기본 단어 25.88", "dur": "22주"}, {"id": "L089", "cat": "short", "name": "중2. 1학기 중간", "dur": "5주"}, {"id": "L090", "cat": "short", "name": "중2. 1학기 중간- 부교재", "dur": "5주"}, {"id": "L091", "cat": "short", "name": "중3. 1학기 중간", "dur": "5주"}, {"id": "L092", "cat": "short", "name": "중3. 1학기 중간- 부교재", "dur": "5주"}, {"id": "L093", "cat": "short", "name": "중2. 1학기 기말", "dur": "5주"}, {"id": "L094", "cat": "short", "name": "중2. 1학기 기말- 부교재", "dur": "5주"}, {"id": "L095", "cat": "short", "name": "중3. 1학기 기말", "dur": "5주"}, {"id": "L096", "cat": "short", "name": "중3. 1학기 기말- 부교재", "dur": "5주"}, {"id": "L097", "cat": "short", "name": "중1. 2학기 중간", "dur": "5주"}, {"id": "L098", "cat": "short", "name": "중1. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L099", "cat": "short", "name": "중2. 2학기 중간", "dur": "5주"}, {"id": "L100", "cat": "short", "name": "중2. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L101", "cat": "short", "name": "중3. 2학기 중간", "dur": "5주"}, {"id": "L102", "cat": "short", "name": "중3. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L103", "cat": "short", "name": "중1. 2학기 기말", "dur": "5주"}, {"id": "L104", "cat": "short", "name": "중1. 2학기 기말- 부교재", "dur": "5주"}, {"id": "L105", "cat": "short", "name": "중2. 2학기 기말", "dur": "5주"}, {"id": "L106", "cat": "short", "name": "중2. 2학기 기말- 부교재", "dur": "5주"}, {"id": "L107", "cat": "short", "name": "중3. 2학기 기말", "dur": "5주"}, {"id": "L108", "cat": "short", "name": "중3. 2학기 기말- 부교재", "dur": "5주"}];
 var EMBED = document.getElementById('roadmap-data').textContent;   // 처음 한 번 넣을 기본 로드맵
@@ -238,6 +238,13 @@ var VOC = [
 var ETC = ["etc","기타","D5DBE2","2F3A45"];
 var GRADE_COL = ["8C96A0","6E7B8B","4F6475","34495E","2B3A4A","22303D","1B2631"];
 
+// ★ v25: 기간표 엑셀(v16)과 같은 색 — 교재 이름 앞부분으로 정함 (위에서부터 먼저 맞는 것)
+var XCOL=[['Alphabet','FDE2C4'],['Ph Speed 워크북','F9C6A0'],['Ph 워크북','FBD3B0'],['Phonics','F6B98A'],['Reading','FFE08A'],['Basic','C8E6A0'],
+ ['워크북 E','DDEFC4'],['워크북 M','DDEFC4'],['5형식','B5E3D8'],['3800 드릴','A9CCF0'],['3800 해석','C6DBF5'],['천문장 입문 단어','E0D3F5'],['천문장 기본 단어','E0D3F5'],
+ ['천문장','CBB6EE'],['고등','F2C4DE'],['초등 주니어','FFF1C2'],['초등 1단계','FFE6A8'],['초등 2단계','FFD98A'],['중등 1단계','D4EDC9'],['중등 2단계','B9E0A8'],
+ ['3인칭','D4EDC9'],['과거','D4EDC9']];
+function xcolor(t){t=String(t||'');for(var i=0;i<XCOL.length;i++)if(t.indexOf(XCOL[i][0])===0)return XCOL[i][1];return null}
+var STG=[['Alphabet','Alphabet','7A5AF8'],['Phonics','Phonics','E04F16'],['Reading','Reading','CA8504'],['Basic','Basic','4CA30D'],['5형식','5형식','0E9384'],['3800 해석','3800','1570EF'],['천문장','천문장','6941C6'],['고등','고등 미니 모의고사','C11574']];
 function famList(kind){return kind==='vocab'?VOC:FAM}
 function detect(title,kind){
   var s=(title||'').toLowerCase().replace(/\s/g,'');
@@ -263,8 +270,8 @@ function mainRow(){return S.rows.find(function(r){return r.name==='수업 주교
 function SR(){return S.rows.filter(function(r){return r.kind!=='dist'})}
 // 주교재 줄의 교재 계열로 '단계' 띠 만들기
 function stages(){var r=mainRow(),out=[];if(!r)return out;
-  inRow(r.id).forEach(function(b){var k=famOf(b);var L=out[out.length-1];if(L&&L.k===k)L.e=b.start+b.len;else out.push({k:k,s:b.start,e:b.start+b.len})});
-  return out.map(function(o){var fi=famInfo(o.k,'class');return {s:o.s,e:o.e,name:fi.f[1],bg:fi.f[2],fg:fi.f[3]}})}
+  inRow(r.id).forEach(function(b){var k=-1;STG.forEach(function(x,i){if(k<0&&b.title.indexOf(x[0])===0)k=i});var L=out[out.length-1];if(L&&L.k===k)L.e=b.start+b.len;else out.push({k:k,s:b.start,e:b.start+b.len,t:b.title})});
+  return out.map(function(o){var x=STG[o.k];return x?{s:o.s,e:o.e,name:x[1],bg:x[2],fg:'FFFFFF'}:{s:o.s,e:o.e,name:o.t,bg:'8C96A0',fg:'FFFFFF'}})}
 function famOf(b){var r=rowOf(b.row);return b.fam||detect(b.title,r?r.kind:'class')}
 function colors(){ // id -> [bg,fg]
   var out={};
@@ -273,7 +280,7 @@ function colors(){ // id -> [bg,fg]
     list.forEach(function(b){var k=famOf(b);(groups[k]=groups[k]||[]).push(b)});
     Object.keys(groups).forEach(function(k){
       var g=groups[k],fi=famInfo(k,r.kind);
-      g.forEach(function(b,i){var bg=fi.f[2];if(fi.next&&g.length>1)bg=blend(fi.f[2],fi.next,0.55*i/g.length);out[b.id]=[bg,fi.f[3]]});
+      g.forEach(function(b,i){var x=xcolor(b.title);if(x){out[b.id]=[x,'1F2933'];return}var bg=fi.f[2];if(fi.next&&g.length>1)bg=blend(fi.f[2],fi.next,0.55*i/g.length);out[b.id]=[bg,fi.f[3]]});
     });
   });
   return out;
@@ -312,7 +319,7 @@ function toStore(st){
   o.exams={};(st.exams||[]).forEach(function(x){o.exams[x.id]={school:x.school||'',grade:x.grade||0,start:x.start||'',weeks:x.weeks||5,name:x.name||''}});
   st.blocks.forEach(function(b){o.blocks[b.id]={row:b.row,start:b.start,len:b.len,title:b.title,fam:b.fam||''}});
   o.students={};
-  (st.students||[]).forEach(function(x){o.students[x.id]={name:x.name,group:x.group||'',school:x.school||'',grade:x.grade||0,gy:x.gy||0,from:x.from||'',starts:x.starts||{},skips:x.skips||{},custom:x.custom||{},done:x.done||{}}});
+  (st.students||[]).forEach(function(x){o.students[x.id]={name:x.name,group:x.group||'',school:x.school||'',grade:x.grade||0,gy:x.gy||0,from:x.from||'',starts:x.starts||{},skips:x.skips||{},custom:x.custom||{},done:x.done||{},fromR:x.fromR||{}}});
   // ⚠️ 깊은 복사 — 화면 데이터(S)와 '마지막 저장본'이 같은 객체를 공유하면 고친 내용이 저장되지 않음 (v11에서 고침)
   return JSON.parse(JSON.stringify(o));
 }
@@ -320,7 +327,7 @@ function fromStore(o){
   o=o||{};var m=o.meta||{};
   var rows=Object.keys(o.rows||{}).map(function(k){var r=o.rows[k];return {id:k,name:r.name,kind:r.kind||'class',order:r.order||0,pause:r.pause!==false}}).sort(function(a,b){return a.order-b.order}).map(function(r){return {id:r.id,name:r.name,kind:r.kind,pause:r.pause}});
   var blocks=Object.keys(o.blocks||{}).map(function(k){var b=o.blocks[k];return {id:k,row:b.row,start:+b.start||0,len:Math.max(1,+b.len||1),title:b.title||'',fam:b.fam||''}});
-  var students=Object.keys(o.students||{}).map(function(k){var x=o.students[k];return {id:k,name:x.name||'',group:x.group||'',school:x.school||'',grade:+x.grade||0,gy:+x.gy||0,from:x.from||'',starts:x.starts||{},skips:x.skips||{},custom:fixCustom(x.custom),done:x.done||{}}});
+  var students=Object.keys(o.students||{}).map(function(k){var x=o.students[k];return {id:k,name:x.name||'',group:x.group||'',school:x.school||'',grade:+x.grade||0,gy:+x.gy||0,from:x.from||'',starts:x.starts||{},skips:x.skips||{},custom:fixCustom(x.custom),done:x.done||{},fromR:x.fromR||{}}});
   var exams=Object.keys(o.exams||{}).map(function(k){var x=o.exams[k];return {id:k,school:x.school||'',grade:+x.grade||0,start:x.start||'',weeks:+x.weeks||5,name:x.name||''}});
   var library=Object.keys(o.library||{}).map(function(k){var x=o.library[k];return {id:k,cat:x.cat||'main',name:x.name||'',dur:x.dur||'',order:+x.order||0}}).sort(function(a,b){return a.order-b.order}).map(function(x){return {id:x.id,cat:x.cat,name:x.name,dur:x.dur}});
   if(!library.length)library=JSON.parse(JSON.stringify(DEFAULT_LIB));
@@ -501,9 +508,10 @@ function render(){
   h+='</div></div>';
   // legend
   h+='<div class="legend">';
-  [['수업 흐름',FAM],['단어 흐름',VOC]].forEach(function(L){
+  var LG=[['수업 흐름',STG.map(function(x){return [x[1],x[2],'FFFFFF']})],['단어 흐름',[['초등 주니어','FFF1C2'],['초등 1단계','FFE6A8'],['초등 2단계','FFD98A'],['3인칭·과거','D4EDC9'],['중등 1단계','D4EDC9'],['중등 2단계','B9E0A8'],['천문장 단어','E0D3F5']].map(function(x){return [x[0],x[1],'1F2933']})]];
+  LG.forEach(function(L){
     h+='<div class="lg"><b>'+L[0]+'</b>';
-    L[1].forEach(function(f,i){h+='<span class="chip" style="background:#'+f[2]+';color:#'+f[3]+'">'+esc(f[1])+'</span>'+(i<L[1].length-1?'<span class="arr">▶</span>':'')});
+    L[1].forEach(function(f,i){h+='<span class="chip" style="background:#'+f[1]+';color:#'+f[2]+'">'+esc(f[0])+'</span>'+(i<L[1].length-1?'<span class="arr">▶</span>':'')});
     h+='</div>';
   });
   h+='</div>';
@@ -855,7 +863,7 @@ function rawItems0(st,rowId){
   }
   var sb=st.starts&&st.starts[rowId]?blk(st.starts[rowId]):null;
   if(!sb||sb.row!==rowId)return null;
-  var from=ymParse(st.from);if(from==null)from=Math.floor(nowIdx())
+  var from=ymParse((st.fromR&&st.fromR[rowId])||st.from);if(from==null)from=Math.floor(nowIdx())
   var shift=0,items=[],skipped=[];
   inRow(rowId).filter(function(b){return b.start>=sb.start}).forEach(function(b){
     if(b.id!==sb.id&&st.skips&&st.skips[b.id]){skipped.push({b:b});shift+=b.len;return}
@@ -934,7 +942,7 @@ function stuHTML(){
   var h='<div class="stu" id="stuwrap">';
   if(stuPaste){
     h+='<div class="sdet paste"><div class="sdh"><h2>학생 명단 붙여 넣기</h2><button class="btn" data-s="pasteclose" style="margin-left:auto">닫기</button></div>';
-    h+='<div class="note">LMS 학생 관리 표나 엑셀에서 학생 줄을 복사해 아래에 붙여 넣으세요. 첫 줄에 <b>이름 · 반 · 학교 · 학년</b> 같은 제목이 있으면 그 순서대로 읽어요. 제목이 없으면 <b>이름, 반, 학교</b> 순서로 읽어요. 학년 칸이 없으면 붙여 넣은 뒤 표에서 골라 주세요.<br>이미 있는 학생(이름·학교가 같은 학생)은 반·학교만 새로 맞추고, 로드맵 설정은 그대로 둬요.</div>';
+    h+='<div class="note">LMS 학생 관리 표나 엑셀에서 학생 줄을 복사해 아래에 붙여 넣으세요. <b>학생 입력표</b>(엑셀)는 제목 줄까지 통째로 복사하면 출발 칸·시작일도 한 번에 들어가요. 첫 줄에 <b>이름 · 반 · 학교 · 학년</b> 같은 제목이 있으면 그 순서대로 읽어요. 제목이 없으면 <b>이름, 반, 학교</b> 순서로 읽어요. 학년 칸이 없으면 붙여 넣은 뒤 표에서 골라 주세요.<br>이미 있는 학생(이름·학교가 같은 학생)은 반·학교만 새로 맞추고, 로드맵 설정은 그대로 둬요.</div>';
     h+='<textarea id="pastebox" placeholder="이름	반	학교	클래스카드 아이디	첫 등원일&#10;김민지	초4A	○○초	…"></textarea>';
     h+='<div class="acts" style="margin-top:8px"><button class="btn primary" data-s="pastego">명단 넣기</button></div></div>';
   }
@@ -980,6 +988,7 @@ function examHTML(){
 var lastScrollStu=null,stuSetOpen=null,stuChain=true,stuPick=null,stuAddOpen=false,stuResetConfirm=null;
 function itemColor(st,r,it,col){
   if(it.ref&&col[it.ref])return col[it.ref];
+  var x=xcolor(it.title);if(x)return [x,'1F2933'];
   var fi=famInfo(detect(it.title,r.kind),r.kind);return [fi.f[2],fi.f[3]];
 }
 function libOptions(){
@@ -1034,7 +1043,7 @@ function stuDetail(st){
     rowsH+='<div class="sinfo"><b style="min-width:84px">'+esc(r.name)+'</b>';
     if(custom)rowsH+='<span class="cust">개인 계획</span><button class="btn sm" data-s="reset" data-id="'+st.id+'" data-row="'+r.id+'">'+(stuResetConfirm===r.id?'정말 기본으로 되돌릴까요? (한 번 더)':'기본 로드맵으로 되돌리기')+'</button>';
     else{var opts='<option value="">출발 칸 고르기</option>';inRow(r.id).forEach(function(b){opts+='<option value="'+b.id+'"'+(P&&P.sb&&P.sb.id===b.id?' selected':'')+'>'+esc(b.title)+' ('+esc(posText(b.start))+')</option>'});
-      rowsH+='<select data-ss="'+st.id+'" data-row="'+r.id+'" style="max-width:260px">'+opts+'</select>'}
+      var fr=(st.fromR&&st.fromR[r.id])||'';rowsH+='<select data-ss="'+st.id+'" data-row="'+r.id+'" style="max-width:260px">'+opts+'</select><label title="이 줄만 시작일이 다르면 넣어요 (비우면 위의 출발 날짜)" style="font-size:11.5px;color:#5b6570">시작일 <input type="date" data-sdr="'+st.id+'" data-row="'+r.id+'" value="'+esc(fr)+'" style="font:inherit;font-size:12px;padding:2px 4px;border:1px solid #cfd5dc;border-radius:6px"></label>'}
     rowsH+='<span>지금: <b>'+(t.exam?'<span class="exb">시험대비</span> ~'+esc(idxDate(t.examEnd)):esc(t.cur?t.cur.title:(t.next?'(다음) '+t.next.title:'—')))+'</b></span><span>계획 대비: '+dgHTML(t.diff,t.unconf)+'</span>';
     if(P&&P.skipped.length)rowsH+='<span class="skips">건너뜀: '+P.skipped.map(function(k){return esc(k.b.title)+' <button class="btn sm" data-s="unskip" data-id="'+st.id+'" data-b="'+k.b.id+'">되살리기</button>'}).join(' ')+'</span>';
     rowsH+='</div>';
@@ -1201,6 +1210,10 @@ function pasteStudents(txt){
   var head=split(lines[0]).map(function(x){return x.trim()}),map={name:0,group:1,school:2,grade:-1,from:-1},hasHead=head.some(function(x){return /^(이름|학생|성명|학생명)$/.test(x)});
   if(hasHead){map={name:-1,group:-1,school:-1,grade:-1,from:-1};head.forEach(function(x,i){if(/^(이름|학생|성명|학생명)$/.test(x))map.name=i;else if(/^반/.test(x))map.group=i;else if(/^학교/.test(x))map.school=i;else if(/^학년/.test(x))map.grade=i;else if(/등원/.test(x))map.from=i});lines=lines.slice(1)}
   if(map.name<0){toast('이름 칸을 찾지 못했어요');return}
+  // ★ 학생 입력표: '수업 주교재 · 수업 주교재 시작일 …' 칸이 있으면 출발 칸·시작일도 넣음
+  var rcol={};if(hasHead){SR().forEach(function(r){var nk=function(x){return String(x||'').replace(/\s/g,'')},rn=nk(r.name);head.forEach(function(x,i){var hx=nk(x);if(hx===rn)rcol[r.id]=rcol[r.id]||{};if(hx===rn)rcol[r.id].b=i;if(hx===rn+'시작일')(rcol[r.id]=rcol[r.id]||{}).d=i})})}
+  var nb=function(x){return String(x||'').replace(/\s/g,'').toLowerCase()},miss=[],setN=0;
+  var pd=function(v){var m=String(v||'').match(/(\d{4})[-.\/년\s]+(\d{1,2})(?:[-.\/월\s]+(\d{1,2}))?/);if(!m)return '';return m[1]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[3]||1).padStart(2,'0')};
   var add=0,upd=0,y=nowYM().y;
   lines.forEach(function(l){var c=split(l).map(function(x){return (x||'').trim()});var nm=c[map.name];if(!nm)return;
     var grp=map.group>=0?c[map.group]||'':'',sch=map.school>=0?c[map.school]||'':'',gr=map.grade>=0?parseGrade(c[map.grade]):0;
@@ -1208,9 +1221,14 @@ function pasteStudents(txt){
     var nk=nm.replace(/\s/g,'');
     var ex=S.students.find(function(x){return x.name.replace(/\s/g,'')===nk&&(x.school||'')===(sch||x.school||'')});
     if(ex){ex.group=grp||ex.group;ex.school=sch||ex.school;if(gr){ex.grade=gr;ex.gy=y}if(fr)ex.from=fr;upd++}
-    else{S.students.push({id:uid('s'),name:nm,group:grp,school:sch,grade:gr,gy:gr?y:0,from:fr,starts:{},skips:{}});add++}
+    else{ex={id:uid('s'),name:nm,group:grp,school:sch,grade:gr,gy:gr?y:0,from:fr,starts:{},skips:{},done:{},fromR:{}};S.students.push(ex);add++}
+    Object.keys(rcol).forEach(function(rid){var cc=rcol[rid],bt=cc.b!=null?c[cc.b]:'';if(!bt)return;
+      var bk=inRow(rid).find(function(b){return nb(b.title)===nb(bt)});if(!bk){miss.push(nm+' · '+bt);return}
+      ex.starts=ex.starts||{};ex.starts[rid]=bk.id;if(ex.custom)delete ex.custom[rid];
+      var dd=cc.d!=null?pd(c[cc.d]):'';ex.fromR=ex.fromR||{};if(dd)ex.fromR[rid]=dd;setN++;if(!ex.from)ex.from=dd||todayStr()});
   });
-  stuPaste=false;commit();toast('새 학생 '+add+'명 추가'+(upd?' · '+upd+'명 정보 갱신':''));
+  stuPaste=false;commit();toast('새 학생 '+add+'명 추가'+(upd?' · '+upd+'명 정보 갱신':'')+(setN?' · 출발 칸 '+setN+'개':'')+(miss.length?' · 못 찾은 교재 '+miss.length+'개':''));
+  if(miss.length)setTimeout(function(){alert('로드맵에서 찾지 못한 교재 (이름을 확인해 주세요):\n'+miss.slice(0,40).join('\n'))},300);
 }
 app.addEventListener('click',function(e){
   var v=e.target.closest('[data-v]');if(v){view=v.getAttribute('data-v');try{localStorage.setItem(LS_KEY+'-view',view)}catch(x){}sel=null;addAt=null;selRow=null;panelMode=null;render();return}
@@ -1221,6 +1239,7 @@ app.addEventListener('change',function(e){
   if(t.hasAttribute('data-sg')){var st=stuOf(t.getAttribute('data-sg'));if(st){st.grade=+t.value;st.gy=st.grade?y:0;commit()}}
   else if(t.hasAttribute('data-ss')){stuSetOpen=true;var s2=stuOf(t.getAttribute('data-ss'));if(s2){s2.starts=s2.starts||{};var r=t.getAttribute('data-row');if(t.value)s2.starts[r]=t.value;else delete s2.starts[r];if(!s2.from)s2.from=todayStr();commit()}}
   else if(t.hasAttribute('data-sd')){var s3=stuOf(t.getAttribute('data-sd'));if(s3&&t.value){s3.from=t.value;commit()}}
+  else if(t.hasAttribute('data-sdr')){var s4=stuOf(t.getAttribute('data-sdr'));if(s4){s4.fromR=s4.fromR||{};var rr4=t.getAttribute('data-row');if(t.value)s4.fromR[rr4]=t.value;else delete s4.fromR[rr4];stuSetOpen=true;commit()}}
   else if(t.hasAttribute('data-sf')){stuFilter[t.getAttribute('data-sf')]=t.value;render()}
   else if(t.id==='stuchain'){stuChain=t.checked}
   else if(t.id==='histon'){histOn=t.checked;render()}
