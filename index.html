@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="더퍼스트 숙제관리">
-<title>숙제 관리 v522</title>
+<title>숙제 관리 v526</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
 <style>
@@ -976,6 +976,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:#fafaf9;}
 
 /* ─── 🗺 학생 로드맵 (v377) ─── */
 #p-roadmap{--rm-done-bg:#e4f4ea;--rm-done-tx:#11643f;--rm-done-bar:#1f9d63;--rm-act-bg:#fff4e2;--rm-act-bd:#f0a23a;--rm-act-tx:#8f4d00;--rm-fut-bg:#f3f3f0;--rm-fut-tx:#a5a59e;--rm-gap-bd:#bdbdb5}
+.nb-hide{display:none!important}   /* v526 안 쓰는 메뉴 숨김 (학생 로드맵 · 교재 배정이력 · 교재/반/학생 요약) — 화면과 데이터는 그대로, 이 줄만 지우면 다시 보임 */
 .rm-nav-badge{margin-left:auto;background:var(--amb);color:#fff;border-radius:9px;font-size:.62rem;font-weight:800;padding:0 .4rem;line-height:1.35rem;min-width:1.35rem;text-align:center}
 .rm-mu{color:var(--mu);font-size:.7rem}
 .rm-toolbar{display:flex;gap:.5rem .6rem;align-items:center;flex-wrap:wrap;margin-bottom:.6rem}
@@ -1315,7 +1316,7 @@ button.rq-pn.on{border-color:currentColor}
 <nav class="sidebar">
   <div class="logo" style="display:flex;flex-direction:column;align-items:flex-start;gap:.35rem;padding:.4rem .4rem .6rem">
     <img src="data:image/jpeg;base64,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" alt="THE FIRST - For Better Days" style="width:119px;height:auto;flex:0 0 auto;border-radius:3px">
-    <span style="font-weight:500;font-size:.72rem;color:#0a4771;letter-spacing:-.2px">숙제관리 v522</span>
+    <span style="font-weight:500;font-size:.72rem;color:#0a4771;letter-spacing:-.2px">숙제관리 v526</span>
   </div>
   <div id="fb-status-wrap" style="padding:.3rem .85rem;font-size:.68rem;color:var(--mu);border-bottom:1px solid var(--bd);margin-bottom:.4rem">
     <span id="fb-status-dot">⚪</span>
@@ -1333,7 +1334,7 @@ button.rq-pn.on{border-color:currentColor}
     <button class="nb active" data-page="p-assign" onclick="goPage('p-assign')">📅 교재 배정</button>
     <button class="nb" data-page="p-list" onclick="goPage('p-list')">📋 교재 배정 목록</button>
     <button class="nb" data-page="p-history" onclick="goPage('p-history')">📊 숙제 배정 내역</button>
-    <button class="nb" data-page="p-roadmap" onclick="goPage('p-roadmap')">🗺 학생 로드맵 <span id="rm-nav-badge" class="rm-nav-badge" style="display:none"></span></button>
+    <button class="nb nb-hide" data-page="p-roadmap" onclick="goPage('p-roadmap')">🗺 학생 로드맵 <span id="rm-nav-badge" class="rm-nav-badge" style="display:none"></span></button>
     <button class="nb" data-page="p-rmplan" onclick="goPage('p-rmplan')">🗓 로드맵 기간표</button>
     </div>
     <div class="nav-sec">관리</div>
@@ -1346,8 +1347,8 @@ button.rq-pn.on{border-color:currentColor}
     </div>
     <button class="nav-sec nav-fold" onclick="this.parentNode.classList.toggle('nav-open-g')">기록·정리 <span class="nav-car">▸</span></button>
     <div class="nav-g nav-g-fold">
-    <button class="nb" data-page="p-learn" onclick="goPage('p-learn')">📈 교재 배정이력</button>
-    <button class="nb" data-page="p-summary" onclick="goPage('p-summary')">🧾 교재/반/학생 요약</button>
+    <button class="nb nb-hide" data-page="p-learn" onclick="goPage('p-learn')">📈 교재 배정이력</button>
+    <button class="nb nb-hide" data-page="p-summary" onclick="goPage('p-summary')">🧾 교재/반/학생 요약</button>
     <button class="nb" data-page="p-report" onclick="goPage('p-report')">📤 월간 리포트</button>
     <button class="nb" data-page="p-fee" onclick="goPage('p-fee')">💳 교재비</button>
     <button class="nb" data-page="p-export" onclick="goPage('p-export')">💾 내보내기</button>
@@ -2231,6 +2232,16 @@ button.rq-pn.on{border-color:currentColor}
       <span id="bk-last" style="font-size:.74rem;color:var(--mu)"></span>
     </div>
   </div>
+  <div class="card" style="margin-bottom:1.1rem" id="arch-card">
+    <div class="ct" style="margin-bottom:.35rem">📦 지난 기록 보관함</div>
+    <div style="font-size:.76rem;color:var(--mu);line-height:1.6;margin-bottom:.6rem">오래전에 교재완료한 교재의 숙제 기록을 보관함으로 옮겨서 앱을 가볍게 해요. 앱은 평소에 보관함을 받지 않고, 아래 버튼을 누를 때만 열어요. 지우는 게 아니라서 언제든 앱으로 되돌릴 수 있어요.</div>
+    <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.5rem">
+      <span style="font-size:.8rem">교재완료 날짜가</span><input type="date" id="arch-cut" value="2026-09-01" style="width:auto" oninput="archPreview()"><span style="font-size:.8rem">보다 전인 교재의 숙제</span>
+      <button class="btn bp" onclick="archRun()">📦 보관함으로 옮기기</button>
+    </div>
+    <div id="arch-pv" style="font-size:.78rem;color:var(--mu);margin-bottom:.6rem"></div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn bg" onclick="archOpen()">🔍 보관함 열어 보기</button><span id="arch-meta" style="font-size:.76rem;color:var(--mu);align-self:center"></span></div>
+  </div>
   <div class="g2" style="gap:1.1rem;margin-bottom:1.1rem">
     <div class="card">
       <div class="ct">기간 & 대상</div>
@@ -2356,25 +2367,8 @@ const S = {
   vacationReasons: {}, // ★ 휴무일 사유 { 'YYYY-MM-DD': '사유텍스트' } — vacations와 별도 관리(하위호환)
   schoolEvents: [], // ★ 학원 일정(제휴 학교 시험/방학/행사 등) { id, date, school, title, type }
   attendance: [], // ★ 출석 기록 { id, studentId, date, status } — status: 'present'|'late'|'absent' (기록 없으면 출석으로 간주)
-  groups: ['중2반','중1반','초등반'],   // ★ 동적 반 목록 (단일 진실 공급원)
-  students: [
-    {id:1,name:'김경서',group:'중2반',books:['천문장입문','중등 필수','3800제 중2','5형식교재']},
-    {id:2,name:'나민흠',group:'중2반',books:['천문장입문','중등 필수','3800제 중2','5형식교재']},
-    {id:3,name:'신예빈',group:'중2반',books:['천문장입문','중등 필수','3800제 중2','5형식교재']},
-    {id:4,name:'유윤서',group:'중2반',books:['천문장입문','중등 필수','3800제 중2','5형식교재']},
-    {id:5,name:'이서윤',group:'중2반',books:['천문장입문','중등 필수','3800제 중2','5형식교재']},
-    {id:6,name:'이서진',group:'중2반',books:['천문장입문','중등 필수','3800제 중2','5형식교재']},
-    {id:7,name:'이준민',group:'중2반',books:['천문장입문','중등 필수','3800제 중2','5형식교재']},
-    {id:8,name:'정기준',group:'중2반',books:['천문장입문','중등 필수','3800제 중2','5형식교재']},
-    {id:9,name:'정민경',group:'중2반',books:['천문장입문','중등 필수','3800제 중2','5형식교재']},
-    {id:10,name:'차재원',group:'중2반',books:['천문장입문','중등 필수','3800제 중2','5형식교재']},
-    {id:11,name:'함채현',group:'중2반',books:['천문장입문','중등 필수','3800제 중2','5형식교재']},
-    {id:12,name:'차예사랑',group:'중2반',books:['천문장입문','3800제 중2']},
-    {id:13,name:'한승지',group:'중2반',books:['천문장입문','중등 필수','3800제 중1']},
-    {id:14,name:'박성혁',group:'초등반',books:['초등 필수','5형식교재']},
-    {id:15,name:'이예슬',group:'초등반',books:['초등 필수']},
-    {id:16,name:'정영현',group:'초등반',books:['초등 필수']},
-  ],
+  groups: [],   // ★ 동적 반 목록 (단일 진실 공급원) — v523 예시 반·학생 없음 (새 기기에서 예시 반이 실제 데이터에 섞여 들어가던 문제)
+  students: [],
   classcardMappings: [], // ★ 클래스카드 "클래스명" → 우리 교재 매핑 (전체 리포트 일괄 업로드용)
   teacherNote: '', // ★ 어디서든 떠있는 메모 위젯 내용
   classDaysByGroup: [], // ★ v390 반별 수업 요일 [{ g:'중1', d:[1,3,5] }] — 수업보카 배정 때 반을 고르면 자동 체크
@@ -2693,7 +2687,7 @@ function goPage(id) {
   if (id === 'p-books')   { renderBooks(); }
   if (id === 'p-history') { setupHistory(); renderHistory(); }
   if (id === 'p-today')   { setupIncomplete(); renderIncomplete(); }
-  if (id === 'p-export')  { setupExport(); _bkShowLast(); }
+  if (id === 'p-export')  { setupExport(); _bkShowLast(); try { archPreview(); } catch (e) {} }
   if (id === 'p-check')   { renderCheckPage(); }
   if (id === 'p-mappings'){ renderMappingsPage(); }
   if (id === 'p-learn')   { populateLearnFilters(); renderVocaHistoryMatrix(); }
@@ -14374,6 +14368,16 @@ function _computeBulkPreview() {
             out.skippedNoDistribution.set(`${book.name} :: ${rawName}`, (out.skippedNoDistribution.get(`${book.name} :: ${rawName}`)||0) + 1);
             return;
           }
+          // ★ v525 이미 교재완료한 차수(보관함으로 옮긴 기록 포함)는 새로 만들지 않음 — 같은 회차가 두 벌 생기던 원인
+          if ((student.completedBooks || []).some(x => _isSameCompleted(x, book, String(matchCohort || ''), null))) {
+            out.skippedNoDistribution.set(`${book.name} :: ${rawName} (교재완료한 차수)`, (out.skippedNoDistribution.get(`${book.name} :: ${rawName} (교재완료한 차수)`)||0) + 1);
+            return;
+          }
+          // ★ v525 이미 교재완료한 차수(보관함으로 옮긴 기록 포함)는 새로 만들지 않음 — 같은 회차가 두 벌 생기던 원인
+          if ((student.completedBooks || []).some(x => _isSameCompleted(x, book, String(matchCohort != null ? matchCohort : ''), bulkCat))) {
+            out.skippedNoDistribution.set(`${book.name} :: ${rawName} (교재완료한 차수)`, (out.skippedNoDistribution.get(`${book.name} :: ${rawName} (교재완료한 차수)`)||0) + 1);
+            return;
+          }
           // 새 배정: 학습일을 그대로 사용 (실제로 그 날 학습한 기록이므로)
           const dateStr = _parseExcelDate(row['학습일']) || getTodayStr();
           // ★ 아직 안 지난 날짜에 "미통과"를 새로 만들지 않음 (위와 같은 이유)
@@ -15881,7 +15885,7 @@ function _setFbStatus(state, text) {
   txt.style.color = cfg.color;
 }
 
-let _fbInitialPulled = false;
+var _fbInitialPulled = false;   // v523 var — save()가 위쪽에서 먼저 불려도 안전하게
 function initFirebase() {
   try {
     if (typeof firebase === 'undefined') {
@@ -16961,8 +16965,12 @@ async function pullInitialFromFirebase() {
   try {
     const path = FB_PATH;
     _validatePath(path);
-    const snap = await _fbDB.ref(path).once('value');
-    const val  = snap.val();
+    // ★ v525 통째(homework_v4 전체)로 받지 않고 쓰는 칸만 받음 — 보관함(_archive)·오늘수업 화면 자료는 안 받아서 가벼움
+    const _pk = [...PERSIST_KEYS, '_tomb'];
+    const _ps = await Promise.all(_pk.map(k => _fbDB.ref(`${path}/${k}`).once('value')));
+    let val = {}, _any = false;
+    _ps.forEach((sn, i) => { const v = sn.val(); if (v !== null && v !== undefined) { val[_pk[i]] = v; if (_pk[i] !== '_tomb') _any = true; } });
+    if (!_any) val = null;
     if (!val) {
       // Firebase에 데이터 없음 → 현재 localStorage 값을 Firebase로 1회 업로드
       console.log('[Firebase] 원격 데이터 없음, 로컬 → 원격 업로드');
@@ -17247,7 +17255,7 @@ function subscribeToFirebase() {
           PERSIST_KEYS.forEach(pk => { payload[pk] = _SF(pk); });
           localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
         } catch(e) {}
-        if ((k === 'groups' || k === 'students') && _healGroups()) setTimeout(saveToFirebase, 800); // ★ v450
+        if ((k === 'groups' || k === 'students') && _fbInitialPulled && _healGroups()) setTimeout(saveToFirebase, 800); // ★ v450 · v523 처음 데이터를 다 받은 뒤에만 (그 전엔 이 기기의 옛 학생 목록으로 반을 되살렸음)
         rerenderAll();
       }
     });
@@ -17323,8 +17331,9 @@ function sanitizeStudentsBeforeSave() {
   });
 }
 
+function _healOk() { try { return !_fbReady || _fbInitialPulled; } catch (e) { return true; } }
 function save() {
-  _healGroups(); // ★ v450
+  if (_healOk()) _healGroups(); // ★ v450 · v523 Firebase 처음 받기 전엔 옛 학생 목록으로 반을 되살리지 않음
   sanitizeStudentsBeforeSave(); // ★ 저장 전 정합성 정리 (undefined 저장 오류 방지)
   try {
     const payload = {};
@@ -17641,7 +17650,7 @@ function _todoPausedHtml() {
   return `<details ${window._todoPzOpen ? 'open' : ''} ontoggle="window._todoPzOpen=this.open"><summary class="todo-sec" style="color:#b91c1c;cursor:pointer">● 배부 멈춤 <span class="n">${n}명 · ${rows.length}줄</span>${old ? ` <span class="todo-sm" style="color:#b91c1c">— 한 달 넘게 멈춘 줄 ${old}개</span>` : ''}</summary>
     ${rows.map(r => { const days = r.d ? _rmDiff(r.d, today) : null;
       return `<div class="todo-item" style="border-left-color:#f87171"><span class="todo-cat" style="background:#dc2626">${escHtml(r.t.label)}</span><div><div class="todo-bk">${escHtml(r.st.name)} <span class="todo-sm">${escHtml(r.st.group || '')}</span></div><div class="todo-sm">${r.d ? `${_rmMD(r.d)}부터 멈춤 · <b style="${days >= 30 ? 'color:#b91c1c' : ''}">${days}일째</b>` : '멈춤'}</div></div><div></div>
-      <div class="todo-btns"><button class="btn bg bsm" onclick="_rmSelId=${r.st.id};goPage('p-roadmap')">🗺 로드맵</button><button class="btn bp bsm" onclick="todoUnpause(${r.st.id},'${r.t.key}')">▶ 멈춤 풀기</button></div></div>`; }).join('')}
+      <div class="todo-btns">${_rmHidden() ? '' : `<button class="btn bg bsm" onclick="_rmSelId=${r.st.id};goPage('p-roadmap')">🗺 로드맵</button>`}<button class="btn bp bsm" onclick="todoUnpause(${r.st.id},'${r.t.key}')">▶ 멈춤 풀기</button></div></div>`; }).join('')}
   </details>`;
 }
 function todoUnpause(sid, track) {
@@ -18188,6 +18197,122 @@ function clsSend(kind) {
 
 // ══════════ 🛟 전체 백업 (v406) ══════════
 /* 앱이 저장하는 모든 키(PERSIST_KEYS)를 그대로 JSON 파일 하나로 받는다. 받기만 하고 앱 데이터는 바꾸지 않음. */
+/* ══════════ ★ v525 지난 기록 보관함 — homework_v4/_archive/assigns/{id}
+   교재완료 날짜가 기준일보다 전인 묶음(교재·차수·종류)의 숙제를 옮김. 앱 처음 받기(pull)는 보관함을 안 받음 ══════════ */
+function _archPath() { return `${FB_PATH}/_archive`; }
+function _archCollect(cut) {
+  const out = [], byName = new Map();
+  S._allStudents().forEach(st => {
+    if (!st) return;
+    const done = (st.completedBooks || []).filter(c => c && c.date && c.date < cut);
+    if (!done.length) return;
+    S.assigns.forEach(a => {
+      if (!a || a.studentId !== st.id) return;
+      const book = getBook(a.bookId); if (!book) return;
+      const cat = a.type === 'voca' ? (a.category || '수업보카') : null;
+      const cs = done.filter(c => _isSameCompleted(c, book, a.cohort || '', cat)); if (!cs.length) return;
+      const since = (st.bookDates || {})[_bdKey(a.bookId, a.cohort || '', cat)];
+      if (since && since > cs.reduce((m, c) => c.date > m ? c.date : m, '')) return;   // 교재완료 뒤에 같은 묶음을 다시 배부해 진행 중이면 남김
+      if (a.result === '' || a.result == null) { if (a.date >= getTodayStr()) return; }   // 아직 안 온 날짜 숙제는 남김
+      out.push(a); byName.set(st.name, (byName.get(st.name) || 0) + 1);
+    });
+  });
+  return { list: out, students: byName.size };
+}
+function archPreview() {
+  const el = $('arch-pv'); if (!el) return;
+  const cut = $('arch-cut')?.value; if (!cut) { el.textContent = ''; return; }
+  const r = _archCollect(cut);
+  el.innerHTML = r.list.length ? `옮길 기록: 학생 <b>${r.students}명</b> · 숙제 <b>${r.list.length.toLocaleString()}건</b> (지금 앱 숙제 ${S.assigns.length.toLocaleString()}건 → ${(S.assigns.length - r.list.length).toLocaleString()}건)` : '옮길 기록이 없어요';
+  _archMeta();
+}
+function _archOnline() { try { return _fbReady && _fbInitialPulled && _fbDB; } catch (e) { return false; } }
+function _archMeta() {
+  const el = $('arch-meta'); if (!el || !_archOnline()) return;
+  _fbDB.ref(`${_archPath()}/meta`).once('value').then(sn => { const m = sn.val();
+    el.textContent = m && m.count ? `보관함: ${m.count.toLocaleString()}건 (마지막으로 옮긴 날 ${String(m.at || '').slice(0, 10)})` : '보관함이 비어 있어요'; }).catch(() => {});
+}
+async function archRun() {
+  if (!_archOnline()) { toast('서버에 연결된 상태에서만 옮길 수 있어요'); return; }
+  const cut = $('arch-cut')?.value; if (!cut) { toast('기준 날짜를 고르세요'); return; }
+  const r = _archCollect(cut);
+  if (!r.list.length) { toast('옮길 기록이 없어요'); return; }
+  if (!confirm(`📦 교재완료 날짜가 ${_rmMD(cut)}보다 전인 교재의 숙제를 보관함으로 옮길까요?\n\n학생 ${r.students}명 · 숙제 ${r.list.length.toLocaleString()}건\n\n· 옮기기 전에 전체 백업 파일을 먼저 내려받아요\n· 지우는 게 아니라 보관함으로 옮기는 것이라 언제든 앱으로 되돌릴 수 있어요\n· 옮긴 기록은 월간 리포트·배정 내역에는 안 나오고 '보관함 열어 보기'에서 볼 수 있어요`)) return;
+  try { downloadFullBackup(); } catch (e) {}
+  toast('보관함으로 옮기는 중…');
+  try {
+    const list = r.list.map(a => JSON.parse(JSON.stringify(a)));
+    for (let i = 0; i < list.length; i += 1500) {
+      const up = {}; list.slice(i, i + 1500).forEach(a => { up[`${_archPath()}/assigns/${a.id}`] = a; });
+      await _fbDB.ref().update(up);
+    }
+    const old = (await _fbDB.ref(`${_archPath()}/meta`).once('value')).val() || {};
+    await _fbDB.ref(`${_archPath()}/meta`).set({ count: (old.count || 0) + list.length, at: new Date().toISOString(), cut });
+  } catch (e) { console.error('[보관함]', e); alert('보관함에 저장하지 못했어요. 앱의 기록은 그대로 두었어요.\n' + (e && e.message || e)); return; }
+  const ids = new Set(r.list.map(a => a.id));
+  S.assigns = S.assigns.filter(a => !(a && ids.has(a.id)));
+  save(); try { rerenderAll(); } catch (e) {}
+  archPreview();
+  toast(`📦 ${ids.size.toLocaleString()}건을 보관함으로 옮겼어요`);
+}
+let _archCache = null;
+async function archOpen() {
+  if (!_archOnline()) { toast('서버에 연결된 상태에서만 열 수 있어요'); return; }
+  toast('보관함 여는 중…');
+  try { const v = (await _fbDB.ref(`${_archPath()}/assigns`).once('value')).val(); _archCache = v ? Object.values(v).filter(Boolean) : []; }
+  catch (e) { toast('보관함을 열지 못했어요'); return; }
+  if (!_archCache.length) { toast('보관함이 비어 있어요'); return; }
+  const names = [...new Set(_archCache.map(a => a.studentName))].sort((a, b) => a.localeCompare(b, 'ko'));
+  const old = document.getElementById('arch-modal'); if (old) old.remove();
+  const m = document.createElement('div'); m.id = 'arch-modal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem';
+  m.innerHTML = `<div style="background:var(--surface);border-radius:12px;max-width:760px;width:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.2)">
+    <div style="padding:.9rem 1.1rem;display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--bd)">
+      <b style="font-size:1rem">📦 지난 기록 보관함</b><span style="font-size:.8rem;color:var(--mu)">${_archCache.length.toLocaleString()}건</span>
+      <select id="arch-st" onchange="_archShow()" style="width:auto"><option value="">학생 고르기…</option>${names.map(n => `<option>${escHtml(n)}</option>`).join('')}</select>
+      <span style="flex:1"></span>
+      <button class="btn bg bsm" onclick="_archDownload()">💾 파일로 받기</button>
+      <button class="btn bg bsm" onclick="archRestore()">↩ 이 학생 기록 앱으로 되돌리기</button>
+      <button class="btn bsm" onclick="document.getElementById('arch-modal').remove()">닫기</button>
+    </div>
+    <div id="arch-body" style="overflow:auto;flex:1;min-height:0;padding:.6rem 1.1rem;font-size:.8rem;color:var(--mu)">학생을 고르면 그 학생의 지난 숙제 기록이 보여요.</div></div>`;
+  document.body.appendChild(m);
+}
+function _archShow() {
+  const n = $('arch-st')?.value, el = $('arch-body'); if (!el) return;
+  if (!n) { el.innerHTML = '학생을 고르면 그 학생의 지난 숙제 기록이 보여요.'; return; }
+  const rows = _archCache.filter(a => a.studentName === n);
+  const g = new Map(); rows.forEach(a => { const k = `${a.bookName}${a.cohort ? ' ' + a.cohort : ''}${a.type === 'voca' ? ' · ' + (a.category || '수업보카') : ''}`; if (!g.has(k)) g.set(k, []); g.get(k).push(a); });
+  const ok = r => r === '통과' || (typeof r === 'number' && r >= 80) || (/^\d+$/.test(String(r)) && +r >= 80);
+  el.innerHTML = [...g.entries()].sort((a, b) => (a[1][0].date || '').localeCompare(b[1][0].date || '')).map(([k, v]) => {
+    v.sort((x, y) => (x.date || '').localeCompare(y.date || '') || String(x.unitFrom).localeCompare(String(y.unitFrom)));
+    const done = v.filter(a => a.result !== '' && a.result != null);
+    return `<div style="margin-bottom:.8rem;color:var(--tx,inherit)"><b>${escHtml(k)}</b> <span style="color:var(--mu)">${_rmMD(v[0].date)} ~ ${_rmMD(v[v.length - 1].date)} · ${v.length}건 · 결과 ${done.length}건 · 통과 ${done.filter(a => ok(a.result)).length}건</span>
+      <div style="display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.3rem">${v.map(a => `<span title="${escHtml(a.date)}" style="font-size:.72rem;padding:.1rem .35rem;border-radius:5px;border:1px solid var(--bd);${a.result === '' || a.result == null ? 'color:var(--mu)' : ok(a.result) ? 'background:rgba(5,150,105,.08)' : 'background:rgba(220,38,38,.08)'}">${escHtml(String(a.unitFrom || (a.probLabels || [])[0] || ''))} ${escHtml(String(a.result === '' || a.result == null ? '—' : a.result))}</span>`).join('')}</div></div>`;
+  }).join('') || '기록이 없어요';
+}
+function _archDownload() {
+  if (!_archCache) return;
+  const blob = new Blob([JSON.stringify({ _archive: { savedAt: new Date().toISOString(), count: _archCache.length }, assigns: _archCache })], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `숙제관리_보관함_${getTodayStr()}.json`;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+async function archRestore() {
+  const n = $('arch-st')?.value; if (!n) { toast('되돌릴 학생을 먼저 고르세요'); return; }
+  const rows = _archCache.filter(a => a.studentName === n); if (!rows.length) return;
+  if (!confirm(`${n} 학생의 보관함 기록 ${rows.length}건을 앱으로 되돌릴까요?`)) return;
+  const have = new Set(S.assigns.map(a => a && a.id));
+  const back = rows.filter(a => !have.has(a.id));
+  S.assigns.push(...back.map(a => JSON.parse(JSON.stringify(a))));
+  save();
+  try { const up = {}; rows.forEach(a => { up[`${_archPath()}/assigns/${a.id}`] = null; }); await _fbDB.ref().update(up);
+    const old = (await _fbDB.ref(`${_archPath()}/meta`).once('value')).val() || {};
+    await _fbDB.ref(`${_archPath()}/meta/count`).set(Math.max(0, (old.count || 0) - rows.length)); } catch (e) { console.warn('[보관함 되돌리기]', e); }
+  _archCache = _archCache.filter(a => a.studentName !== n);
+  try { rerenderAll(); } catch (e) {}
+  document.getElementById('arch-modal')?.remove(); archPreview();
+  toast(`↩ ${n} 기록 ${back.length}건을 앱으로 되돌렸어요`);
+}
 function downloadFullBackup() {
   if (typeof _fbReady !== 'undefined' && _fbReady && typeof _fbInitialPulled !== 'undefined' && !_fbInitialPulled) {
     toast('서버에서 최신 데이터를 불러오는 중이에요. 잠시 후 다시 눌러 주세요'); return;
@@ -18283,6 +18408,74 @@ function _chkCollect(group) {
   A.sort((a, b) => b.days - a.days); B.sort((a, b) => b.days - a.days); C.sort((a, b) => (b.days || 0) - (a.days || 0));
   return { A, B, C, D, E };
 }
+/* ★ v524 데이터 정리 — 같은 회차가 두 벌인 보카 숙제 · 완료 기록 중복 · 지난 반/교재 일시정지 · 없는 반·교재를 가리키는 연결 · 안 쓰는 보관 교재 */
+function _tidyScore(r) { if (r === '' || r == null) return null; if (r === '통과') return 101; if (r === '미통과') return -1; const n = Number(r); return isNaN(n) ? 0 : n; }
+function _tidyCollect() {
+  const today = getTodayStr(), out = { dupDrop: [], dupFix: [], dupSeries: new Map(), comp: [], pauses: [], thr: [], maps: [], steps: [], books: [], groups: [] };
+  const bidSet = new Set(S.books.map(b => b && b.id)), grp = new Set(S.groups);
+  // 1) 같은 회차 두 벌 — 나중에 만든 것(시험기간이 반영된 날짜)을 남기고, 점수는 있는 쪽(둘 다면 높은 쪽)
+  const m = new Map();
+  S.assigns.forEach(a => { if (!a || a.type !== 'voca' || !/^\d+$/.test(String(a.unitFrom || ''))) return;
+    const k = `${a.studentId}|${a.bookId}|${a.cohort || ''}|${a.category || '수업보카'}|${+a.unitFrom}`; if (!m.has(k)) m.set(k, []); m.get(k).push(a); });
+  m.forEach(v => { if (v.length < 2) return;
+    v.sort((x, y) => y.id - x.id); const keep = v[0];
+    let best = keep; v.forEach(a => { const sa = _tidyScore(a.result), sb = _tidyScore(best.result); if (sa != null && (sb == null || sa > sb)) best = a; });
+    if (best !== keep) out.dupFix.push({ a: keep, result: best.result });
+    v.slice(1).forEach(a => out.dupDrop.push(a));
+    const sk = `${keep.studentName} · ${keep.bookName}${keep.cohort ? ' ' + keep.cohort : ''} (${keep.category || '수업보카'})`; out.dupSeries.set(sk, (out.dupSeries.get(sk) || 0) + v.length - 1); });
+  // 2) 완료 기록 중복
+  S._allStudents().forEach(st => { if (!st || !Array.isArray(st.completedBooks)) return; const seen = new Set();
+    st.completedBooks.forEach((c, i) => { const k = `${c.bookId}|${c.cohort || ''}|${c.category || ''}`; if (seen.has(k)) out.comp.push({ st, i }); else seen.add(k); }); });
+  // 3) 지난 반·교재 일시정지 (학교 시험대비·학원 휴무가 아닌 옛 방식)
+  (S.classPauses || []).forEach(p => { if (p && !p.school && !p.vac && p.end && p.end < today) out.pauses.push(p); });
+  // 4) 학생이 한 명도 없는 반 (퇴원생 포함) · 없는 반 기준 · 없는 교재를 가리키는 매핑/로드맵 칸
+  const stG = new Set(S._allStudents().map(st => st && st.group)); S.groups.forEach(g => { if (!stG.has(g)) out.groups.push(g); });
+  S.books.forEach(b => { if (b && b.classThresholds) Object.keys(b.classThresholds).forEach(g => { if (!grp.has(g)) out.thr.push({ b, g }); }); });
+  (S.classcardMappings || []).forEach(x => { if (x && x.bookId != null && !bidSet.has(x.bookId)) out.maps.push(x); });
+  (S.roadmapSteps || []).forEach(x => { if (x && x.bookId != null && !bidSet.has(x.bookId)) out.steps.push(x); });
+  // 5) 보관한 교재 중 한 번도 안 쓴 것 (로드맵·매핑에 연결된 건 남김)
+  const used = new Set(S.assigns.map(a => a && a.bookId)), names = new Set(), comp = new Set();
+  S._allStudents().forEach(st => { (st && st.books || []).forEach(n => names.add(n)); (st && st.completedBooks || []).forEach(c => comp.add(c.bookId)); });
+  const rmB = new Set((S.roadmapSteps || []).map(x => x && x.bookId)), mpB = new Set((S.classcardMappings || []).map(x => x && x.bookId));
+  S.books.forEach(b => { if (b && b.archived && !used.has(b.id) && !names.has(b.name) && !comp.has(b.id) && !rmB.has(b.id) && !mpB.has(b.id)) out.books.push(b); });
+  out.total = out.groups.length + out.dupDrop.length + out.comp.length + out.pauses.length + out.thr.length + out.maps.length + out.steps.length + out.books.length;
+  return out;
+}
+function _tidyCardHtml() {
+  const t = _tidyCollect(); if (!t.total) return '';
+  const li = (n, txt) => n ? `<li>${txt}</li>` : '';
+  return `<div class="card" style="margin-bottom:1rem;border:2px solid var(--acc)"><div class="ct" style="margin-bottom:.3rem">🧹 정리할 데이터가 있어요</div>
+    <ul style="margin:.2rem 0 .6rem 1.1rem;font-size:.82rem;line-height:1.7">
+      ${li(t.dupDrop.length, `같은 회차가 두 벌인 보카 숙제 <b>${t.dupDrop.length}건</b> (${t.dupSeries.size}묶음) — 나중 날짜(시험기간 반영) 쪽을 남기고, 점수는 있는 쪽(둘 다면 높은 쪽)으로 합쳐요`)}
+      ${li(t.comp.length, `같은 교재를 두 번 완료 처리한 기록 <b>${t.comp.length}건</b>`)}
+      ${li(t.pauses.length, `이미 지난 반·교재 일시정지 <b>${t.pauses.length}개</b>`)}
+      ${li(t.groups.length, `학생이 한 명도 없는 반 <b>${t.groups.length}개</b> (${t.groups.map(escHtml).join(', ')})`)}
+      ${li(t.thr.length, `없는 반의 교재 기준 <b>${t.thr.length}개</b> (${[...new Set(t.thr.map(x => x.g))].map(escHtml).join(', ')})`)}
+      ${li(t.maps.length, `지운 교재를 가리키는 클래스카드 매핑 <b>${t.maps.length}개</b>`)}
+      ${li(t.steps.length, `지운 교재를 가리키는 로드맵 칸 연결 <b>${t.steps.length}개</b> (칸은 남기고 연결만 풀어요)`)}
+      ${li(t.books.length, `보관한 교재 중 한 번도 안 쓴 것 <b>${t.books.length}개</b> (${t.books.map(b => escHtml(b.name)).join(', ')})`)}
+    </ul>
+    ${t.dupSeries.size ? `<details style="font-size:.78rem;margin-bottom:.6rem"><summary style="cursor:pointer">두 벌인 숙제 자세히</summary><div style="margin-top:.3rem;line-height:1.7">${[...t.dupSeries.entries()].map(([k, n]) => `· ${escHtml(k)} ${n}회차`).join('<br>')}</div></details>` : ''}
+    <button class="btn bp" onclick="tidyRun()">🧹 한 번에 정리 (정리 전에 백업 파일을 먼저 내려받아요)</button></div>`;
+}
+function tidyRun() {
+  const t = _tidyCollect(); if (!t.total) { toast('정리할 게 없어요'); return; }
+  if (!confirm(`데이터 ${t.total}건을 정리할까요?\n\n정리하기 전에 지금 상태를 백업 파일로 먼저 내려받아요.\n숙제 점수는 지우지 않고 남는 쪽으로 합쳐요.`)) return;
+  try { downloadFullBackup(); } catch (e) {}
+  t.dupFix.forEach(x => { x.a.result = x.result; });
+  const drop = new Set(t.dupDrop.map(a => a.id));
+  S.assigns = S.assigns.filter(a => !(a && drop.has(a.id)));
+  const byStudent = new Map(); t.comp.forEach(x => { if (!byStudent.has(x.st)) byStudent.set(x.st, new Set()); byStudent.get(x.st).add(x.i); });
+  byStudent.forEach((ix, st) => { st.completedBooks = st.completedBooks.filter((c, i) => !ix.has(i)); });
+  const pz = new Set(t.pauses.map(p => p.id)); S.classPauses = (S.classPauses || []).filter(p => !(p && pz.has(p.id)));
+  const eg = new Set(t.groups); S.groups = S.groups.filter(g => !eg.has(g));
+  t.thr.forEach(x => { delete x.b.classThresholds[x.g]; });
+  const mp = new Set(t.maps); S.classcardMappings = (S.classcardMappings || []).filter(x => !mp.has(x));
+  t.steps.forEach(x => { x.bookId = null; });
+  const bk = new Set(t.books.map(b => b.id)); S.books = S.books.filter(b => !(b && bk.has(b.id)));
+  save(); try { rerenderAll(); renderCheckPage(); } catch (e) {}
+  toast(`✅ ${t.total}건 정리했어요`);
+}
 function renderCheckPage() {
   const root = $('chk-root'); if (!root) return;
   const group = $('chk-group')?.value || '';
@@ -18323,7 +18516,7 @@ function renderCheckPage() {
   const tblE = d.E.size ? `<div class="chk-wrap"><table class="chk-tb"><tr><th>차수 이름</th><th>건수</th><th>어디에</th></tr>
     ${[...d.E.entries()].sort((a, b) => b[1].length - a[1].length).map(([k, v]) => `<tr><td><b>"${escHtml(k)}"</b></td><td>${v.length}</td><td>${v.slice(0, 6).map(escHtml).join(' · ')}${v.length > 6 ? ` 외 ${v.length - 6}` : ''}</td></tr>`).join('')}</table></div>` : '<div class="rm-mu">없음 👍 — 모두 "n차" 형식이에요</div>';
   const box = (cls, id, n, lab) => `<div class="box ${cls}" onclick="document.getElementById('chk-${id}').scrollIntoView({behavior:'smooth'})"><b>${n}</b><span>${lab}</span></div>`;
-  root.innerHTML = `
+  root.innerHTML = _tidyCardHtml() + `
     <div class="chk-bar" style="margin-top:0">
       <select id="chk-group" onchange="renderCheckPage()" style="width:auto"><option value="">전체 반</option>${groups.map(g => `<option ${g === group ? 'selected' : ''}>${escHtml(g)}</option>`).join('')}</select>
       <span class="rm-mu">⚠ 교재완료 버튼을 누르기 전에 <a href="#" onclick="downloadFullBackup();return false">💾 전체 백업 받기</a>를 먼저 눌러 두세요 <span class="bk-last-inline"></span></span>
@@ -19659,8 +19852,10 @@ function rmFlushQueue() {
   if (_rmPopItems.length) rmRenderNextPop();
   if ($('p-roadmap')?.classList.contains('active')) renderRoadmapPage();
 }
+function _rmHidden() { const b = document.querySelector('.nb[data-page="p-roadmap"]'); return !!(b && b.classList.contains('nb-hide')); }
 function rmRenderNextPop() {
   const pop = $('rm-next-pop'); if (!pop) return;
+  if (_rmHidden()) { pop.style.display = 'none'; return; }   // v526 학생 로드맵을 안 쓰면 '다음 교재' 알림도 안 띄움
   const items = _rmPopItems.map(it => {
     const st = _rmStu(it.sid); if (!st) return null;
     const v = rmTrackView(st, it.track);
