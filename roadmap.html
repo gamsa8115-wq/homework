@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>학원 로드맵 기간표 v46</title>
+<title>학원 로드맵 기간표 v48</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style id="app-style">
@@ -151,6 +151,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family
 .saxis .ym{position:absolute;top:0;bottom:0;font-size:10.5px;color:#5b6570;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;border-left:1px solid #fff}
 .saxis .ym.jan{border-left:2px solid #55606b}
 .slane{position:relative;height:42px;background-color:#f4f5f7;background-image:repeating-linear-gradient(to right,transparent 0,transparent calc(var(--sw) - 1px),#eaecef calc(var(--sw) - 1px),#eaecef var(--sw))}
+.slane.two{height:80px}.plab.two{height:80px}.slane.two .sblk{bottom:auto;height:34px}.slane.two .sblk.l1{top:42px}.slane.two .sblk.exam{height:auto;bottom:3px}.sblk.l1{outline:2px dashed #534AB7;outline-offset:-2px}.sblk.tol{outline:2px dashed #534AB7;outline-offset:-2px;opacity:.8;z-index:6}.slane.ovhint{overflow:visible}.slane.ovhint::after{content:'여기 놓으면 겹쳐서 하기';position:absolute;left:0;right:0;top:40px;height:34px;border:2px dashed #534AB7;border-radius:6px;background:rgba(238,237,254,.85);color:#3C3489;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;z-index:5;pointer-events:none}
 .slane.dl{height:22px;background:#fffaf2}
 .sdist{position:absolute;top:2px;font-size:11px;font-weight:800;color:#b54708;white-space:nowrap}
 .sblk.done{background:#f1e6da!important;color:#8a8178!important;box-shadow:none}
@@ -229,7 +230,7 @@ var FIREBASE_CONFIG = {           // 숙제관리 앱과 같은 Firebase 프로�
 var DB_PATH = 'roadmap_planner_v1';      // 이 프로그램 전용 저장 위치 — ⚠️ homework_v4(숙제관리), academy 와 절대 겹치지 않게
 var FB_APP_NAME = 'roadmap_planner';     // 별도 앱 인스턴스 이름 (다른 프로그램과 섞이지 않게)
 /* ★ 버전 — 고칠 때마다 숫자를 올리면 화면 왼쪽 위에 표시돼요 */
-var RM_VERSION = 'v46'; try{document.title='학원 로드맵 기간표 '+RM_VERSION}catch(e){}
+var RM_VERSION = 'v48'; try{document.title='학원 로드맵 기간표 '+RM_VERSION}catch(e){}
 var RM_DATE = '2026-11-14';
 var DEFAULT_LIB = [{"id": "L000", "cat": "main", "name": "Alphabet 1", "dur": "4주"}, {"id": "L001", "cat": "main", "name": "Alphabet 2", "dur": "4주"}, {"id": "L002", "cat": "main", "name": "Phonics 1", "dur": "5주"}, {"id": "L003", "cat": "main", "name": "Phonics 2", "dur": "5주"}, {"id": "L004", "cat": "main", "name": "Phonics 3", "dur": "5주"}, {"id": "L005", "cat": "main", "name": "Phonics 4", "dur": "5주"}, {"id": "L006", "cat": "main", "name": "Phonics 5", "dur": "5주"}, {"id": "L007", "cat": "main", "name": "Phonics 6", "dur": "5주"}, {"id": "L008", "cat": "main", "name": "Reading 1", "dur": "5주"}, {"id": "L009", "cat": "main", "name": "Reading 2", "dur": "5주"}, {"id": "L010", "cat": "main", "name": "Reading 3", "dur": "5주"}, {"id": "L011", "cat": "main", "name": "Reading 4", "dur": "5주"}, {"id": "L012", "cat": "main", "name": "Reading 5", "dur": "5주"}, {"id": "L013", "cat": "main", "name": "Reading 6", "dur": "5주"}, {"id": "L014", "cat": "main", "name": "Basic 1", "dur": "5주"}, {"id": "L015", "cat": "main", "name": "Basic 2", "dur": "5주"}, {"id": "L016", "cat": "main", "name": "Basic 3", "dur": "5주"}, {"id": "L017", "cat": "main", "name": "Basic 4", "dur": "5주"}, {"id": "L018", "cat": "main", "name": "Basic 5", "dur": "5주"}, {"id": "L019", "cat": "main", "name": "Basic 6", "dur": "5주"}, {"id": "L020", "cat": "main", "name": "Basic 7", "dur": "5주"}, {"id": "L021", "cat": "main", "name": "Basic 8", "dur": "5주"}, {"id": "L022", "cat": "main", "name": "Basic 9", "dur": "5주"}, {"id": "L023", "cat": "main", "name": "Basic 10", "dur": "5주"}, {"id": "L024", "cat": "main", "name": "Basic 11", "dur": "5주"}, {"id": "L025", "cat": "main", "name": "Basic 12", "dur": "5주"}, {"id": "L026", "cat": "main", "name": "5형식 (주+동+시)", "dur": "4주"}, {"id": "L027", "cat": "main", "name": "5형식 (부사구)", "dur": "4주"}, {"id": "L028", "cat": "main", "name": "5형식 (준동사)", "dur": "4주"}, {"id": "L029", "cat": "main", "name": "5형식 (분석/해석하기)", "dur": "4주"}, {"id": "L030", "cat": "main", "name": "3800 해석 (1단계)", "dur": "17주"}, {"id": "L031", "cat": "main", "name": "3800 해석 (2단계)", "dur": "17주"}, {"id": "L032", "cat": "main", "name": "천문장 입문(Test)", "dur": "22주"}, {"id": "L033", "cat": "main", "name": "천문장 기본(Test)", "dur": "22주"}, {"id": "L034", "cat": "main", "name": "고등 미니 모의고사", "dur": "13주"}, {"id": "L087", "cat": "main", "name": "Beginner Sentence build up", "dur": "1일"}, {"id": "L088", "cat": "main", "name": "Inter Sentence build up", "dur": "1일"}, {"id": "L035", "cat": "sub", "name": "Alphabet 쓰기 1", "dur": "4주"}, {"id": "L036", "cat": "sub", "name": "Alphabet 쓰기 2", "dur": "4주"}, {"id": "L037", "cat": "sub", "name": "Ph 워크북 1", "dur": "8주"}, {"id": "L038", "cat": "sub", "name": "Ph 워크북 2", "dur": "8주"}, {"id": "L039", "cat": "sub", "name": "Ph 워크북 3", "dur": "8주"}, {"id": "L040", "cat": "sub", "name": "Ph 워크북 4", "dur": "8주"}, {"id": "L041", "cat": "sub", "name": "Ph 워크북 5", "dur": "8주"}, {"id": "L042", "cat": "sub", "name": "Ph 워크북 6", "dur": "8주"}, {"id": "L043", "cat": "sub", "name": "Ph Speed 워크북 1", "dur": "8주"}, {"id": "L044", "cat": "sub", "name": "Ph Speed 워크북 2", "dur": "8주"}, {"id": "L045", "cat": "sub", "name": "Ph Speed 워크북 3", "dur": "8주"}, {"id": "L046", "cat": "sub", "name": "워크북 E1", "dur": "8주"}, {"id": "L047", "cat": "sub", "name": "워크북 E2", "dur": "8주"}, {"id": "L048", "cat": "sub", "name": "워크북 E3", "dur": "8주"}, {"id": "L049", "cat": "sub", "name": "워크북 E4", "dur": "8주"}, {"id": "L050", "cat": "sub", "name": "워크북 E5", "dur": "8주"}, {"id": "L051", "cat": "sub", "name": "워크북 E6", "dur": "8주"}, {"id": "L052", "cat": "sub", "name": "워크북 M", "dur": "5주"}, {"id": "L053", "cat": "sub", "name": "3800 드릴 (1단계)", "dur": "35주"}, {"id": "L054", "cat": "sub", "name": "3800 드릴 (2단계)", "dur": "35주"}, {"id": "L055", "cat": "sub", "name": "3800 드릴 (3단계)", "dur": "35주"}, {"id": "L056", "cat": "sub", "name": "Prerequisite 초 (A)", "dur": "6주"}, {"id": "L057", "cat": "sub", "name": "Prerequisite 중 intro (A)", "dur": "6주"}, {"id": "L058", "cat": "sub", "name": "Prerequisite 초 (B)", "dur": "6주"}, {"id": "L059", "cat": "sub", "name": "Prerequisite 중 intro (B)", "dur": "6주"}, {"id": "L060", "cat": "sub", "name": "초등 1단계 (단어장)", "dur": "17주"}, {"id": "L061", "cat": "sub", "name": "초등 2단계 (단어장)", "dur": "17주"}, {"id": "L062", "cat": "sub", "name": "3인칭 일반동사 (단어장)", "dur": "4주"}, {"id": "L063", "cat": "sub", "name": "과거 일반동사 (단어장)", "dur": "4주"}, {"id": "L064", "cat": "sub", "name": "과거/과거분사 (단어장)", "dur": "4주"}, {"id": "L065", "cat": "sub", "name": "중등 1단계 (단어장)", "dur": "13주"}, {"id": "L066", "cat": "sub", "name": "중등 2단계 (단어장)", "dur": "13주"}, {"id": "L067", "cat": "voca", "name": "초등 주니어 20.65", "dur": "17주"}, {"id": "L068", "cat": "voca", "name": "초등 1단계 40.70 (리콜)", "dur": "17주"}, {"id": "L069", "cat": "voca", "name": "초등 1단계 40.70 (객관식)", "dur": "17주"}, {"id": "L070", "cat": "voca", "name": "초등 1단계 40.70 (주관식)", "dur": "17주"}, {"id": "L071", "cat": "voca", "name": "초등 2단계 40.70 (리콜)", "dur": "17주"}, {"id": "L072", "cat": "voca", "name": "초등 2단계 40.70 (객관식)", "dur": "17주"}, {"id": "L073", "cat": "voca", "name": "초등 2단계 40.70 (주관식)", "dur": "17주"}, {"id": "L074", "cat": "voca", "name": "3인칭 일반동사", "dur": "4주"}, {"id": "L075", "cat": "voca", "name": "과거 일반동사", "dur": "4주"}, {"id": "L076", "cat": "voca", "name": "과거 과거분사", "dur": "4주"}, {"id": "L077", "cat": "voca", "name": "중등 1단계 100.50 (리콜)", "dur": "13주"}, {"id": "L078", "cat": "voca", "name": "중등 1단계 100.50 (객관식)", "dur": "13주"}, {"id": "L079", "cat": "voca", "name": "중등 1단계 100.50 (주관식)", "dur": "13주"}, {"id": "L080", "cat": "voca", "name": "중등 2단계 100.50 (리콜)", "dur": "13주"}, {"id": "L081", "cat": "voca", "name": "중등 2단계 100.50 (객관식)", "dur": "13주"}, {"id": "L082", "cat": "voca", "name": "중등 2단계 100.50 (주관식)", "dur": "13주"}, {"id": "L083", "cat": "voca", "name": "한끝 고등 기본 30.42", "dur": "9주"}, {"id": "L084", "cat": "voca", "name": "5형식 단어", "dur": "4주"}, {"id": "L085", "cat": "voca", "name": "천문장 입문 단어 20.88", "dur": "22주"}, {"id": "L086", "cat": "voca", "name": "천문장 기본 단어 25.88", "dur": "22주"}, {"id": "L089", "cat": "short", "name": "중2. 1학기 중간", "dur": "5주"}, {"id": "L090", "cat": "short", "name": "중2. 1학기 중간- 부교재", "dur": "5주"}, {"id": "L091", "cat": "short", "name": "중3. 1학기 중간", "dur": "5주"}, {"id": "L092", "cat": "short", "name": "중3. 1학기 중간- 부교재", "dur": "5주"}, {"id": "L093", "cat": "short", "name": "중2. 1학기 기말", "dur": "5주"}, {"id": "L094", "cat": "short", "name": "중2. 1학기 기말- 부교재", "dur": "5주"}, {"id": "L095", "cat": "short", "name": "중3. 1학기 기말", "dur": "5주"}, {"id": "L096", "cat": "short", "name": "중3. 1학기 기말- 부교재", "dur": "5주"}, {"id": "L097", "cat": "short", "name": "중1. 2학기 중간", "dur": "5주"}, {"id": "L098", "cat": "short", "name": "중1. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L099", "cat": "short", "name": "중2. 2학기 중간", "dur": "5주"}, {"id": "L100", "cat": "short", "name": "중2. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L101", "cat": "short", "name": "중3. 2학기 중간", "dur": "5주"}, {"id": "L102", "cat": "short", "name": "중3. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L103", "cat": "short", "name": "중1. 2학기 기말", "dur": "5주"}, {"id": "L104", "cat": "short", "name": "중1. 2학기 기말- 부교재", "dur": "5주"}, {"id": "L105", "cat": "short", "name": "중2. 2학기 기말", "dur": "5주"}, {"id": "L106", "cat": "short", "name": "중2. 2학기 기말- 부교재", "dur": "5주"}, {"id": "L107", "cat": "short", "name": "중3. 2학기 기말", "dur": "5주"}, {"id": "L108", "cat": "short", "name": "중3. 2학기 기말- 부교재", "dur": "5주"}];
 var EMBED = document.getElementById('roadmap-data').textContent;   // 처음 한 번 넣을 기본 로드맵
@@ -889,7 +890,7 @@ function rawItems(st,rowId,noDone){var R0=rawItems0(st,rowId);if(R0&&!noDone)app
 function rawItems0(st,rowId){
   var cu=st.custom&&st.custom[rowId];
   if(cu&&cu.length){
-    var items=cu.map(function(x){return {id:x.id,ref:x.ref||'',title:x.title,cal:+x.cal,len:Math.max(1,+x.len||1)}}).sort(function(a,b){return a.cal-b.cal});
+    var items=cu.map(function(x){return {id:x.id,ref:x.ref||'',title:x.title,cal:+x.cal,len:Math.max(1,+x.len||1),lane:x.lane?1:0}}).sort(function(a,b){return a.cal-b.cal});
     var sb0=null;for(var i=0;i<items.length;i++){if(items[i].ref&&blk(items[i].ref)){sb0=blk(items[i].ref);break}}
     return {custom:true,from:items[0].cal,items:items,skipped:[],sb:sb0};
   }
@@ -904,9 +905,11 @@ function rawItems0(st,rowId){
   return {custom:false,from:from,items:items,skipped:skipped,sb:sb};
 }
 // ★ 완료 표시: 마지막으로 완료한 교재의 완료일부터 뒤 교재를 다시 이어 붙임 (완료한 교재까지는 실제 기록으로 고정)
+function rowTwo(st,rowId){var cu=st.custom&&st.custom[rowId];return !!(cu&&cu.some(function(x){return x.lane}))}
 function doneOf(st,rowId){return (st.done&&st.done[rowId])||{}}
 function applyDone(st,rowId,R){
-  var D=doneOf(st,rowId),L=R.items,j=-1;
+  var D=doneOf(st,rowId),L=R.items.filter(function(x){return !x.lane}),j=-1;
+  R.items.forEach(function(it){if(it.lane&&D[it.id]){var e=dateIdx(D[it.id]);if(e!=null){if(e<=it.cal)it.cal=e-0.4;it.len=e-it.cal;it.fixed=true}}});
   L.forEach(function(it,i){if(D[it.id])j=i});
   if(j<0)return;
   var oe=L[j].cal+L[j].len;
@@ -948,7 +951,9 @@ function stuStatus(st,rowId){
   var out={plan:P,cur:null,diff:null,exam:null,unconf:0,uncT:[],lastDone:null};
   if(!P||!P.items.length)return out;
   var books=P.segs.filter(function(g){return !g.exam});
-  P.segs.forEach(function(g){if(g.exam&&g.exam.vac)return;if(now>=g.cal&&now<g.cal+g.len){if(g.exam){out.exam=g.exam;out.examEnd=g.cal+g.len}else out.cur={title:g.item.title,id:g.item.id,item:g.item}}});
+  P.segs.forEach(function(g){if(g.exam&&g.exam.vac)return;if(now>=g.cal&&now<g.cal+g.len){if(g.exam){out.exam=g.exam;out.examEnd=g.cal+g.len}else if(g.item.lane){out.cur2={title:g.item.title,id:g.item.id,item:g.item}}else out.cur={title:g.item.title,id:g.item.id,item:g.item}}});
+  if(!out.cur&&out.cur2){out.cur=out.cur2;out.cur2=null}
+  if(out.cur2){var ce2=0;books.forEach(function(g){if(g.item===out.cur2.item)ce2=Math.max(ce2,g.cal+g.len)});out.cur2End=ce2}
   if(out.cur){var ce=0;books.forEach(function(g){if(g.item===out.cur.item)ce=Math.max(ce,g.cal+g.len)});out.curEnd=ce}
   if(!out.cur&&!out.exam){var next=null;books.forEach(function(g){if(!next&&g.cal>now)next=g});if(next)out.next={title:next.item.title}}
   var D=doneOf(st,rowId),last=null;Object.keys(D).forEach(function(k){if(P.items.some(function(it){return it.id===k})&&(!last||D[k]>D[last]))last=k});
@@ -1004,7 +1009,7 @@ function stuHTML(){
       var sbk=!t.plan&&x.starts&&x.starts[r.id]&&!(x.custom&&x.custom[r.id]&&x.custom[r.id].length)?blk(x.starts[r.id]):null;
       if(sbk)h+='<td><div class="cellp"><span class="cur">'+esc(sbk.title)+'</span> <span class="uc" data-s="open" data-id="'+x.id+'" style="cursor:pointer" title="시작일을 넣어야 로드맵이 그려져요">시작일 필요</span></div></td>';
       else if(!t.plan)h+='<td><span class="dg n" data-s="open" data-id="'+x.id+'" style="cursor:pointer">출발 칸 정하기</span></td>';
-      else h+='<td><div class="cellp"><span class="cur" title="'+esc(t.cur?t.cur.title:'')+'">'+(t.exam?'<span class="exb">'+(t.exam.vac?'휴무':'시험대비')+'</span>':esc(t.cur?t.cur.title:(t.next?'→ '+t.next.title:'')))+'</span>'+remainHTML(t)+dgHTML(null,t.unconf,t.uncT)+'</div></td>'});
+      else h+='<td><div class="cellp"><span class="cur" title="'+esc(t.cur?t.cur.title:'')+'">'+(t.exam?'<span class="exb">'+(t.exam.vac?'휴무':'시험대비')+'</span>':esc(t.cur?t.cur.title:(t.next?'→ '+t.next.title:'')))+'</span>'+remainHTML(t)+(t.cur2&&!t.exam?' · <span class="cur">'+esc(t.cur2.title)+'</span>'+remainHTML({cur:t.cur2,curEnd:t.cur2End}):'')+dgHTML(null,t.unconf,t.uncT)+'</div></td>'});
     h+='</tr>';
   });
   h+='</tbody></table></div></div>';
@@ -1075,8 +1080,8 @@ function stuDetail(st){
   var lanes='';
   if(distL)lanes+='<div class="slane dl" style="width:'+(span*SW)+'px">'+distL+'</div>';
   rows.forEach(function(r,ri){
-    var P=stuPlan(st,r.id),D=doneOf(st,r.id),PLM=planLenMap(st,r.id);
-    lanes+='<div class="slane" data-srow="'+r.id+'" style="--sw:'+SW+'px;width:'+(span*SW)+'px">';
+    var P=stuPlan(st,r.id),D=doneOf(st,r.id),PLM=planLenMap(st,r.id),two=rowTwo(st,r.id);
+    lanes+='<div class="slane'+(two?' two':'')+'" data-srow="'+r.id+'" style="--sw:'+SW+'px;width:'+(span*SW)+'px">';
     if(P)P.segs.forEach(function(g){if(g.cal+g.len<=lo||g.cal>=hi)return;var past=g.cal+g.len<=now;
       if(g.exam&&g.exam.vac)return;
       if(g.exam){lanes+='<div class="sblk exam'+(past?' past':'')+'" title="'+(g.exam.vac?'휴무 ':'시험대비 ')+esc(g.exam.name||'')+' · '+(g.exam.vac?Math.round(g.len*5)+'일':(g.exam.weeks||4)+'주')+'" style="left:'+((g.cal-lo)*SW+2)+'px;width:'+Math.max(8,g.len*SW-4)+'px">'+(g.exam.vac?(g.len>=0.6?'휴무':''):'시험<br>대비')+'</div>';return}
@@ -1086,7 +1091,7 @@ function stuDetail(st){
       if(dn&&g.part!==1){var pe0=planEnd(st,r.id,it.id),de0=dateIdx(dn);if(pe0!=null&&de0!=null){var dd0=Math.round((de0-pe0)*7);if(dd0>0)lateD=dd0}}
       if(lateD)badge+='<i class="ld" title="계획 '+esc(idxISO(planEnd(st,r.id,it.id)).slice(5).replace('-','/'))+' → '+esc(String(dn).slice(5).replace('-','/'))+' 완료 ('+(lateD>=7?Math.round(lateD/7)+'주':lateD+'일')+' 늦게)"></i>';
       if(g.part!==2)badge+=lenTag(PLM[it.id],baseLen(it)).replace('class="lt','class="lt'+(lateD?' bt':''));
-      lanes+='<div class="sblk mv'+(past&&!dn?' past':'')+(dn?' done':'')+(g.part?' part'+g.part:'')+(on?' on':'')+'" data-ci="'+esc(it.id)+'" data-row="'+r.id+'" title="'+esc(it.title)+' · '+wl+'주 · '+esc(idxDate(g.cal))+'~'+esc(idxDate(g.cal+g.len-1/7))+(dn?' · 완료 '+esc(dn):'')+(g.part?' (시험대비로 나뉨)':'')+' · 끌어서 옮기기 / 눌러서 고치기·완료" style="left:'+((g.cal-lo)*SW+2)+'px;width:'+Math.max(8,g.len*SW-4)+'px;background:#'+c[0]+';color:#'+c[1]+'">'+(g.len*SW>34?esc(it.title).replace(/ \/ /g,'<br>+ '):'')+badge+(g.part===1||dn?'':'<div class="rh2" data-rh2="1"></div>')+'</div>'});
+      lanes+='<div class="sblk mv'+(it.lane?' l1':'')+(past&&!dn?' past':'')+(dn?' done':'')+(g.part?' part'+g.part:'')+(on?' on':'')+'" data-ci="'+esc(it.id)+'" data-row="'+r.id+'" title="'+esc(it.title)+' · '+wl+'주 · '+esc(idxDate(g.cal))+'~'+esc(idxDate(g.cal+g.len-1/7))+(dn?' · 완료 '+esc(dn):'')+(g.part?' (시험대비로 나뉨)':'')+' · 끌어서 옮기기 / 눌러서 고치기·완료" style="left:'+((g.cal-lo)*SW+2)+'px;width:'+Math.max(8,g.len*SW-4)+'px;background:#'+c[0]+';color:#'+c[1]+'">'+(g.len*SW>34?esc(it.title).replace(/ \/ /g,'<br>+ '):'')+badge+(g.part===1||dn?'':'<div class="rh2" data-rh2="1"></div>')+'</div>'});
     lanes+='<div class="today" style="left:'+((now-lo)*SW)+'px">'+(ri===0&&!distL?'<span>오늘</span>':'')+'</div></div>';
   });
   var rowsH='';
@@ -1108,6 +1113,7 @@ function stuDetail(st){
     h+='<div class="sbar2"><span class="selname">'+esc(rowOf(stuPick.row).name)+' · <b>'+esc(pit.title)+'</b> <span style="color:#888780;font-weight:400">('+(baseLen(pit)!=null?baseLen(pit):Math.round(pit.len*10)/10)+'주)</span></span>';
     h+='<button class="btn sm" data-s="ci" data-op="left">◀ 1주 앞</button><button class="btn sm" data-s="ci" data-op="right">1주 뒤 ▶</button>';
     h+='<button class="btn sm" data-s="ci" data-op="dec">− 1주</button><button class="btn sm" data-s="ci" data-op="inc">＋ 1주</button>';
+    if(rowOf(stuPick.row).kind==='class'&&!dn)h+=pit.lane?'<button class="btn sm" data-s="ci" data-op="unovl" title="겹쳐서 하던 교재를 원래 순서 자리로 돌려놔요">⇈ 원래 줄로</button>':'<button class="btn sm" data-s="ci" data-op="ovl" title="앞 교재와 같은 때부터 아래 칸에서 겹쳐서 해요 (아래로 끌어도 돼요)">⇊ 겹쳐서 하기</button>';
     h+='<button class="btn sm" data-s="ci" data-op="dup">반복(n차) 추가</button><button class="btn sm" data-s="ci" data-op="addafter">＋ 뒤에 교재 추가</button>';
     h+='<button class="btn sm danger" data-s="ci" data-op="del">빼기</button>';
     h+='<span class="donebar">'+(dn?'<b style="color:#1d6b3a">✓ '+esc(dn)+' 완료</b>'+(df!=null?' <span class="hint">(계획 '+(df>0?df+'주 뒤':(df<0?(-df)+'주 앞':'그대로'))+')</span>':'')+' <button class="btn sm" data-s="ci" data-op="undone">완료 취소</button>'
@@ -1130,7 +1136,7 @@ function stuDetail(st){
       hLanes+='<div class="today" style="left:'+((now-lo)*SW)+'px"></div></div>';
     });
   }
-  h+='<div style="display:grid;grid-template-columns:max-content minmax(0,1fr);margin-top:8px"><div>'+'<div style="height:46px"></div>'+(distL?'<div class="hlab" style="height:22px;background:#fffaf2;color:#b54708">배부 ◆</div>':'')+rows.map(function(r){var t=stuStatus(st,r.id);var cu=st.custom&&st.custom[r.id]&&st.custom[r.id].length;return '<div class="plab'+(r.kind==='vocab'?' v':'')+'" title="지금: '+esc(t.exam?'시험대비':(t.cur?t.cur.title:'—'))+'"><span>'+esc(r.name)+(cu?' <i class=\'cdot\' title=\'개인 계획\'>●</i>':'')+'</span></div>'}).join('')+hLab+'</div>';
+  h+='<div style="display:grid;grid-template-columns:max-content minmax(0,1fr);margin-top:8px"><div>'+'<div style="height:46px"></div>'+(distL?'<div class="hlab" style="height:22px;background:#fffaf2;color:#b54708">배부 ◆</div>':'')+rows.map(function(r){var t=stuStatus(st,r.id);var cu=st.custom&&st.custom[r.id]&&st.custom[r.id].length;return '<div class="plab'+(r.kind==='vocab'?' v':'')+(rowTwo(st,r.id)?' two':'')+'" title="지금: '+esc(t.exam?'시험대비':(t.cur?t.cur.title:'—'))+'"><span>'+esc(r.name)+(cu?' <i class=\'cdot\' title=\'개인 계획\'>●</i>':'')+'</span></div>'}).join('')+hLab+'</div>';
   h+='<div class="stl" id="stl"><div class="stlin" style="width:'+(span*SW)+'px">'+axis+lanes+hLanes+'</div></div></div>';
   if(!(HI&&HI.length)&&Object.keys(HIST.students||{}).length)h+='<div class="note" style="margin-top:6px">이 학생은 지난 기록(장부)에 이름이 없어요.</div>';
   h+='</div>';
@@ -1211,11 +1217,12 @@ function ensureCustom(st,rowId){
   st.custom=st.custom||{};
   if(st.custom[rowId]&&st.custom[rowId].length)return st.custom[rowId];
   var R=rawItems(st,rowId,true);if(!R)return null;
-  st.custom[rowId]=R.items.map(function(x){return {id:x.id,ref:x.ref,title:x.title,cal:x.cal,len:x.len}});
+  st.custom[rowId]=R.items.map(function(x){var o={id:x.id,ref:x.ref,title:x.title,cal:x.cal,len:x.len};if(x.lane)o.lane=1;return o});
   return st.custom[rowId];
 }
 // 겹치면 뒤로 밀기 (fixed 는 제자리)
-function resolveItems(list,fixed){
+function resolveItems(list0,fixed){
+  var ln=fixed.lane?1:0,list=list0.filter(function(x){return (x.lane?1:0)===ln});
   list.sort(function(a,b){return a.cal-b.cal||(a===fixed?-1:b===fixed?1:0)});
   list.forEach(function(X){if(X!==fixed&&X.cal<fixed.cal&&X.cal+X.len>fixed.cal){if(fixed.cal-X.cal<X.len/2)X.cal=fixed.cal;else fixed.cal=X.cal+X.len}});
   var cur=fixed.cal+fixed.len;
@@ -1225,11 +1232,22 @@ function ciEdit(st,rowId,id,fn){
   var L=ensureCustom(st,rowId);if(!L)return;var it=L.find(function(x){return x.id===id});if(!it)return;
   fn(it,L);commitKeep();
 }
+function laneMove(st,row,id,toLane,d,alignPrev){var msg='';
+  ciEdit(st,row,id,function(it,L){
+    var same=function(ln){return L.filter(function(x){return x!==it&&(x.lane?1:0)===ln})};
+    if(toLane===1){var prev=null;same(0).forEach(function(x){if(x.cal<it.cal&&(!prev||x.cal>prev.cal))prev=x});
+      same(0).forEach(function(x){if(x.cal>it.cal)x.cal-=it.len});it.lane=1;it.cal=(alignPrev&&prev?prev.cal:it.cal)+d;resolveItems(L,it);msg=it.title+'을(를) 겹쳐서 하기로 옮겼어요 — 뒤 교재는 원래 진도대로 이어져요 (↶ 되돌리기 가능)'}
+    else{delete it.lane;var M=same(0).sort(function(a2,b2){return a2.cal-b2.cal}),ib=it.ref&&blk(it.ref),nx=null;
+      if(ib)nx=M.find(function(x){var xb=x.ref&&blk(x.ref);return xb&&xb.start>ib.start&&!doneOf(st,row)[x.id]});
+      if(nx)it.cal=nx.cal;else{it.cal+=d;var cov=M.find(function(x){return x.cal<=it.cal&&x.cal+x.len>it.cal});if(cov)it.cal=cov.cal+cov.len}
+      M.forEach(function(x){if(x.cal>=it.cal)x.cal+=it.len});resolveItems(L,it);msg=it.title+'을(를) 원래 줄로 돌려놨어요'}
+  });stuPick={row:row,id:id};if(msg)toast(msg)}
 function commitKeep(){var tl=document.getElementById('stl');stuKeepScroll=true;stuScrollToday=tl?tl.scrollLeft:0;commit();stuKeepScroll=false}
 function ciOp(op){
   var st=stuOf(stuSel);if(!st||!stuPick)return;var row=stuPick.row,id=stuPick.id;
   if(op==='unpick'){stuPick=null;stuAddOpen=false;render();return}
   if(op==='addafter'){stuAddOpen=true;render();return}
+  if(op==='ovl'||op==='unovl'){if(op==='ovl'&&doneOf(st,row)[id]){toast('완료한 교재는 옮길 수 없어요');return}laneMove(st,row,id,op==='ovl'?1:0,0,true);return}
   if(op==='addcancel'){stuAddOpen=false;render();return}
   if(op==='done'||op==='donedate'||op==='undone'){var dt=op==='done'?todayStr():((document.getElementById('done-date')||{}).value||'');
     if(op!=='undone'&&!dt){toast('완료한 날짜를 골라 주세요');return}
@@ -1237,19 +1255,19 @@ function ciOp(op){
     if(op==='undone')delete st.done[row][id];else st.done[row][id]=dt;
     commitKeep();toast(op==='undone'?'완료 표시를 지웠어요':'완료로 표시했어요 — 뒤 교재 날짜를 완료일에 맞췄어요');return}
   ciEdit(st,row,id,function(it,L){
-    var after=function(){return L.filter(function(x){return x!==it&&x.cal>=it.cal})};
+    var after=function(){return L.filter(function(x){return x!==it&&(x.lane?1:0)===(it.lane?1:0)&&x.cal>=it.cal})};
     if(op==='left'){if(stuChain)after().forEach(function(x){x.cal-=1});it.cal-=1;resolveItems(L,it)}
     else if(op==='right'){if(stuChain)after().forEach(function(x){x.cal+=1});it.cal+=1;resolveItems(L,it)}
     else if(op==='dec'){if(it.len>1){if(stuChain)after().forEach(function(x){x.cal-=1});it.len-=1}}
     else if(op==='inc'){if(stuChain)after().forEach(function(x){x.cal+=1});it.len+=1;resolveItems(L,it)}
     else if(op==='dup'){var nth=L.filter(function(x){return x.title.replace(/ \d+차$/,'')===it.title.replace(/ \d+차$/,'')}).length+1;
-      var base=it.title.replace(/ \d+차$/,'');var c={id:uid('c'),ref:it.ref,title:base+' '+nth+'차',cal:it.cal+it.len,len:it.len};
+      var base=it.title.replace(/ \d+차$/,'');var c={id:uid('c'),ref:it.ref,title:base+' '+nth+'차',cal:it.cal+it.len,len:it.len};if(it.lane)c.lane=1;
       if(stuChain)after().forEach(function(x){x.cal+=c.len});L.push(c);resolveItems(L,c);stuPick={row:row,id:c.id}}
-    else if(op==='del'){var i=L.indexOf(it);L.splice(i,1);if(stuChain)L.forEach(function(x){if(x.cal>it.cal)x.cal-=it.len});stuPick=null}
+    else if(op==='del'){var i=L.indexOf(it);L.splice(i,1);if(stuChain)L.forEach(function(x){if((x.lane?1:0)===(it.lane?1:0)&&x.cal>it.cal)x.cal-=it.len});stuPick=null}
     else if(op==='addgo'){var lid=(document.getElementById('sa-lib')||{}).value,tt=((document.getElementById('sa-title')||{}).value||'').trim(),ln=Math.max(1,parseInt((document.getElementById('sa-len')||{}).value,10)||1);
       var lx=lid&&S.library.find(function(o){return o.id===lid});if(lx){tt=lx.name;if(!(document.getElementById('sa-len')||{}).dataset.touched)ln=durMonths(lx.dur)}if(!tt){toast('교재를 고르거나 입력해 주세요');return}
       var refb=S.blocks.find(function(b){return b.row===row&&b.title.replace(/\s/g,'').toLowerCase()===tt.replace(/\s/g,'').toLowerCase()});
-      var nw={id:uid('c'),ref:refb?refb.id:'',title:tt,cal:it.cal+it.len,len:ln};
+      var nw={id:uid('c'),ref:refb?refb.id:'',title:tt,cal:it.cal+it.len,len:ln};if(it.lane)nw.lane=1;
       if(stuChain)after().forEach(function(x){x.cal+=ln});L.push(nw);resolveItems(L,nw);stuAddOpen=false;stuPick={row:row,id:nw.id}}
   });
 }
@@ -1260,19 +1278,25 @@ app.addEventListener('pointerdown',function(e){
   var el=e.target.closest('.sblk.mv');if(!el)return;
   var st=stuOf(stuSel);if(!st)return;
   if(e.pointerType==='touch'){SD={tap:true,el:el,row:el.getAttribute('data-row'),id:el.getAttribute('data-ci'),x:e.clientX,y:e.clientY,moved:false};return}
-  SD={el:el,row:el.getAttribute('data-row'),id:el.getAttribute('data-ci'),x:e.clientX,moved:false,resize:!!e.target.closest('[data-rh2]'),left:parseFloat(el.style.left),width:parseFloat(el.style.width)};
+  SD={el:el,row:el.getAttribute('data-row'),id:el.getAttribute('data-ci'),x:e.clientX,y:e.clientY,lane:el.classList.contains('l1')?1:0,moved:false,resize:!!e.target.closest('[data-rh2]'),left:parseFloat(el.style.left),width:parseFloat(el.style.width)};
   el.setPointerCapture(e.pointerId);e.preventDefault();
 });
 app.addEventListener('pointermove',function(e){
   if(!SD)return;if(SD.tap){if(Math.abs(e.clientX-SD.x)+Math.abs(e.clientY-SD.y)>8)SD=null;return}
-  var dx=e.clientX-SD.x;if(!SD.moved&&Math.abs(dx)<5)return;SD.moved=true;
+  var dx=e.clientX-SD.x,dy=e.clientY-SD.y;if(!SD.moved&&Math.abs(dx)<5&&Math.abs(dy)<8)return;SD.moved=true;
   var d=Math.round(dx/SW);SD.d=d;
+  if(!SD.resize){var rk=rowOf(SD.row),can=rk&&rk.kind==='class'&&!SD.el.classList.contains('done');
+    var tl=SD.lane;if(can&&SD.lane===0&&dy>18)tl=1;else if(SD.lane===1&&dy<-18)tl=0;SD.toLane=tl;
+    var ln=SD.el.closest('.slane');if(ln)ln.classList.toggle('ovhint',tl===1&&SD.lane===0);
+    SD.el.classList.toggle('tol',tl!==SD.lane);SD.el.style.transform=tl!==SD.lane?'translateY('+(tl?38:-38)+'px)':''}
   if(SD.resize)SD.el.style.width=Math.max(SW-4,SD.width+d*SW)+'px';else{SD.el.style.left=(SD.left+d*SW)+'px';SD.el.classList.add('drag')}
 });
 function stuEnd(){
   if(!SD)return;var s=SD;SD=null;var st=stuOf(stuSel);if(!st)return;
   if(!s.moved){stuPick={row:s.row,id:s.id};stuAddOpen=false;var tl=document.getElementById('stl');stuKeepScroll=true;stuScrollToday=tl?tl.scrollLeft:0;render();stuKeepScroll=false;return}
-  var d=s.d||0;if(!d){render();return}
+  var d=s.d||0;
+  if(s.toLane!=null&&s.toLane!==s.lane){laneMove(st,s.row,s.id,s.toLane,d,false);return}
+  if(!d){render();return}
   ciEdit(st,s.row,s.id,function(it,L){
     var after=L.filter(function(x){return x!==it&&x.cal>=it.cal});
     if(s.resize){var nl=Math.max(1,it.len+d),dd=nl-it.len;if(stuChain)after.forEach(function(x){x.cal+=dd});it.len=nl;resolveItems(L,it)}
