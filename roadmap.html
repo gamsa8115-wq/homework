@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>학원 로드맵 기간표 v53</title>
+<title>학원 로드맵 기간표 v54</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style id="app-style">
@@ -155,7 +155,8 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family
 .slane.dl{height:22px;background:#fffaf2}
 .sdist{position:absolute;top:2px;font-size:11px;font-weight:800;color:#b54708;white-space:nowrap}
 .sblk.done{background:#f1e6da!important;color:#8a8178!important;box-shadow:none}
-.sblk .lt{position:absolute;top:1px;right:2px;background:#FAEEDA;color:#633806;border-radius:9px;padding:0 5px;font-size:10px;font-weight:800;line-height:14px;z-index:3;pointer-events:none}.sblk .ld{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:#EF9F27;z-index:3}.sblk .lt.bt{top:auto;bottom:1px}.sblk .lt.m{background:#E6F1FB;color:#0C447C}
+.sblk .lt{position:absolute;top:1px;right:2px;background:#FAEEDA;color:#633806;border-radius:9px;padding:0 5px;font-size:10px;font-weight:800;line-height:14px;z-index:3;pointer-events:none}.sblk.aact{box-shadow:inset 0 -3px 0 #2b6cb0}
+.sblk .ld{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:#EF9F27;z-index:3}.sblk .lt.bt{top:auto;bottom:1px}.sblk .lt.m{background:#E6F1FB;color:#0C447C}
 .sblk .ck{color:#1d9e57;font-weight:900;margin-left:3px}
 .donebar{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;padding-left:8px;border-left:2px solid #d5dae0;margin-left:4px}
 .uc{font-size:11px;color:#9a5300;font-weight:700}
@@ -230,7 +231,7 @@ var FIREBASE_CONFIG = {           // 숙제관리 앱과 같은 Firebase 프로�
 var DB_PATH = 'roadmap_planner_v1';      // 이 프로그램 전용 저장 위치 — ⚠️ homework_v4(숙제관리), academy 와 절대 겹치지 않게
 var FB_APP_NAME = 'roadmap_planner';     // 별도 앱 인스턴스 이름 (다른 프로그램과 섞이지 않게)
 /* ★ 버전 — 고칠 때마다 숫자를 올리면 화면 왼쪽 위에 표시돼요 */
-var RM_VERSION = 'v53'; try{document.title='학원 로드맵 기간표 '+RM_VERSION}catch(e){}
+var RM_VERSION = 'v54'; try{document.title='학원 로드맵 기간표 '+RM_VERSION}catch(e){}
 var RM_DATE = '2026-11-14';
 var DEFAULT_LIB = [{"id": "L000", "cat": "main", "name": "Alphabet 1", "dur": "4주"}, {"id": "L001", "cat": "main", "name": "Alphabet 2", "dur": "4주"}, {"id": "L002", "cat": "main", "name": "Phonics 1", "dur": "5주"}, {"id": "L003", "cat": "main", "name": "Phonics 2", "dur": "5주"}, {"id": "L004", "cat": "main", "name": "Phonics 3", "dur": "5주"}, {"id": "L005", "cat": "main", "name": "Phonics 4", "dur": "5주"}, {"id": "L006", "cat": "main", "name": "Phonics 5", "dur": "5주"}, {"id": "L007", "cat": "main", "name": "Phonics 6", "dur": "5주"}, {"id": "L008", "cat": "main", "name": "Reading 1", "dur": "5주"}, {"id": "L009", "cat": "main", "name": "Reading 2", "dur": "5주"}, {"id": "L010", "cat": "main", "name": "Reading 3", "dur": "5주"}, {"id": "L011", "cat": "main", "name": "Reading 4", "dur": "5주"}, {"id": "L012", "cat": "main", "name": "Reading 5", "dur": "5주"}, {"id": "L013", "cat": "main", "name": "Reading 6", "dur": "5주"}, {"id": "L014", "cat": "main", "name": "Basic 1", "dur": "5주"}, {"id": "L015", "cat": "main", "name": "Basic 2", "dur": "5주"}, {"id": "L016", "cat": "main", "name": "Basic 3", "dur": "5주"}, {"id": "L017", "cat": "main", "name": "Basic 4", "dur": "5주"}, {"id": "L018", "cat": "main", "name": "Basic 5", "dur": "5주"}, {"id": "L019", "cat": "main", "name": "Basic 6", "dur": "5주"}, {"id": "L020", "cat": "main", "name": "Basic 7", "dur": "5주"}, {"id": "L021", "cat": "main", "name": "Basic 8", "dur": "5주"}, {"id": "L022", "cat": "main", "name": "Basic 9", "dur": "5주"}, {"id": "L023", "cat": "main", "name": "Basic 10", "dur": "5주"}, {"id": "L024", "cat": "main", "name": "Basic 11", "dur": "5주"}, {"id": "L025", "cat": "main", "name": "Basic 12", "dur": "5주"}, {"id": "L026", "cat": "main", "name": "5형식 (주+동+시)", "dur": "4주"}, {"id": "L027", "cat": "main", "name": "5형식 (부사구)", "dur": "4주"}, {"id": "L028", "cat": "main", "name": "5형식 (준동사)", "dur": "4주"}, {"id": "L029", "cat": "main", "name": "5형식 (분석/해석하기)", "dur": "4주"}, {"id": "L030", "cat": "main", "name": "3800 해석 (1단계)", "dur": "17주"}, {"id": "L031", "cat": "main", "name": "3800 해석 (2단계)", "dur": "17주"}, {"id": "L032", "cat": "main", "name": "천문장 입문(Test)", "dur": "22주"}, {"id": "L033", "cat": "main", "name": "천문장 기본(Test)", "dur": "22주"}, {"id": "L034", "cat": "main", "name": "고등 미니 모의고사", "dur": "13주"}, {"id": "L087", "cat": "main", "name": "Beginner Sentence build up", "dur": "1일"}, {"id": "L088", "cat": "main", "name": "Inter Sentence build up", "dur": "1일"}, {"id": "L035", "cat": "sub", "name": "Alphabet 쓰기 1", "dur": "4주"}, {"id": "L036", "cat": "sub", "name": "Alphabet 쓰기 2", "dur": "4주"}, {"id": "L037", "cat": "sub", "name": "Ph 워크북 1", "dur": "8주"}, {"id": "L038", "cat": "sub", "name": "Ph 워크북 2", "dur": "8주"}, {"id": "L039", "cat": "sub", "name": "Ph 워크북 3", "dur": "8주"}, {"id": "L040", "cat": "sub", "name": "Ph 워크북 4", "dur": "8주"}, {"id": "L041", "cat": "sub", "name": "Ph 워크북 5", "dur": "8주"}, {"id": "L042", "cat": "sub", "name": "Ph 워크북 6", "dur": "8주"}, {"id": "L043", "cat": "sub", "name": "Ph Speed 워크북 1", "dur": "8주"}, {"id": "L044", "cat": "sub", "name": "Ph Speed 워크북 2", "dur": "8주"}, {"id": "L045", "cat": "sub", "name": "Ph Speed 워크북 3", "dur": "8주"}, {"id": "L046", "cat": "sub", "name": "워크북 E1", "dur": "8주"}, {"id": "L047", "cat": "sub", "name": "워크북 E2", "dur": "8주"}, {"id": "L048", "cat": "sub", "name": "워크북 E3", "dur": "8주"}, {"id": "L049", "cat": "sub", "name": "워크북 E4", "dur": "8주"}, {"id": "L050", "cat": "sub", "name": "워크북 E5", "dur": "8주"}, {"id": "L051", "cat": "sub", "name": "워크북 E6", "dur": "8주"}, {"id": "L052", "cat": "sub", "name": "워크북 M", "dur": "5주"}, {"id": "L053", "cat": "sub", "name": "3800 드릴 (1단계)", "dur": "35주"}, {"id": "L054", "cat": "sub", "name": "3800 드릴 (2단계)", "dur": "35주"}, {"id": "L055", "cat": "sub", "name": "3800 드릴 (3단계)", "dur": "35주"}, {"id": "L056", "cat": "sub", "name": "Prerequisite 초 (A)", "dur": "6주"}, {"id": "L057", "cat": "sub", "name": "Prerequisite 중 intro (A)", "dur": "6주"}, {"id": "L058", "cat": "sub", "name": "Prerequisite 초 (B)", "dur": "6주"}, {"id": "L059", "cat": "sub", "name": "Prerequisite 중 intro (B)", "dur": "6주"}, {"id": "L060", "cat": "sub", "name": "초등 1단계 (단어장)", "dur": "17주"}, {"id": "L061", "cat": "sub", "name": "초등 2단계 (단어장)", "dur": "17주"}, {"id": "L062", "cat": "sub", "name": "3인칭 일반동사 (단어장)", "dur": "4주"}, {"id": "L063", "cat": "sub", "name": "과거 일반동사 (단어장)", "dur": "4주"}, {"id": "L064", "cat": "sub", "name": "과거/과거분사 (단어장)", "dur": "4주"}, {"id": "L065", "cat": "sub", "name": "중등 1단계 (단어장)", "dur": "13주"}, {"id": "L066", "cat": "sub", "name": "중등 2단계 (단어장)", "dur": "13주"}, {"id": "L067", "cat": "voca", "name": "초등 주니어 20.65", "dur": "17주"}, {"id": "L068", "cat": "voca", "name": "초등 1단계 40.70 (리콜)", "dur": "17주"}, {"id": "L069", "cat": "voca", "name": "초등 1단계 40.70 (객관식)", "dur": "17주"}, {"id": "L070", "cat": "voca", "name": "초등 1단계 40.70 (주관식)", "dur": "17주"}, {"id": "L071", "cat": "voca", "name": "초등 2단계 40.70 (리콜)", "dur": "17주"}, {"id": "L072", "cat": "voca", "name": "초등 2단계 40.70 (객관식)", "dur": "17주"}, {"id": "L073", "cat": "voca", "name": "초등 2단계 40.70 (주관식)", "dur": "17주"}, {"id": "L074", "cat": "voca", "name": "3인칭 일반동사", "dur": "4주"}, {"id": "L075", "cat": "voca", "name": "과거 일반동사", "dur": "4주"}, {"id": "L076", "cat": "voca", "name": "과거 과거분사", "dur": "4주"}, {"id": "L077", "cat": "voca", "name": "중등 1단계 100.50 (리콜)", "dur": "13주"}, {"id": "L078", "cat": "voca", "name": "중등 1단계 100.50 (객관식)", "dur": "13주"}, {"id": "L079", "cat": "voca", "name": "중등 1단계 100.50 (주관식)", "dur": "13주"}, {"id": "L080", "cat": "voca", "name": "중등 2단계 100.50 (리콜)", "dur": "13주"}, {"id": "L081", "cat": "voca", "name": "중등 2단계 100.50 (객관식)", "dur": "13주"}, {"id": "L082", "cat": "voca", "name": "중등 2단계 100.50 (주관식)", "dur": "13주"}, {"id": "L083", "cat": "voca", "name": "한끝 고등 기본 30.42", "dur": "9주"}, {"id": "L084", "cat": "voca", "name": "5형식 단어", "dur": "4주"}, {"id": "L085", "cat": "voca", "name": "천문장 입문 단어 20.88", "dur": "22주"}, {"id": "L086", "cat": "voca", "name": "천문장 기본 단어 25.88", "dur": "22주"}, {"id": "L089", "cat": "short", "name": "중2. 1학기 중간", "dur": "5주"}, {"id": "L090", "cat": "short", "name": "중2. 1학기 중간- 부교재", "dur": "5주"}, {"id": "L091", "cat": "short", "name": "중3. 1학기 중간", "dur": "5주"}, {"id": "L092", "cat": "short", "name": "중3. 1학기 중간- 부교재", "dur": "5주"}, {"id": "L093", "cat": "short", "name": "중2. 1학기 기말", "dur": "5주"}, {"id": "L094", "cat": "short", "name": "중2. 1학기 기말- 부교재", "dur": "5주"}, {"id": "L095", "cat": "short", "name": "중3. 1학기 기말", "dur": "5주"}, {"id": "L096", "cat": "short", "name": "중3. 1학기 기말- 부교재", "dur": "5주"}, {"id": "L097", "cat": "short", "name": "중1. 2학기 중간", "dur": "5주"}, {"id": "L098", "cat": "short", "name": "중1. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L099", "cat": "short", "name": "중2. 2학기 중간", "dur": "5주"}, {"id": "L100", "cat": "short", "name": "중2. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L101", "cat": "short", "name": "중3. 2학기 중간", "dur": "5주"}, {"id": "L102", "cat": "short", "name": "중3. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L103", "cat": "short", "name": "중1. 2학기 기말", "dur": "5주"}, {"id": "L104", "cat": "short", "name": "중1. 2학기 기말- 부교재", "dur": "5주"}, {"id": "L105", "cat": "short", "name": "중2. 2학기 기말", "dur": "5주"}, {"id": "L106", "cat": "short", "name": "중2. 2학기 기말- 부교재", "dur": "5주"}, {"id": "L107", "cat": "short", "name": "중3. 2학기 기말", "dur": "5주"}, {"id": "L108", "cat": "short", "name": "중3. 2학기 기말- 부교재", "dur": "5주"}];
 var EMBED = document.getElementById('roadmap-data').textContent;   // 처음 한 번 넣을 기본 로드맵
@@ -326,9 +327,9 @@ function appSchedSet(cp,ev,vl){var P=[],V=[];var arr=function(o){return Array.is
   APPS.pauses=P;APPS.vacs=V;APPS.events=arr(ev);APPS.loaded=true}
 function appStuSet(o){var a=Array.isArray(o)?o.filter(Boolean):Object.keys(o||{}).map(function(k){return o[k]}).filter(Boolean);
   var pj=function(v){if(typeof v==='string'){try{return JSON.parse(v)}catch(e){return null}}return v};
-  APPS.students=a.map(function(x){var g=x.gr||{};var cb=pj(x.completedBooks);cb=Array.isArray(cb)?cb:Object.keys(cb||{}).map(function(k){return cb[k]});return {id:String(x.id),name:x.name||'',school:x.school||'',group:x.group||'',grade:+g.g||0,gy:+g.y||0,books:Array.isArray(x.books)?x.books:Object.keys(x.books||{}).map(function(k){return x.books[k]}),bd:x.bookDates||{},be:x.bookEndDates||{},cb:(cb||[]).filter(Boolean)}});APPS.stuLoaded=true;appStuSync()}
+  APPS.ver=(APPS.ver||0)+1;APPS.students=a.map(function(x){var g=x.gr||{};var cb=pj(x.completedBooks);cb=Array.isArray(cb)?cb:Object.keys(cb||{}).map(function(k){return cb[k]});return {id:String(x.id),name:x.name||'',school:x.school||'',group:x.group||'',grade:+g.g||0,gy:+g.y||0,books:Array.isArray(x.books)?x.books:Object.keys(x.books||{}).map(function(k){return x.books[k]}),bd:x.bookDates||{},be:x.bookEndDates||{},cb:(cb||[]).filter(Boolean)}});APPS.stuLoaded=true;appStuSync()}
 function appBookSet(o){var a=Array.isArray(o)?o.filter(Boolean):Object.keys(o||{}).map(function(k){return o[k]}).filter(Boolean);
-  APPS.books=a.map(function(x){var du=x.defaultDuration||{},n=+du.n||0,w=!n?null:du.unit==='day'?n/7:du.unit==='month'?n*M2W:n;return {id:String(x.id),name:x.name||'',mode:x.mode||'book',weeks:w}});APPS.bookLoaded=true;appBookLink()}
+  APPS.ver=(APPS.ver||0)+1;APPS.books=a.map(function(x){var du=x.defaultDuration||{},n=+du.n||0,w=!n?null:du.unit==='day'?n/7:du.unit==='month'?n*M2W:n;return {id:String(x.id),name:x.name||'',mode:x.mode||'book',weeks:w}});APPS.bookLoaded=true;appBookLink()}
 function nkey(x){return String(x||'').replace(/\s/g,'').toLowerCase()}
 // 로드맵 칸 ↔ 앱 교재 짝 (id 우선, 없으면 이름). 앱에서 이름을 바꿔도 id로 따라감 — 로드맵 칸 이름만 앱 이름으로 맞춤
 function appBookLink(){if(!S||!S.blocks)return;S.blocks.forEach(function(b){if(b.row==='rd')return;var a=b.appBook&&APPS.books.find(function(x){return x.id===b.appBook});
@@ -346,6 +347,17 @@ function appActive(a){if(!a||!APPS.books.length)return [];var B={};APPS.books.fo
     rows.some(function(rid){var c=inRow(rid).filter(function(x){return nkey(x.title)===nkey(b.name)||(x.appBook&&x.appBook===b.id)});if(c.length){var n=parseInt(coh,10);blk=(rid==='r4'&&n>1&&c[n-1])?c[n-1]:c[0];return true}});
     if(!blk)return;out.push({row:blk.row,blk:blk,name:b.name,coh:coh,date:a.bd[k],end:(a.be||{})[k]||''})});
   return out}
+var APPC={};var APP_CUT='2026-11-01';
+function appRowInfo(st,row){var a=appStuOf(st);if(!a||!APPS.books.length)return null;var key=(APPS.ver||0)+'|'+st.id;var c=APPC[key];
+  if(!c){c={act:{},done:{}};appActive(a).forEach(function(x){(c.act[x.row]=c.act[x.row]||{})[x.blk.id]=x});
+    var B={};APPS.books.forEach(function(b){B[b.id]=b});
+    (a.cb||[]).forEach(function(cb){var b=B[String(cb.bookId)];if(!b||!cb.date||cb.date<APP_CUT)return;var cat=cb.category||'';if(b.mode==='voca'&&!cat)cat='수업보카';
+      var rows=b.mode==='voca'?[cat==='홈보카'?'r2':'r3']:['r0','r1','r4'];
+      rows.some(function(rid){var m=inRow(rid).filter(function(x){return nkey(x.title)===nkey(b.name)||(x.appBook&&x.appBook===b.id)});if(m.length){var n=parseInt(cb.cohort,10),bk=(rid==='r4'&&n>1&&m[n-1])?m[n-1]:m[0];var d0=(c.done[rid]=c.done[rid]||{});if(!d0[bk.id]||d0[bk.id]<cb.date)d0[bk.id]=cb.date;return true}})});
+    if(APPC._v!==APPS.ver){APPC={_v:APPS.ver}}APPC[key]=c}
+  return {act:c.act[row]||{},done:c.done[row]||{}}}
+// 연결 학생의 칸 상태: 'done'(앱 완료) · 'active'(앱 배부 중) · ''(앞으로 — 로드맵에서 자유롭게)
+function appLock(st,row,it){if(!it)return '';var inf=appRowInfo(st,row);if(!inf)return '';if(it.ref&&inf.done[it.ref])return 'done';if(it.ref&&inf.act[it.ref])return 'active';return ''}
 function appApplyRow(st,row,acts){acts=acts.slice().sort(function(x,y){return x.blk.start-y.blk.start});var m=acts[0];
   st.custom=st.custom||{};delete st.custom[row];st.starts=st.starts||{};st.fromR=st.fromR||{};st.starts[row]=m.blk.id;st.fromR[row]=m.date;
   if(st.skips)delete st.skips[row];
@@ -364,6 +376,7 @@ function appStuOf(st){return st&&st.appId?APPS.students.find(function(a){return 
 // 연결된 학생은 학교·반·학년을 앱 값으로 (읽기만, 앱에는 쓰지 않음)
 function appStuSync(){(S&&S.students||[]).forEach(function(st){var a=appStuOf(st);if(a){st.school=a.school;st.group=a.group;if(a.grade){st.grade=a.grade;st.gy=a.gy}}})}
 function appStuGuess(st){var nk=function(x){return String(x||'').replace(/\s/g,'')},c=APPS.students.filter(function(a){return nk(a.name)===nk(st.name)});if(c.length>1&&st.school)c=c.filter(function(a){return normSchool(a.school)===normSchool(st.school)});return c.length===1?c[0]:null}
+try{if(window.__APPSTU)window.__appStuSet=function(o){appStuSet(o);render()}}catch(e){}
 try{if(window.__APPSTU)setTimeout(function(){appStuSet(window.__APPSTU);if(window.__APPBOOKS)appBookSet(window.__APPBOOKS);render()},0)}catch(e){}
 try{if(window.__APPSCHED)appSchedSet(window.__APPSCHED.classPauses,window.__APPSCHED.schoolEvents,window.__APPSCHED.vacations)}catch(e){}
 function normSchool(x){return String(x||'').replace(/\s/g,'').replace(/(중학교|중)$/,'')}
@@ -947,7 +960,8 @@ function rawItems0(st,rowId){
 }
 // ★ 완료 표시: 마지막으로 완료한 교재의 완료일부터 뒤 교재를 다시 이어 붙임 (완료한 교재까지는 실제 기록으로 고정)
 function rowTwo(st,rowId){var cu=st.custom&&st.custom[rowId];return !!(cu&&cu.some(function(x){return x.lane}))}
-function doneOf(st,rowId){return (st.done&&st.done[rowId])||{}}
+function doneOf(st,rowId){var base=(st.done&&st.done[rowId])||{};var inf=appRowInfo(st,rowId);if(!inf||!Object.keys(inf.done).length)return base;
+  var R0=rawItems0(st,rowId);if(!R0)return base;var o={};Object.keys(base).forEach(function(k){o[k]=base[k]});R0.items.forEach(function(it){if(it.ref&&inf.done[it.ref])o[it.id]=inf.done[it.ref]});return o}
 function applyDone(st,rowId,R){
   var D=doneOf(st,rowId),L=R.items.filter(function(x){return !x.lane}),j=-1;
   R.items.forEach(function(it){if(it.lane&&D[it.id]){var e=dateIdx(D[it.id]);if(e!=null){if(e<=it.cal)it.cal=e-0.4;it.len=e-it.cal;it.fixed=true}}});
@@ -1189,7 +1203,7 @@ function stuDetail(st){
       if(dn&&g.part!==1){var pe0=planEnd(st,r.id,it.id),de0=dateIdx(dn);if(pe0!=null&&de0!=null){var dd0=Math.round((de0-pe0)*7);if(dd0>0)lateD=dd0}}
       if(lateD)badge+='<i class="ld" title="계획 '+esc(idxISO(planEnd(st,r.id,it.id)).slice(5).replace('-','/'))+' → '+esc(String(dn).slice(5).replace('-','/'))+' 완료 ('+(lateD>=7?Math.round(lateD/7)+'주':lateD+'일')+' 늦게)"></i>';
       if(g.part!==2)badge+=lenTag(PLM[it.id],baseLen(it)).replace('class="lt','class="lt'+(lateD?' bt':''));
-      lanes+='<div class="sblk mv'+(it.lane?' l1':'')+(past&&!dn?' past':'')+(dn?' done':'')+(g.part?' part'+g.part:'')+(on?' on':'')+'" data-ci="'+esc(it.id)+'" data-row="'+r.id+'" title="'+esc(it.title)+' · '+wl+'주 · '+esc(idxDate(g.cal))+'~'+esc(idxDate(g.cal+g.len-1/7))+(dn?' · 완료 '+esc(dn):'')+(g.part?' (시험대비로 나뉨)':'')+' · 끌어서 옮기기 / 눌러서 고치기·완료" style="left:'+((g.cal-lo)*SW+2)+'px;width:'+Math.max(8,g.len*SW-4)+'px;background:#'+c[0]+';color:#'+c[1]+'">'+(g.len*SW>34?esc(it.title).replace(/ \/ /g,'<br>+ '):'')+badge+(g.part===1||dn?'':'<div class="rh2" data-rh2="1"></div>')+'</div>'});
+      lanes+='<div class="sblk mv'+(it.lane?' l1':'')+(appLock(st,r.id,it)==='active'?' aact':'')+(past&&!dn?' past':'')+(dn?' done':'')+(g.part?' part'+g.part:'')+(on?' on':'')+'" data-ci="'+esc(it.id)+'" data-row="'+r.id+'" title="'+esc(it.title)+' · '+wl+'주 · '+esc(idxDate(g.cal))+'~'+esc(idxDate(g.cal+g.len-1/7))+(dn?' · 완료 '+esc(dn):'')+(g.part?' (시험대비로 나뉨)':'')+' · 끌어서 옮기기 / 눌러서 고치기·완료" style="left:'+((g.cal-lo)*SW+2)+'px;width:'+Math.max(8,g.len*SW-4)+'px;background:#'+c[0]+';color:#'+c[1]+'">'+(g.len*SW>34?esc(it.title).replace(/ \/ /g,'<br>+ '):'')+badge+(g.part===1||dn?'':'<div class="rh2" data-rh2="1"></div>')+'</div>'});
     lanes+='<div class="today" style="left:'+((now-lo)*SW)+'px">'+(ri===0&&!distL?'<span>오늘</span>':'')+'</div></div>';
   });
   var rowsH='';
@@ -1206,6 +1220,15 @@ function stuDetail(st){
   if(setOpen)h+='<div class="setbox">'+rowsH+'</div>';
   // 선택한 블록 편집 막대
   var pk=stuPick&&rawItems(st,stuPick.row,true),pit=pk&&pk.items.find(function(x){return x.id===stuPick.id});
+  var lkp=pit?appLock(st,stuPick.row,pit):'',lnk=!!appStuOf(st);
+  if(pit&&lkp){var inf=appRowInfo(st,stuPick.row),ac=inf.act[pit.ref],dn2=doneOf(st,stuPick.row)[pit.id],df2=dn2?doneDiff(st,stuPick.row,pit.id):null;
+    h+='<div class="sbar2"><span class="selname">'+esc(rowOf(stuPick.row).name)+' · <b>'+esc(pit.title)+'</b> <span style="color:#888780;font-weight:400">('+(baseLen(pit)!=null?baseLen(pit):Math.round(pit.len*10)/10)+'주)</span></span>';
+    if(lkp==='done')h+='<span class="donebar"><b style="color:#1d6b3a">✓ 앱 완료 '+esc(dn2)+'</b>'+(df2!=null?' <span class="hint">(계획 '+(df2>0?df2+'주 뒤':(df2<0?(-df2)+'주 앞':'그대로'))+')</span>':'')+' <span class="hint">· 숙제앱 기록이라 여기서는 바꿀 수 없어요</span></span>';
+    else{h+='<span class="hint" style="font-weight:700;color:#2b6cb0">앱 배부 중 · '+esc(ac.date)+(ac.end?' → 끝 예정 '+esc(ac.end):'')+'</span>';
+      h+='<button class="btn sm" data-s="ci" data-op="applock">◀ 1주 앞</button><button class="btn sm" data-s="ci" data-op="applock">1주 뒤 ▶</button><button class="btn sm" data-s="ci" data-op="applock">− 1주</button><button class="btn sm" data-s="ci" data-op="applock">＋ 1주</button>';
+      h+='<button class="btn sm" data-s="ci" data-op="dup">반복(n차) 추가</button><button class="btn sm" data-s="ci" data-op="addafter">＋ 뒤에 교재 추가</button><button class="btn sm danger" data-s="ci" data-op="applock">빼기</button>';
+      h+='<span class="donebar"><input type="date" value="'+esc(ac.end||'')+'" disabled title="앱 끝 예정일"><button class="btn sm primary" data-s="ci" data-op="applock">✓ 완료</button></span>'}
+    h+='<button class="btn sm" data-s="ci" data-op="unpick">선택 해제</button></div>';pit=null}
   if(pit){
     var dn=doneOf(st,stuPick.row)[pit.id],df=dn?doneDiff(st,stuPick.row,pit.id):null;
     h+='<div class="sbar2"><span class="selname">'+esc(rowOf(stuPick.row).name)+' · <b>'+esc(pit.title)+'</b> <span style="color:#888780;font-weight:400">('+(baseLen(pit)!=null?baseLen(pit):Math.round(pit.len*10)/10)+'주)</span></span>';
@@ -1215,7 +1238,7 @@ function stuDetail(st){
     h+='<button class="btn sm" data-s="ci" data-op="dup">반복(n차) 추가</button><button class="btn sm" data-s="ci" data-op="addafter">＋ 뒤에 교재 추가</button>';
     h+='<button class="btn sm danger" data-s="ci" data-op="del">빼기</button>';
     h+='<span class="donebar">'+(dn?'<b style="color:#1d6b3a">✓ '+esc(dn)+' 완료</b>'+(df!=null?' <span class="hint">(계획 '+(df>0?df+'주 뒤':(df<0?(-df)+'주 앞':'그대로'))+')</span>':'')+' <button class="btn sm" data-s="ci" data-op="undone">완료 취소</button>'
-      :(function(){var pe=planEnd(st,stuPick.row,pit.id),pd=pe!=null?idxISO(pe):todayStr();return '<input type="date" id="done-date" value="'+pd+'" title="계획상 끝나는 날이 미리 들어가 있어요. 다르면 날짜를 바꾼 뒤 완료를 누르세요"><span class="hint">'+(pe!=null?'계획일':'오늘')+'</span><button class="btn sm primary" data-s="ci" data-op="donedate">✓ 완료</button>'})())+'</span>';
+      :lnk?'<span class="hint">배부하면 숙제앱 기록으로 진행·완료돼요</span>':(function(){var pe=planEnd(st,stuPick.row,pit.id),pd=pe!=null?idxISO(pe):todayStr();return '<input type="date" id="done-date" value="'+pd+'" title="계획상 끝나는 날이 미리 들어가 있어요. 다르면 날짜를 바꾼 뒤 완료를 누르세요"><span class="hint">'+(pe!=null?'계획일':'오늘')+'</span><button class="btn sm primary" data-s="ci" data-op="donedate">✓ 완료</button>'})())+'</span>';
     h+='<button class="btn sm" data-s="ci" data-op="unpick">선택 해제</button></div>';
   }
   if(stuAddOpen&&pit){
@@ -1345,6 +1368,10 @@ function ciOp(op){
   var st=stuOf(stuSel);if(!st||!stuPick)return;var row=stuPick.row,id=stuPick.id;
   if(op==='unpick'){stuPick=null;stuAddOpen=false;render();return}
   if(op==='addafter'){stuAddOpen=true;render();return}
+  if(['left','right','dec','inc','del','ovl','unovl','donedate','undone','applock'].indexOf(op)>=0){var R2=rawItems(st,row,true),it2=R2&&R2.items.find(function(x){return x.id===id}),lk=appLock(st,row,it2);
+    if(lk==='done'){toast('앱에서 완료한 교재예요. 바꾸려면 숙제앱에서 완료를 취소해 주세요');return}
+    if(lk==='active'){toast('진행 중인 교재는 숙제앱 교재 배부에서 바꿔요 (로드맵에서 앱 화면 바로 열기는 다음 버전)');return}
+    if((op==='donedate'||op==='undone')&&appStuOf(st)){toast('완료는 숙제앱에서 교재완료로 해요');return}}
   if(op==='ovl'||op==='unovl'){if(op==='ovl'&&doneOf(st,row)[id]){toast('완료한 교재는 옮길 수 없어요');return}laneMove(st,row,id,op==='ovl'?1:0,0,true);return}
   if(op==='addcancel'){stuAddOpen=false;render();return}
   if(op==='done'||op==='donedate'||op==='undone'){var dt=op==='done'?todayStr():((document.getElementById('done-date')||{}).value||'');
@@ -1375,12 +1402,13 @@ app.addEventListener('pointerdown',function(e){
   if(view!=='stu'||e.button!==0)return;
   var el=e.target.closest('.sblk.mv');if(!el)return;
   var st=stuOf(stuSel);if(!st)return;
-  if(e.pointerType==='touch'){SD={tap:true,el:el,row:el.getAttribute('data-row'),id:el.getAttribute('data-ci'),x:e.clientX,y:e.clientY,moved:false};return}
+  var lk0=appLock(st,el.getAttribute('data-row'),(function(){var R1=rawItems(st,el.getAttribute('data-row'),true);return R1&&R1.items.find(function(x){return x.id===el.getAttribute('data-ci')})})());
+  if(e.pointerType==='touch'||lk0){SD={tap:true,lock:lk0,el:el,row:el.getAttribute('data-row'),id:el.getAttribute('data-ci'),x:e.clientX,y:e.clientY,moved:false};return}
   SD={el:el,row:el.getAttribute('data-row'),id:el.getAttribute('data-ci'),x:e.clientX,y:e.clientY,lane:el.classList.contains('l1')?1:0,moved:false,resize:!!e.target.closest('[data-rh2]'),left:parseFloat(el.style.left),width:parseFloat(el.style.width)};
   el.setPointerCapture(e.pointerId);e.preventDefault();
 });
 app.addEventListener('pointermove',function(e){
-  if(!SD)return;if(SD.tap){if(Math.abs(e.clientX-SD.x)+Math.abs(e.clientY-SD.y)>8)SD=null;return}
+  if(!SD)return;if(SD.tap){if(Math.abs(e.clientX-SD.x)+Math.abs(e.clientY-SD.y)>8){if(SD.lock&&!SD.warned){SD.warned=1;toast(SD.lock==='done'?'앱에서 완료한 교재라 옮길 수 없어요':'진행 중인 교재는 숙제앱 교재 배부에서 바꿔요')}if(!SD.lock)SD=null}return}
   var dx=e.clientX-SD.x,dy=e.clientY-SD.y;if(!SD.moved&&Math.abs(dx)<5&&Math.abs(dy)<8)return;SD.moved=true;
   var d=Math.round(dx/SW);SD.d=d;
   if(!SD.resize){var rk=rowOf(SD.row),can=rk&&rk.kind==='class'&&!SD.el.classList.contains('done');
