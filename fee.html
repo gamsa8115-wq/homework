@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>교재비 v27</title>
+<title>교재비 v29</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
 <style>
 /* 숙제관리 앱(index.html)과 같은 디자인 — 색·글꼴·버튼·표 모양을 그대로 맞춤 */
@@ -110,6 +110,8 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    · 예전 자료(숙제앱 지난 배부 + 통통통 판매내역)는 '같거나 비슷한 교재를 예전에 받은 적 있음' 확인창으로만 쓴다
    · 두 번 배부는 표시만 하고 목록에 넣는다
    · 목록 확정 → A4 인쇄 (종이 보면서 통통통에 입력)
+   v29: 2026년 판매내역에서 스터디포스 독해 트레이닝 뺌 (지난 목록·예전에 받은 적 있음 확인 모두)
+   v28: 지난 목록이 비어 있으면 그 자리에서 판매내역 불러오기
    v27: 🗂 지난 목록에 통통통 판매내역도 달별로 (10월까지 청구한 것)
    v26: 🗂 지난 목록에 예전 교재비 화면에서 청구 완료한 것도 달별로 보이기
    v25: 위 제목·탭을 한 덩어리로 고정 (숙제관리 탭 안에서 스크롤할 때 내용이 탭 사이로 비치던 것), 학생별 교재를 날짜순으로
@@ -126,7 +128,7 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    v14: 같은 반·같은 교재끼리 묶어 인쇄 (교재별 인쇄)
    v13: 2판으로 다시 만듦 (연결표·통통통 엑셀·가격·선생님 구분 없앰, 확인창, 인쇄)
    ══════════════════════════════════════════════════════════════ */
-const VER = 'v27';
+const VER = 'v29';
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAh3zMoepbA38yFFEDQ210XWveBdf2HDN8",
   authDomain: "sotong-academy.firebaseapp.com",
@@ -141,6 +143,9 @@ const STORE_PATHS = { test: 'homework_v4_fee_test', live: 'homework_v4_fee' };
 const STORE_KEYS = ['settings', 'bills', 'billed', 'skip', 'ok', 'acks', 'seen', 'renew', 'unlegacy'];
 const DEFAULT_START = '2026-10-26';   // 이 날 이후 배부분부터 챙김 (그 전은 정리 끝남)
 const EXCLUDE = /전자교재/;
+// ★ v29 판매내역에서 빼는 것: [교재 이름(띄어쓰기 무시), 이 날짜부터]
+const SALES_DROP = [['스터디포스독해트레이닝', '2026-01-01']];
+const salesDrop = (book, date) => SALES_DROP.some(([n, from]) => norm(book).includes(norm(n)) && date >= from);
 const KIND = { main: '주교재', sub: '부교재', extra: '단기', word: '단어장', etc: '기타' };
 const KIND_ORDER = ['main', 'sub', 'extra', 'word', 'etc'];
 
@@ -321,7 +326,7 @@ function buildSX() {   // 학생(이름 띄어쓰기·뒤 숫자 무시) → [{b
   if (!SALES || !SALES.rows) return;
   SALES.rows.forEach(r => {
     const [name, book, date, qty] = r.length >= 7 ? [r[0], r[2], r[3], r[4]] : r;   // 예전 형식도 읽음
-    if (EXCLUDE.test(book)) return;
+    if (EXCLUDE.test(book) || salesDrop(book, date)) return;
     const k = normName(name); if (!SX.has(k)) SX.set(k, []);
     const L = SX.get(k);
     if (qty > 0) L.push({ book, date });
@@ -785,7 +790,8 @@ function histItems(M) {
 function rHist(r) {
   const bills = toArr(F.bills), leg = legacyItems(), sal = salesItems();
   const months = [...new Set(bills.map(b => b.month).concat(leg.map(i => i.month), sal.map(i => i.month)))].sort().reverse();
-  if (!months.length) { r.innerHTML = `<div class="card"><div class="empty">아직 확정한 목록이 없어요.<br><span class="mu">지난달까지 청구한 내용을 보려면 ⚙ 설정에서 통통통 판매내역을 불러와 주세요.</span></div></div>`; return; }
+  if (!months.length) { r.innerHTML = `<div class="card"><div class="empty">아직 확정한 목록이 없어요.<br><span class="mu">지난달까지 청구한 내용은 통통통 판매내역으로 봐요. 통통통 원본 판매내역 엑셀을 여기서 바로 불러와 주세요.</span>
+      <div class="row" style="justify-content:center;margin-top:.6rem"><label class="btn p">📂 통통통 판매내역 불러오기<input type="file" accept=".xlsx,.xls" hidden onchange="importSales(this.files[0])"></label></div></div></div>`; return; }
   if (!months.includes(UI.hMonth)) UI.hMonth = months[0];
   const mb = bills.filter(b => b.month === UI.hMonth).sort((a, b) => String(a.at).localeCompare(String(b.at)));
   const items = histItems(UI.hMonth).filter(i => !UI.group || i.group === UI.group);
