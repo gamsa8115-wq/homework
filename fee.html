@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>교재비 v24</title>
+<title>교재비 v25</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
 <style>
 /* 숙제관리 앱(index.html)과 같은 디자인 — 색·글꼴·버튼·표 모양을 그대로 맞춤 */
@@ -11,11 +11,12 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Pretendard Variable',Pretendard,'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);font-size:14px}
 button,input,select,textarea{font-family:inherit}
-.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:1.1rem 1.6rem .2rem;display:flex;align-items:baseline;gap:.65rem;flex-wrap:wrap}
+.hd{position:sticky;top:0;z-index:6;background:var(--bg);padding-bottom:.45rem;box-shadow:0 1px 0 var(--bd)}
+.top{padding:1.1rem 1.6rem .2rem;display:flex;align-items:baseline;gap:.65rem;flex-wrap:wrap}
 .top h1{font-size:1.25rem;font-weight:700;white-space:nowrap;color:var(--tx)}
 .top .sub{font-size:.78rem;color:var(--mu)}
 .st{margin-left:auto;font-size:.72rem;display:flex;gap:.3rem;align-items:center;flex-wrap:wrap}
-.tabs{display:flex;background:var(--s2);border-radius:9px;padding:3px;gap:3px;margin:.55rem 1.6rem .2rem;flex-wrap:wrap;position:sticky;top:3.05rem;z-index:5}
+.tabs{display:flex;background:var(--s2);border-radius:9px;padding:3px;gap:3px;margin:.55rem 1.6rem 0;flex-wrap:wrap}
 .tab{flex:1;min-width:max-content;padding:.48rem .7rem;border:none;border-radius:7px;background:transparent;font-size:.8rem;font-weight:700;color:var(--mu);cursor:pointer;transition:all .18s;text-align:center}
 .tab:hover{color:var(--tx)}
 .tab.on{background:var(--surface);color:var(--acc);box-shadow:0 1px 3px rgba(0,0,0,.08)}
@@ -84,12 +85,14 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
 </style>
 </head>
 <body>
+<div class="hd">
 <div class="top">
   <h1>💳 교재비</h1>
   <span class="sub">숙제관리에서 배부한 교재로 매달 25일 배부 목록 만들기 (보카·전자교재 제외)</span>
   <div class="st" id="status"></div>
 </div>
 <nav class="tabs" id="tabs"></nav>
+</div>
 <main id="root"><div class="empty">불러오는 중…</div></main>
 <div class="toast" id="toast"></div>
 <div id="tip"></div>
@@ -107,6 +110,7 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    · 예전 자료(숙제앱 지난 배부 + 통통통 판매내역)는 '같거나 비슷한 교재를 예전에 받은 적 있음' 확인창으로만 쓴다
    · 두 번 배부는 표시만 하고 목록에 넣는다
    · 목록 확정 → A4 인쇄 (종이 보면서 통통통에 입력)
+   v25: 위 제목·탭을 한 덩어리로 고정 (숙제관리 탭 안에서 스크롤할 때 내용이 탭 사이로 비치던 것), 학생별 교재를 날짜순으로
    v24: 이번 달 목록 화면에 '예전 화면 청구 완료로 빠진 배부' 알림 + 한 번에 되돌리기
    v23: 예전 화면 "청구 완료" 중 잘못 표시된 것을 이 프로그램에서 "청구 전으로 되돌리기" (숙제관리 데이터는 그대로)
    v22: 예전 교재비 화면의 '청구 완료' 표시(feeLog.billed)를 이미 청구된 것으로 읽음
@@ -120,7 +124,7 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    v14: 같은 반·같은 교재끼리 묶어 인쇄 (교재별 인쇄)
    v13: 2판으로 다시 만듦 (연결표·통통통 엑셀·가격·선생님 구분 없앰, 확인창, 인쇄)
    ══════════════════════════════════════════════════════════════ */
-const VER = 'v24';
+const VER = 'v25';
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAh3zMoepbA38yFFEDQ210XWveBdf2HDN8",
   authDomain: "sotong-academy.firebaseapp.com",
@@ -475,7 +479,7 @@ function rBill(r) {
       html += `<div class="gh">${esc(g || '반 없음')} <span class="mu" style="font-weight:500">${xs.length}명</span></div><div class="card"><table class="fee-t"><colgroup><col style="width:34px"><col style="width:58px"><col><col style="width:96px"></colgroup>`;
       xs.forEach(x => {
         const sel = x.list.filter(selectable), on = sel.filter(i => !UI.unsel.has(i.key));
-        const list = x.list.slice().sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) || a.date.localeCompare(b.date));
+        const list = x.list.slice().sort((a, b) => a.date.localeCompare(b.date) || KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind));   // ★ v25 날짜순
         html += `<tbody><tr class="fee-sh"><td colspan="3"><b class="who" onclick="openLedger('${x.st.id}')" title="학생별 기록 보기">${esc(x.st.name)}</b> <span class="mu">${esc(x.st.group || '')} · ${on.length}권${x.st.left ? ' · 퇴원' : ''} · 지난달 목록: ${x.prev.length ? x.prev.map(esc).join(', ') : '없음'}</span></td>
           <td class="ar">${sel.length ? `<button class="lk" onclick="selKeys('${sel.map(i => i.key).join(',')}',${on.length === sel.length ? 'false' : 'true'})">${on.length === sel.length ? '이 학생 모두 해제' : '이 학생 모두 선택'}</button>` : ''}</td></tr>
           ${list.map(it => rowHtml(it, `<td class="nw">${md(it.date)}</td><td>${kTag(it.kind)}${esc(it.name)}${it.cohort ? ` <span class="mu">(${esc(it.cohort)})</span>` : ''}<div style="margin-top:3px">${stateChip(it)}</div></td>`)).join('')}</tbody>`;
