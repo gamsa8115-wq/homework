@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>교재비 v26</title>
+<title>교재비 v27</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
 <style>
 /* 숙제관리 앱(index.html)과 같은 디자인 — 색·글꼴·버튼·표 모양을 그대로 맞춤 */
@@ -110,6 +110,7 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    · 예전 자료(숙제앱 지난 배부 + 통통통 판매내역)는 '같거나 비슷한 교재를 예전에 받은 적 있음' 확인창으로만 쓴다
    · 두 번 배부는 표시만 하고 목록에 넣는다
    · 목록 확정 → A4 인쇄 (종이 보면서 통통통에 입력)
+   v27: 🗂 지난 목록에 통통통 판매내역도 달별로 (10월까지 청구한 것)
    v26: 🗂 지난 목록에 예전 교재비 화면에서 청구 완료한 것도 달별로 보이기
    v25: 위 제목·탭을 한 덩어리로 고정 (숙제관리 탭 안에서 스크롤할 때 내용이 탭 사이로 비치던 것), 학생별 교재를 날짜순으로
    v24: 이번 달 목록 화면에 '예전 화면 청구 완료로 빠진 배부' 알림 + 한 번에 되돌리기
@@ -125,7 +126,7 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    v14: 같은 반·같은 교재끼리 묶어 인쇄 (교재별 인쇄)
    v13: 2판으로 다시 만듦 (연결표·통통통 엑셀·가격·선생님 구분 없앰, 확인창, 인쇄)
    ══════════════════════════════════════════════════════════════ */
-const VER = 'v26';
+const VER = 'v27';
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAh3zMoepbA38yFFEDQ210XWveBdf2HDN8",
   authDomain: "sotong-academy.firebaseapp.com",
@@ -768,31 +769,41 @@ function legacyItems() {
     out.push({ key, sid: st.id, student: st.name, group: st.group || '', kind: kindOf(b, f.bookName), bookId: f.bookId, name: f.bookName || (b && b.name) || '', date: f.date, cohort: f.cohort || '', month: billMonth(f.billed), billedOn: f.billed, legacy: true, flags: '예전 교재비 화면에서 청구 (' + md(f.billed) + ')' }); }));
   return out;
 }
+/* ★ v27 통통통 판매내역도 지난 목록에 — 판매일자 기준 달 (26일부터는 다음 달), 환불 뺀 것 */
+function salesItems() {
+  if (!SX) return [];
+  const byN = new Map(); D.students.forEach(st => { const k = normName(st.name); if (!byN.has(k)) byN.set(k, st); });
+  const out = [];
+  SX.forEach((L, k) => { const st = byN.get(k); L.forEach((x, n) => out.push({ key: `s:${k}:${n}`, sid: st ? st.id : 'n:' + k, student: st ? st.name : k, group: st ? (st.group || '') : '(지금 명단에 없음)',
+    kind: kindOf(D.books.find(b => norm(b.name) === norm(x.book)) || null, x.book), name: x.book, date: x.date, cohort: '', month: billMonth(x.date), sales: true, flags: '통통통 판매내역' })); });
+  return out;
+}
 function histItems(M) {
   const n = toArr(F.bills).filter(b => b.month === M).flatMap(b => toArr(b.items).map(i => ({ ...i, billId: b.id })));
-  return n.concat(legacyItems().filter(i => i.month === M));
+  return n.concat(legacyItems().filter(i => i.month === M), salesItems().filter(i => i.month === M));
 }
 function rHist(r) {
-  const bills = toArr(F.bills), leg = legacyItems();
-  const months = [...new Set(bills.map(b => b.month).concat(leg.map(i => i.month)))].sort().reverse();
-  if (!months.length) { r.innerHTML = '<div class="card"><div class="empty">아직 확정한 목록이 없어요.</div></div>'; return; }
+  const bills = toArr(F.bills), leg = legacyItems(), sal = salesItems();
+  const months = [...new Set(bills.map(b => b.month).concat(leg.map(i => i.month), sal.map(i => i.month)))].sort().reverse();
+  if (!months.length) { r.innerHTML = `<div class="card"><div class="empty">아직 확정한 목록이 없어요.<br><span class="mu">지난달까지 청구한 내용을 보려면 ⚙ 설정에서 통통통 판매내역을 불러와 주세요.</span></div></div>`; return; }
   if (!months.includes(UI.hMonth)) UI.hMonth = months[0];
   const mb = bills.filter(b => b.month === UI.hMonth).sort((a, b) => String(a.at).localeCompare(String(b.at)));
   const items = histItems(UI.hMonth).filter(i => !UI.group || i.group === UI.group);
-  const nLeg = items.filter(i => i.legacy).length;
+  const nLeg = items.filter(i => i.legacy).length, nSal = items.filter(i => i.sales).length;
   const by = new Map(); items.forEach(i => { if (!by.has(i.sid)) by.set(i.sid, []); by.get(i.sid).push(i); });
   const studs = [...by.entries()].sort((a, b) => byGN({ group: a[1][0].group, name: a[1][0].student }, { group: b[1][0].group, name: b[1][0].student }));
   studs.forEach(([, l]) => l.sort((a, b) => a.date.localeCompare(b.date)));
   const canc = new Set(_cc.cancel.map(c => c.key));
-  const cnt = m => { const a = bills.filter(b => b.month === m).length, b = leg.some(i => i.month === m); return a && b ? ' (새 프로그램 + 예전 화면)' : b ? ' (예전 교재비 화면)' : ''; };
+  const cnt = m => { const t = []; if (bills.some(b => b.month === m)) t.push('새 프로그램'); if (leg.some(i => i.month === m)) t.push('예전 화면'); if (sal.some(i => i.month === m)) t.push('통통통'); return t.length ? ` (${t.join(' + ')})` : ''; };
   r.innerHTML = `<div class="bar"><label>달</label><select onchange="UI.hMonth=this.value;render()">${months.map(m => `<option value="${m}" ${m === UI.hMonth ? 'selected' : ''}>${mLY(m)}${cnt(m)}</option>`).join('')}</select>
       <label>반</label>${groupSel('UI.group=this.value;render()', UI.group)}<span style="flex:1"></span>
       <button class="btn" onclick="printHist('stu')">🖨 학생별 인쇄</button><button class="btn" onclick="printHist('book')">🖨 교재별 인쇄</button></div>
+    ${nSal ? `<div class="warn w-b">📂 이 달에는 <b>통통통 판매내역 ${nSal}권</b>이 있어요. 판매일자 기준이에요 (26일부터는 다음 달, 환불한 것은 뺐어요). 판매내역은 ${SALES ? '~' + ymd(SALES.meta.to) + '까지' : ''} 불러온 것이에요.</div>` : ''}
     ${nLeg ? `<div class="warn w-b">🗂 이 달에는 <b>예전 교재비 화면에서 "청구 완료"로 표시한 ${nLeg}권</b>이 있어요. 청구 완료를 누른 날짜 기준이에요 (26일부터는 다음 달).</div>` : ''}
-    <div class="kpi"><div><b>${by.size}명</b><span>학생</span></div><div><b>${items.length}권</b><span>교재</span></div>${mb.length ? `<div><b>${mb.length}번</b><span>확정: ${mb.map(b => esc(String(b.at || '').slice(5))).join(' / ')}</span></div>` : ''}${nLeg ? `<div><b>${nLeg}권</b><span>예전 화면에서 청구</span></div>` : ''}</div>
-    ${studs.map(([sid, list]) => `<div class="card"><div class="sh"><span class="nm a" onclick="openLedger('${sid}')">${esc(list[0].student)}</span><span class="gx">${esc(list[0].group)}</span><span class="sum">${list.length}권</span></div>
-      <table>${list.map(i => `<tr><td class="nw" style="width:48px">${md(i.date)}</td><td>${kTag(i.kind || 'etc')}${esc(i.name)}${canc.has(i.key) ? ' <span class="pill rd">⚠ 확정 후 배부 취소</span>' : ''}${i.legacy ? ` <span class="pill">예전 화면 청구 ${md(i.billedOn)}</span>` : i.flags ? `<div class="mu">${esc(i.flags)}</div>` : ''}</td>
-        <td class="ar" style="width:120px">${i.legacy ? (i.date >= startFrom() ? `<button class="lk" onclick="unlegacy(['${i.key}'])">청구 전으로 되돌리기</button>` : '') : `<button class="lk d" onclick="unlistItem('${i.billId}','${i.key}')">목록에서 빼기</button>`}</td></tr>`).join('')}</table></div>`).join('')}`;
+    <div class="kpi"><div><b>${by.size}명</b><span>학생</span></div><div><b>${items.length}권</b><span>교재</span></div>${mb.length ? `<div><b>${mb.length}번</b><span>확정: ${mb.map(b => esc(String(b.at || '').slice(5))).join(' / ')}</span></div>` : ''}${nLeg ? `<div><b>${nLeg}권</b><span>예전 화면에서 청구</span></div>` : ''}${nSal ? `<div><b>${nSal}권</b><span>통통통 판매내역</span></div>` : ''}</div>
+    ${studs.map(([sid, list]) => `<div class="card"><div class="sh"><span class="nm ${String(sid).startsWith('n:') ? '' : 'a'}" ${String(sid).startsWith('n:') ? '' : `onclick="openLedger('${sid}')"`}>${esc(list[0].student)}</span><span class="gx">${esc(list[0].group)}</span><span class="sum">${list.length}권</span></div>
+      <table>${list.map(i => `<tr><td class="nw" style="width:48px">${md(i.date)}</td><td>${kTag(i.kind || 'etc')}${esc(i.name)}${canc.has(i.key) ? ' <span class="pill rd">⚠ 확정 후 배부 취소</span>' : ''}${i.sales ? ` <span class="pill">통통통 판매</span>` : i.legacy ? ` <span class="pill">예전 화면 청구 ${md(i.billedOn)}</span>` : i.flags ? `<div class="mu">${esc(i.flags)}</div>` : ''}</td>
+        <td class="ar" style="width:120px">${i.sales ? '' : i.legacy ? (i.date >= startFrom() ? `<button class="lk" onclick="unlegacy(['${i.key}'])">청구 전으로 되돌리기</button>` : '') : `<button class="lk d" onclick="unlistItem('${i.billId}','${i.key}')">목록에서 빼기</button>`}</td></tr>`).join('')}</table></div>`).join('')}`;
 }
 function printHist(mode) { printRows(histItems(UI.hMonth).filter(i => !UI.group || i.group === UI.group), UI.hMonth, '확정', mode); }
 function unlistItem(billId, key) {
