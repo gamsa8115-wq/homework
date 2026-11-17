@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>교재비 v29</title>
+<title>교재비 v30</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
 <style>
 /* 숙제관리 앱(index.html)과 같은 디자인 — 색·글꼴·버튼·표 모양을 그대로 맞춤 */
@@ -110,6 +110,7 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    · 예전 자료(숙제앱 지난 배부 + 통통통 판매내역)는 '같거나 비슷한 교재를 예전에 받은 적 있음' 확인창으로만 쓴다
    · 두 번 배부는 표시만 하고 목록에 넣는다
    · 목록 확정 → A4 인쇄 (종이 보면서 통통통에 입력)
+   v30: 지난 목록은 숙제관리 앱에 있는 학생만 (판매내역의 다른 학생 뺌)
    v29: 2026년 판매내역에서 스터디포스 독해 트레이닝 뺌 (지난 목록·예전에 받은 적 있음 확인 모두)
    v28: 지난 목록이 비어 있으면 그 자리에서 판매내역 불러오기
    v27: 🗂 지난 목록에 통통통 판매내역도 달별로 (10월까지 청구한 것)
@@ -128,7 +129,7 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    v14: 같은 반·같은 교재끼리 묶어 인쇄 (교재별 인쇄)
    v13: 2판으로 다시 만듦 (연결표·통통통 엑셀·가격·선생님 구분 없앰, 확인창, 인쇄)
    ══════════════════════════════════════════════════════════════ */
-const VER = 'v29';
+const VER = 'v30';
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAh3zMoepbA38yFFEDQ210XWveBdf2HDN8",
   authDomain: "sotong-academy.firebaseapp.com",
@@ -779,13 +780,14 @@ function salesItems() {
   if (!SX) return [];
   const byN = new Map(); D.students.forEach(st => { const k = normName(st.name); if (!byN.has(k)) byN.set(k, st); });
   const out = [];
-  SX.forEach((L, k) => { const st = byN.get(k); L.forEach((x, n) => out.push({ key: `s:${k}:${n}`, sid: st ? st.id : 'n:' + k, student: st ? st.name : k, group: st ? (st.group || '') : '(지금 명단에 없음)',
+  SX.forEach((L, k) => { const st = byN.get(k); if (!st) return;   // ★ v30 숙제관리 앱에 있는 학생만
+    L.forEach((x, n) => out.push({ key: `s:${k}:${n}`, sid: st ? st.id : 'n:' + k, student: st ? st.name : k, group: st ? (st.group || '') : '(지금 명단에 없음)',
     kind: kindOf(D.books.find(b => norm(b.name) === norm(x.book)) || null, x.book), name: x.book, date: x.date, cohort: '', month: billMonth(x.date), sales: true, flags: '통통통 판매내역' })); });
   return out;
 }
 function histItems(M) {
   const n = toArr(F.bills).filter(b => b.month === M).flatMap(b => toArr(b.items).map(i => ({ ...i, billId: b.id })));
-  return n.concat(legacyItems().filter(i => i.month === M), salesItems().filter(i => i.month === M));
+  return n.concat(legacyItems().filter(i => i.month === M), salesItems().filter(i => i.month === M)).filter(i => studentById(i.sid));   // ★ v30 숙제관리 앱에 있는 학생만
 }
 function rHist(r) {
   const bills = toArr(F.bills), leg = legacyItems(), sal = salesItems();
