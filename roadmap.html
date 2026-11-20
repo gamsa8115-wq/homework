@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>학원 로드맵 기간표 v97</title>
+<title>학원 로드맵 기간표 v99</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style id="app-style">
@@ -254,7 +254,7 @@ var FIREBASE_CONFIG = {           // 숙제관리 앱과 같은 Firebase 프로�
 var DB_PATH = 'roadmap_planner_v1';      // 이 프로그램 전용 저장 위치 — ⚠️ homework_v4(숙제관리), academy 와 절대 겹치지 않게
 var FB_APP_NAME = 'roadmap_planner';     // 별도 앱 인스턴스 이름 (다른 프로그램과 섞이지 않게)
 /* ★ 버전 — 고칠 때마다 숫자를 올리면 화면 왼쪽 위에 표시돼요 */
-var RM_VERSION = 'v97'; try{document.title='학원 로드맵 기간표 '+RM_VERSION}catch(e){}
+var RM_VERSION = 'v99'; try{document.title='학원 로드맵 기간표 '+RM_VERSION}catch(e){}
 var RM_DATE = '2026-11-14';
 var DEFAULT_LIB = [{"id": "L000", "cat": "main", "name": "Alphabet 1", "dur": "4주"}, {"id": "L001", "cat": "main", "name": "Alphabet 2", "dur": "4주"}, {"id": "L002", "cat": "main", "name": "Phonics 1", "dur": "5주"}, {"id": "L003", "cat": "main", "name": "Phonics 2", "dur": "5주"}, {"id": "L004", "cat": "main", "name": "Phonics 3", "dur": "5주"}, {"id": "L005", "cat": "main", "name": "Phonics 4", "dur": "5주"}, {"id": "L006", "cat": "main", "name": "Phonics 5", "dur": "5주"}, {"id": "L007", "cat": "main", "name": "Phonics 6", "dur": "5주"}, {"id": "L008", "cat": "main", "name": "Reading 1", "dur": "5주"}, {"id": "L009", "cat": "main", "name": "Reading 2", "dur": "5주"}, {"id": "L010", "cat": "main", "name": "Reading 3", "dur": "5주"}, {"id": "L011", "cat": "main", "name": "Reading 4", "dur": "5주"}, {"id": "L012", "cat": "main", "name": "Reading 5", "dur": "5주"}, {"id": "L013", "cat": "main", "name": "Reading 6", "dur": "5주"}, {"id": "L014", "cat": "main", "name": "Basic 1", "dur": "5주"}, {"id": "L015", "cat": "main", "name": "Basic 2", "dur": "5주"}, {"id": "L016", "cat": "main", "name": "Basic 3", "dur": "5주"}, {"id": "L017", "cat": "main", "name": "Basic 4", "dur": "5주"}, {"id": "L018", "cat": "main", "name": "Basic 5", "dur": "5주"}, {"id": "L019", "cat": "main", "name": "Basic 6", "dur": "5주"}, {"id": "L020", "cat": "main", "name": "Basic 7", "dur": "5주"}, {"id": "L021", "cat": "main", "name": "Basic 8", "dur": "5주"}, {"id": "L022", "cat": "main", "name": "Basic 9", "dur": "5주"}, {"id": "L023", "cat": "main", "name": "Basic 10", "dur": "5주"}, {"id": "L024", "cat": "main", "name": "Basic 11", "dur": "5주"}, {"id": "L025", "cat": "main", "name": "Basic 12", "dur": "5주"}, {"id": "L026", "cat": "main", "name": "5형식 (주+동+시)", "dur": "4주"}, {"id": "L027", "cat": "main", "name": "5형식 (부사구)", "dur": "4주"}, {"id": "L028", "cat": "main", "name": "5형식 (준동사)", "dur": "4주"}, {"id": "L029", "cat": "main", "name": "5형식 (분석/해석하기)", "dur": "4주"}, {"id": "L030", "cat": "main", "name": "3800 해석 (1단계)", "dur": "17주"}, {"id": "L031", "cat": "main", "name": "3800 해석 (2단계)", "dur": "17주"}, {"id": "L032", "cat": "main", "name": "천문장 입문(Test)", "dur": "22주"}, {"id": "L033", "cat": "main", "name": "천문장 기본(Test)", "dur": "22주"}, {"id": "L034", "cat": "main", "name": "고등 미니 모의고사", "dur": "13주"}, {"id": "L087", "cat": "main", "name": "Beginner Sentence build up", "dur": "1일"}, {"id": "L088", "cat": "main", "name": "Inter Sentence build up", "dur": "1일"}, {"id": "L035", "cat": "sub", "name": "Alphabet 쓰기 1", "dur": "4주"}, {"id": "L036", "cat": "sub", "name": "Alphabet 쓰기 2", "dur": "4주"}, {"id": "L037", "cat": "sub", "name": "Ph 워크북 1", "dur": "8주"}, {"id": "L038", "cat": "sub", "name": "Ph 워크북 2", "dur": "8주"}, {"id": "L039", "cat": "sub", "name": "Ph 워크북 3", "dur": "8주"}, {"id": "L040", "cat": "sub", "name": "Ph 워크북 4", "dur": "8주"}, {"id": "L041", "cat": "sub", "name": "Ph 워크북 5", "dur": "8주"}, {"id": "L042", "cat": "sub", "name": "Ph 워크북 6", "dur": "8주"}, {"id": "L043", "cat": "sub", "name": "Ph Speed 워크북 1", "dur": "8주"}, {"id": "L044", "cat": "sub", "name": "Ph Speed 워크북 2", "dur": "8주"}, {"id": "L045", "cat": "sub", "name": "Ph Speed 워크북 3", "dur": "8주"}, {"id": "L046", "cat": "sub", "name": "워크북 E1", "dur": "8주"}, {"id": "L047", "cat": "sub", "name": "워크북 E2", "dur": "8주"}, {"id": "L048", "cat": "sub", "name": "워크북 E3", "dur": "8주"}, {"id": "L049", "cat": "sub", "name": "워크북 E4", "dur": "8주"}, {"id": "L050", "cat": "sub", "name": "워크북 E5", "dur": "8주"}, {"id": "L051", "cat": "sub", "name": "워크북 E6", "dur": "8주"}, {"id": "L052", "cat": "sub", "name": "워크북 M", "dur": "5주"}, {"id": "L053", "cat": "sub", "name": "3800 드릴 (1단계)", "dur": "35주"}, {"id": "L054", "cat": "sub", "name": "3800 드릴 (2단계)", "dur": "35주"}, {"id": "L055", "cat": "sub", "name": "3800 드릴 (3단계)", "dur": "35주"}, {"id": "L056", "cat": "sub", "name": "Prerequisite 초 (A)", "dur": "6주"}, {"id": "L057", "cat": "sub", "name": "Prerequisite 중 intro (A)", "dur": "6주"}, {"id": "L058", "cat": "sub", "name": "Prerequisite 초 (B)", "dur": "6주"}, {"id": "L059", "cat": "sub", "name": "Prerequisite 중 intro (B)", "dur": "6주"}, {"id": "L060", "cat": "sub", "name": "초등 1단계 (단어장)", "dur": "17주"}, {"id": "L061", "cat": "sub", "name": "초등 2단계 (단어장)", "dur": "17주"}, {"id": "L062", "cat": "sub", "name": "3인칭 일반동사 (단어장)", "dur": "4주"}, {"id": "L063", "cat": "sub", "name": "과거 일반동사 (단어장)", "dur": "4주"}, {"id": "L064", "cat": "sub", "name": "과거/과거분사 (단어장)", "dur": "4주"}, {"id": "L065", "cat": "sub", "name": "중등 1단계 (단어장)", "dur": "13주"}, {"id": "L066", "cat": "sub", "name": "중등 2단계 (단어장)", "dur": "13주"}, {"id": "L067", "cat": "voca", "name": "초등 주니어 20.65", "dur": "17주"}, {"id": "L068", "cat": "voca", "name": "초등 1단계 40.70 (리콜)", "dur": "17주"}, {"id": "L069", "cat": "voca", "name": "초등 1단계 40.70 (객관식)", "dur": "17주"}, {"id": "L070", "cat": "voca", "name": "초등 1단계 40.70 (주관식)", "dur": "17주"}, {"id": "L071", "cat": "voca", "name": "초등 2단계 40.70 (리콜)", "dur": "17주"}, {"id": "L072", "cat": "voca", "name": "초등 2단계 40.70 (객관식)", "dur": "17주"}, {"id": "L073", "cat": "voca", "name": "초등 2단계 40.70 (주관식)", "dur": "17주"}, {"id": "L074", "cat": "voca", "name": "3인칭 일반동사", "dur": "4주"}, {"id": "L075", "cat": "voca", "name": "과거 일반동사", "dur": "4주"}, {"id": "L076", "cat": "voca", "name": "과거 과거분사", "dur": "4주"}, {"id": "L077", "cat": "voca", "name": "중등 1단계 100.50 (리콜)", "dur": "13주"}, {"id": "L078", "cat": "voca", "name": "중등 1단계 100.50 (객관식)", "dur": "13주"}, {"id": "L079", "cat": "voca", "name": "중등 1단계 100.50 (주관식)", "dur": "13주"}, {"id": "L080", "cat": "voca", "name": "중등 2단계 100.50 (리콜)", "dur": "13주"}, {"id": "L081", "cat": "voca", "name": "중등 2단계 100.50 (객관식)", "dur": "13주"}, {"id": "L082", "cat": "voca", "name": "중등 2단계 100.50 (주관식)", "dur": "13주"}, {"id": "L083", "cat": "voca", "name": "한끝 고등 기본 30.42", "dur": "9주"}, {"id": "L084", "cat": "voca", "name": "5형식 단어", "dur": "4주"}, {"id": "L085", "cat": "voca", "name": "천문장 입문 단어 20.88", "dur": "22주"}, {"id": "L086", "cat": "voca", "name": "천문장 기본 단어 25.88", "dur": "22주"}, {"id": "L089", "cat": "short", "name": "중2. 1학기 중간", "dur": "5주"}, {"id": "L090", "cat": "short", "name": "중2. 1학기 중간- 부교재", "dur": "5주"}, {"id": "L091", "cat": "short", "name": "중3. 1학기 중간", "dur": "5주"}, {"id": "L092", "cat": "short", "name": "중3. 1학기 중간- 부교재", "dur": "5주"}, {"id": "L093", "cat": "short", "name": "중2. 1학기 기말", "dur": "5주"}, {"id": "L094", "cat": "short", "name": "중2. 1학기 기말- 부교재", "dur": "5주"}, {"id": "L095", "cat": "short", "name": "중3. 1학기 기말", "dur": "5주"}, {"id": "L096", "cat": "short", "name": "중3. 1학기 기말- 부교재", "dur": "5주"}, {"id": "L097", "cat": "short", "name": "중1. 2학기 중간", "dur": "5주"}, {"id": "L098", "cat": "short", "name": "중1. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L099", "cat": "short", "name": "중2. 2학기 중간", "dur": "5주"}, {"id": "L100", "cat": "short", "name": "중2. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L101", "cat": "short", "name": "중3. 2학기 중간", "dur": "5주"}, {"id": "L102", "cat": "short", "name": "중3. 2학기 중간- 부교재", "dur": "5주"}, {"id": "L103", "cat": "short", "name": "중1. 2학기 기말", "dur": "5주"}, {"id": "L104", "cat": "short", "name": "중1. 2학기 기말- 부교재", "dur": "5주"}, {"id": "L105", "cat": "short", "name": "중2. 2학기 기말", "dur": "5주"}, {"id": "L106", "cat": "short", "name": "중2. 2학기 기말- 부교재", "dur": "5주"}, {"id": "L107", "cat": "short", "name": "중3. 2학기 기말", "dur": "5주"}, {"id": "L108", "cat": "short", "name": "중3. 2학기 기말- 부교재", "dur": "5주"}];
 var EMBED = document.getElementById('roadmap-data').textContent;   // 처음 한 번 넣을 기본 로드맵
@@ -1409,6 +1409,9 @@ function itemColor(st,r,it,col){
   var x=xcolor(it.title);if(x)return [x,'1F2933'];
   var fi=famInfo(detect(it.title,r.kind),r.kind);return [fi.f[2],fi.f[3]];
 }
+/* v99 뒤에 추가 목록은 그 줄(기본 로드맵 루트)에 있는 교재만 — 홈보카는 홈보카 교재만 */
+function routeOptions(row){var seen={};return S.blocks.filter(function(b){return b.row===row}).sort(function(a,b){return a.start-b.start}).filter(function(b){var k=nkey(b.title);if(seen[k])return false;seen[k]=1;return true}).map(function(b){return '<option value="B:'+esc(b.id)+'">'+esc(b.title)+' ('+fmtLen(b.len)+')</option>'}).join('')}
+function fmtLen(l){var v=Math.round(l*10)/10;return v+'주'}
 function libOptions(){
   return LIBCATS.map(function(c){return '<optgroup label="'+c[1]+'">'+S.library.filter(function(x){return x.cat===c[0]}).map(function(x){return '<option value="'+x.id+'">'+esc(x.name)+' ('+esc(x.dur)+')</option>'}).join('')+'</optgroup>'}).join('');
 }
@@ -1483,7 +1486,7 @@ function stuDetail(st){
   if(setOpen)h+='<div class="setbox"><div style="display:flex;align-items:center;margin-bottom:4px"><b>출발 칸 정하기</b><span class="hint" style="margin-left:8px">줄마다 시작할 교재와 시작일을 골라요</span><button class="btn sm" data-s="setclose" style="margin-left:auto">닫기</button></div>'+rowsH+'</div>';
   // 선택한 블록 편집 막대
   var pk=stuPick&&rawItems(st,stuPick.row,true),pit=pk&&pk.items.find(function(x){return x.id===stuPick.id});
-  var lkp=pit?appLock(st,stuPick.row,pit):'',lnk=!!appStuOf(st);
+  var lkp=pit?appLock(st,stuPick.row,pit):'',lnk=!!appStuOf(st),addPit=pit;
   if(pit&&lkp){var inf=appRowInfo(st,stuPick.row),ac=inf.act[akey(pit)],dn2=doneOf(st,stuPick.row)[pit.id],df2=dn2?doneDiff(st,stuPick.row,pit.id):null;
     h+='<div class="sbar2"><div class="sbr">'+'<span class="selname">'+esc(rowOf(stuPick.row).name)+' · <b>'+esc(pit.title)+'</b> <span style="color:#888780;font-weight:400">('+(baseLen(pit)!=null?baseLen(pit):Math.round(pit.len*10)/10)+'주)</span></span>';
     if(lkp==='done')h+='</div><div class="sbr sbr2"><span class="pgl">앱</span><span class="donebar"><b style="color:#1d6b3a">✓ 앱 완료 '+esc(mdK(dn2))+'</b>'+(df2!=null?' <span class="hint">(계획 '+(df2>0?df2+'주 뒤':(df2<0?(-df2)+'주 앞':'그대로'))+')</span>':'')+' <span class="hint">· 숙제앱 기록이라 여기서는 바꿀 수 없어요</span></span>';
@@ -1494,7 +1497,7 @@ function stuDetail(st){
       h+='<button class="btn sm primary" data-s="ci" data-op="a_ed" title="숙제앱 배부 수정 화면이 바로 열려요">수정</button>';
       h+='<span class="hint" style="margin-left:8px">완료일</span><input type="date" id="a-done-date" value="'+esc(ac.end||'')+'" title="앱 끝 예정일이 들어가 있어요 — 다르면 바꾼 뒤 완료를 누르세요"><button class="btn sm" data-s="ci" data-op="a_done" title="숙제앱 교재완료 화면이 열려요" style="color:#27500A;border-color:#97C459">✓ 완료</button>';
       h+='<button class="btn sm danger" data-s="ci" data-op="a_del" title="숙제앱 배부 취소 화면이 열려요">배부 취소</button>';}
-    h+='<span style="flex:1"></span><button class="btn sm" data-s="ci" data-op="unpick">선택 해제</button>'+'</div></div>';pit=null}
+    h+='<span style="flex:1"></span><button class="btn sm" data-s="ci" data-op="unpick">선택 해제</button>'+'</div></div>';addPit=pit;pit=null}
   if(pit){
     var dn=doneOf(st,stuPick.row)[pit.id],df=dn?doneDiff(st,stuPick.row,pit.id):null;
     h+='<div class="sbar2"><div class="sbr">'+'<span class="selname">'+esc(rowOf(stuPick.row).name)+' · <b>'+esc(pit.title)+'</b> <span style="color:#888780;font-weight:400">('+(baseLen(pit)!=null?baseLen(pit):Math.round(pit.len*10)/10)+'주)</span></span>';
@@ -1507,8 +1510,8 @@ function stuDetail(st){
       :lnk?(function(){var ds=distStart(st,stuPick.row,pit);return '<button class="btn sm primary" data-s="ci" data-op="a_dist" title="숙제앱 교재 배부 화면이 이 배부일로 열려요. 끝 예정일은 앱이 교재 관리 기본 사용기간으로 계산해요">📤 배부 · '+esc(mdK(ds.date))+'부터</button> <span class="hint">'+(ds.prev?'앞 교재 '+esc(ds.prev)+' 끝('+esc(mdK(ds.prevEnd))+') 다음 수업일':'앞 교재가 없어서 오늘부터')+' · 끝 예정일은 앱이 교재 기간으로 계산</span>'})():(function(){var pe=planEnd(st,stuPick.row,pit.id),pd=pe!=null?idxISO(pe):todayStr();return '<span class="hint">완료일</span><input type="date" id="done-date" value="'+pd+'" title="계획상 끝나는 날이 미리 들어가 있어요. 다르면 날짜를 바꾼 뒤 완료를 누르세요"><span class="hint">'+(pe!=null?'계획일':'오늘')+'</span><button class="btn sm primary" data-s="ci" data-op="donedate">✓ 완료</button>'})())+'</span>';
     h+='<span style="flex:1"></span><button class="btn sm" data-s="ci" data-op="unpick">선택 해제</button>'+'</div></div>';
   }
-  if(stuAddOpen&&pit){
-    h+='<div class="sbar2 addf"><b>'+esc(pit.title)+'</b> 뒤에 추가: <select id="sa-lib"><option value="">교재 목록에서 고르기</option>'+libOptions()+'</select> 또는 <input id="sa-title" placeholder="직접 입력" style="width:130px"> <input id="sa-len" type="number" min="1" value="4" style="width:56px">주 <button class="btn sm primary" data-s="ci" data-op="addgo">추가</button><button class="btn sm" data-s="ci" data-op="addcancel">취소</button></div>';
+  if(stuAddOpen&&addPit){var pit=addPit;/* v99 배부된 교재 뒤에도 추가할 수 있게 */
+    h+='<div class="sbar2 addf"><b>'+esc(pit.title)+'</b> 뒤에 추가: <select id="sa-lib"><option value="">'+esc(rowOf(stuPick.row).name)+' 교재에서 고르기</option>'+routeOptions(stuPick.row)+'</select> 또는 <input id="sa-title" placeholder="직접 입력" style="width:130px"> <input id="sa-len" type="number" min="1" value="4" style="width:56px">주 <button class="btn sm primary" data-s="ci" data-op="addgo">추가</button><button class="btn sm" data-s="ci" data-op="addcancel">취소</button></div>';
   }
   var hLab='',hLanes='';HI=histCut(HI);var AH=histOn?appHistOf(st):[];
   if((HI&&HI.length)||AH.length){HI=HI||[];
@@ -1614,7 +1617,10 @@ function saveHist(obj){
 function ensureCustom(st,rowId){
   st.custom=st.custom||{};
   if(st.custom[rowId]&&st.custom[rowId].length){appRevertArr(st,rowId,st.custom[rowId]);return st.custom[rowId]}/* v91 고칠 때 저장본도 같이 정리 */
-  var R=rawItems(st,rowId,true,true);if(!R)return null;
+  var R=rawItems(st,rowId,true,true);
+  /* v98 화면이 앱 배부 교재부터 시작하는 계획(출발 칸보다 앞 교재를 앱에서 배부)이면, 고칠 때도 화면과 같은 계획으로 저장 */
+  if(APPS.stuLoaded){var V=appAdopt(st,rowId,rawItems0(st,rowId));if(V&&V.virtual)R=V}
+  if(!R)return null;
   st.custom[rowId]=R.items.map(function(x){var o={id:x.id,ref:x.ref,title:x.title,cal:x.cal,len:x.len};if(x.lane)o.lane=1;return o});
   return st.custom[rowId];
 }
@@ -1628,7 +1634,7 @@ function resolveItems(list0,fixed){
 }
 function ciEdit(st,rowId,id,fn){
   var had=!!(st.custom&&st.custom[rowId]&&st.custom[rowId].length);
-  var L=ensureCustom(st,rowId);if(!L)return;var it=L.find(function(x){return x.id===id});if(!it)return;
+  var L=ensureCustom(st,rowId);if(!L)return;var it=L.find(function(x){return x.id===id});if(!it){if(!had&&st.custom)delete st.custom[rowId];toast('이 칸은 계획에서 찾지 못해 고칠 수 없어요');return}
   // ★ v81 아무것도 안 바뀐 동작(막힌 당기기 등)은 계획을 새로 만들어 저장하지 않음 — 화면에 안 보이는 흔적 방지
   if(fn(it,L)===false){if(!had&&st.custom)delete st.custom[rowId];return}commitKeep();
 }
@@ -1682,7 +1688,8 @@ function ciOp(op){
       if(stuChain)after().forEach(function(x){x.cal+=c.len});L.push(c);resolveItems(L,c);stuPick={row:row,id:c.id}}
     else if(op==='del'){var i=L.indexOf(it);L.splice(i,1);if(stuChain)L.forEach(function(x){if((x.lane?1:0)===(it.lane?1:0)&&x.cal>it.cal)x.cal-=it.len});stuPick=null}
     else if(op==='addgo'){var lid=(document.getElementById('sa-lib')||{}).value,tt=((document.getElementById('sa-title')||{}).value||'').trim(),ln=Math.max(1,parseInt((document.getElementById('sa-len')||{}).value,10)||1);
-      var lx=lid&&S.library.find(function(o){return o.id===lid});if(lx){tt=lx.name;if(!(document.getElementById('sa-len')||{}).dataset.touched)ln=durMonths(lx.dur)}if(!tt){toast('교재를 고르거나 입력해 주세요');return}
+      var bx=lid&&lid.indexOf('B:')===0&&blk(lid.slice(2));if(bx){tt=bx.title;if(!(document.getElementById('sa-len')||{}).dataset.touched)ln=Math.max(1,Math.round(bx.len))}
+      var lx=!bx&&lid&&S.library.find(function(o){return o.id===lid});if(lx){tt=lx.name;if(!(document.getElementById('sa-len')||{}).dataset.touched)ln=durMonths(lx.dur)}if(!tt){toast('교재를 고르거나 입력해 주세요');return}
       var refb=S.blocks.find(function(b){return b.row===row&&b.title.replace(/\s/g,'').toLowerCase()===tt.replace(/\s/g,'').toLowerCase()});
       var nw={id:uid('c'),ref:refb?refb.id:'',title:tt,cal:it.cal+it.len,len:ln};if(it.lane)nw.lane=1;
       if(stuChain)after().forEach(function(x){x.cal+=ln});L.push(nw);resolveItems(L,nw);stuAddOpen=false;stuPick={row:row,id:nw.id}}
