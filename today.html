@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>오늘 수업 v1</title>
+<title>오늘 수업 v2</title>
 <style>
 :root{
   --bg:#f7f6f3;--surface:#fff;--s2:#f1f0ed;--bd:#e2e1dd;
@@ -399,7 +399,7 @@ table.xl{border-collapse:collapse;width:100%;min-width:560px;font-size:14px;back
      LMS가 쓰지 않는 별도 경로 homework_v4/todayView 에만 저장한다.
    ══════════════════════════════════════════════════════════ */
 /* ── 버전: 고칠 때마다 올린다 (화면 위 제목 옆에 보임) ── */
-const TODAY_VER = 'v1';
+const TODAY_VER = 'v2';
 const TODAY_VER_DATE = '2026-11-23';
 const DB_URL  = 'https://sotong-academy-default-rtdb.asia-southeast1.firebasedatabase.app';
 const FB_PATH = 'homework_v4';
@@ -917,7 +917,8 @@ function card(r, s) {
 
   const lines = [];
   const spHit = (s.kind === 'main' || s.kind === 'el') ? spForStudent(s, dowOf(curDate), st) : null;
-  if (spHit) lines.push(`<div class="row"><span class="lb">오늘</span><span>${spHit.map(h => `<b style="color:${spCol(h.v)}">${esc(h.v || '')}</b>${h.m ? ` <span class="muted">(${esc(h.m)})</span>` : ''}`).join(' · ')}</span></div>`);
+  const myVol = n => { if (!n) return ''; const v = (st.books || []).find(x => spSeriesName(x) === n); return v && v !== n ? v : n; };
+  if (spHit) lines.push(`<div class="row"><span class="lb">오늘</span><span>${spHit.map(h => `<b style="color:${spCol(h.v)}">${esc(myVol(h.v))}</b>${h.m ? ` <span class="muted">(${esc(h.m)})</span>` : ''}`).join(' · ')}</span></div>`);
   if (examMode) {
     const exTxt = `${esc(ex.p.label || '시험대비')} · ~${+ex.p.end.slice(5, 7)}/${+ex.p.end.slice(8)}${ex.left > 0 ? ` (${ex.left}일 남음)` : ' (마지막 날)'}`;
     lines.push(`<div class="row"><span class="lb">시험</span><span class="exam">${exTxt}</span>${bk.examBooks.length ? `<span>${bk.examBooks.map(esc).join(', ')}</span>` : '<span class="muted">시험대비 교재 아직 배부 안 됨</span>'}</div>`);
@@ -1370,9 +1371,22 @@ let SP = {};              // 저장된 학습표
 let spDraft = {};         // 고치는 중
 let spClass = null, spSel = null;
 const SP_OPT = { align:true, block:true, order:true, maxKinds:2 };
-const SP_BOOKS = ['베이직', '워크북', '5형식', '리딩', '파닉스', '단어장', '3800제 해석', '스토리', '문법', '천문장', '3800'];
+
 const SP_COLORS = { '베이직':'#059669', '워크북':'#0891b2', '5형식':'#7c3aed', '리딩':'#c2410c', '파닉스':'#db2777', '단어장':'#a16207', '3800제 해석':'#d97706', '스토리':'#4d7c0f', '문법':'#1d4ed8', '천문장':'#4f46e5', '3800':'#6d28d9' };
-const spCol = n => SP_COLORS[n] || (typesNow ? (Object.values(typesNow()).find(t => t.name === n) || {}).color : '') || '#4b5563';
+const SP_KIND = { main:'📘 주교재', sub:'📗 부교재', word:'📒 단어장', extra:'📕 단기', none:'분류 없음' };
+const spSeriesName = n => String(n || '').replace(/\s*\(.*?\)\s*$/, '').replace(/\s*\d+\s*(권|단계)?\s*$/, '').trim() || String(n || '').trim();
+function spSeries() {   // 숙제관리 앱 교재(교재형) → 시리즈 목록
+  const m = new Map();
+  D.books.filter(b => b && b.mode !== 'voca').forEach(b => {
+    const name = spSeriesName(b.name), kind = b.extra ? 'extra' : (SP_KIND[b.kind] ? b.kind : 'none');
+    if (!m.has(name)) m.set(name, { name, kind, vols: [] });
+    m.get(name).vols.push(b.name);
+  });
+  return [...m.values()].sort((a, b) => a.name.localeCompare(b.name, 'ko', { numeric:true }));
+}
+const SP_PAL = ['#059669', '#0891b2', '#7c3aed', '#c2410c', '#db2777', '#a16207', '#d97706', '#4d7c0f', '#1d4ed8', '#be123c', '#0f766e', '#9333ea'];
+const spHash = n => { let h = 0; for (const c of String(n)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return SP_PAL[h % SP_PAL.length]; };
+const spCol = n => SP_COLORS[n] || (typesNow ? (Object.values(typesNow()).find(t => t.name === n) || {}).color : '') || spHash(n);
 const spYear = ds => { const d = ds ? new Date(ds + 'T00:00:00') : new Date(); return d.getMonth() >= 2 ? d.getFullYear() : d.getFullYear() - 1; };
 const stGrade = (st, ds) => { const r = st && st.gr; if (!r || !r.g) return 0; return r.g + (spYear(ds) - (r.y || spYear(ds))); };
 const grLabel = n => !n ? '' : n <= 6 ? '초' + n : n <= 9 ? '중' + (n - 6) : n <= 12 ? '고' + (n - 9) : '졸업';
@@ -1470,12 +1484,12 @@ function studyView() {
   const tabs = `<div class="pl-groups">${['el', 'mid'].map(lv => keys.filter(x => lvOfKey(x) === lv).map(x => `<button class="${x === k ? 'on' : ''}" data-spk="${esc(x)}">${esc(keyName(x))}반${spDirty(x) ? ' •' : ''}</button>`).join('')).join('<span style="width:8px"></span>')}</div>`;
 
   const bookOpts = r => {
-    const have = new Set(r.items.map(x => x.n));
-    const lms = [...new Set(D.books.filter(b => b.mode !== 'voca' && !b.extra).map(b => String(b.name).replace(/\s*\d+\s*$/, '').replace(/\s*\(.*?\)\s*$/, '').trim()))].filter(Boolean);
-    const used = [...new Set(Object.values(SP).flatMap(p => toArr(p.rows)).flatMap(x => toArr(x.items).map(i => i.n)))];
-    const all = [...new Set([...used, ...SP_BOOKS])].filter(n => !have.has(n));
-    const rest = lms.filter(n => !have.has(n) && !all.includes(n)).sort((a, b) => a.localeCompare(b, 'ko'));
-    return `<option value="">+ 교재</option>${all.map(n => `<option>${esc(n)}</option>`).join('')}${rest.length ? `<optgroup label="숙제관리 앱 교재">${rest.map(n => `<option>${esc(n)}</option>`).join('')}</optgroup>` : ''}<option value="__new">직접 입력…</option>`;
+    const have = new Set(r.items.map(x => x.n)), S2 = spSeries();
+    const grp = Object.keys(SP_KIND).map(kd => {
+      const xs = S2.filter(x => x.kind === kd && !have.has(x.name)); if (!xs.length) return '';
+      return `<optgroup label="${SP_KIND[kd]}">${xs.map(x => `<option value="${esc(x.name)}">${esc(x.name)}${x.vols.length > 1 ? ` (${x.vols.length}권)` : ''}</option>`).join('')}</optgroup>`;
+    }).join('');
+    return `<option value="">+ 교재</option>${grp || '<option disabled>숙제관리 앱에 교재가 없어요</option>'}`;
   };
   const rowsHtml = o.rows.map(r => {
     const t = r.items.reduce((a, x) => a + x.c, 0), sts = spRowStudents(k, r);
@@ -1520,7 +1534,7 @@ function studyView() {
 function spEditor(k, o) {
   if (!spSel) return '';
   const r = o.rows.find(x => x.id === spSel.r); if (!r) return '';
-  const v = (o.plan[r.id] || {})['d' + spSel.d] || '', names = [...new Set([...r.items.map(x => x.n), ...SP_BOOKS])];
+  const v = (o.plan[r.id] || {})['d' + spSel.d] || '', names = [...new Set([...r.items.map(x => x.n), ...(v ? [v] : []), ...spSeries().map(x => x.name)])];
   return `<div class="ed"><b>${esc(spRowName(r))} · ${DN[spSel.d]}</b>
     <select id="sped-v"><option value="">(비움)</option>${names.map(n => `<option ${n === v ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>
     <input id="sped-m" placeholder="메모 (예: 일찍감, 2시 50분 등원)" value="${esc(r.memo['d' + spSel.d] || '')}">
@@ -1539,7 +1553,7 @@ function bindStudy() {
     if (kd === 'all') o.rows.unshift(r); else o.rows.push(r); }));
   q('[data-spic]').forEach(b => b.onclick = () => { const [id, i, d] = b.dataset.spic.split('|'); spEdit(k, o => { const x = row(o, id).items[+i]; x.c = Math.max(1, x.c + +d); }); });
   q('[data-spix]').forEach(b => b.onclick = () => { const [id, i] = b.dataset.spix.split('|'); spEdit(k, o => { row(o, id).items.splice(+i, 1); }); });
-  q('[data-spadd]').forEach(s => s.onchange = () => { let n = s.value; if (!n) return; if (n === '__new') { n = (prompt('교재 이름') || '').trim(); if (!n) { render(); return; } }
+  q('[data-spadd]').forEach(s => s.onchange = () => { const n = s.value; if (!n) return;
     spEdit(k, o => { const r = row(o, s.dataset.spadd), left = days.length - r.items.reduce((a, x) => a + x.c, 0); r.items.push({ n, c: left > 0 ? left : 1 }); }); });
   q('[data-spo]').forEach(i => i.onchange = () => { const key = i.dataset.spo; spEdit(k, o => { o.opt[key] = key === 'maxKinds' ? +i.value : i.checked; }); });
   const rec = $('sp-rec'); if (rec) rec.onclick = () => { spSel = null; spRecommend(k); };
