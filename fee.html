@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>교재비 v30</title>
+<title>교재비 v34</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
 <style>
 /* 숙제관리 앱(index.html)과 같은 디자인 — 색·글꼴·버튼·표 모양을 그대로 맞춤 */
@@ -74,6 +74,7 @@ dialog h3{font-size:1rem}
 .legend{display:flex;gap:.35rem;flex-wrap:wrap;font-size:.72rem;color:var(--mu);align-items:center}
 details.card{padding:.6rem .8rem}details summary{cursor:pointer;font-size:.8rem}
 .seg{display:inline-flex;background:var(--s2);border-radius:9px;padding:3px;gap:3px}.seg button{border:none;background:transparent;padding:.36rem .75rem;border-radius:7px;font-size:.78rem;font-weight:700;color:var(--mu);cursor:pointer}.seg button.on{background:var(--surface);color:var(--acc);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.chip{border:1px solid var(--bd);background:var(--surface);border-radius:8px;padding:.38rem .7rem;font-size:.8rem;font-weight:600;cursor:pointer;color:var(--tx)}.chip:hover{border-color:var(--acc)}.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
 .prior{font-size:.72rem;color:#6d28d9;margin-top:2px}
 .mx.app td,.mx.app th{border:1px solid #eceae5;padding:.35rem .5rem}.mx.app td.n,.mx.app th.n{text-align:center;min-width:44px}.mx.app .tot{font-weight:700;background:#f7f6f2}.mx.app .z{color:#d4d4d4}.mx.app tr:hover td{background:#fbfaf7}
 body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top:.5rem}body.embed main{padding-top:.7rem}
@@ -110,6 +111,10 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    · 예전 자료(숙제앱 지난 배부 + 통통통 판매내역)는 '같거나 비슷한 교재를 예전에 받은 적 있음' 확인창으로만 쓴다
    · 두 번 배부는 표시만 하고 목록에 넣는다
    · 목록 확정 → A4 인쇄 (종이 보면서 통통통에 입력)
+   v34: 선청구 교재 고르기를 분야 → 교재 드롭다운으로
+   v33: 선청구 교재는 숙제앱 교재 관리의 교재를 분야별(주교재·부교재·단기·단어장)로 골라 넣기
+   v32: 📝 선청구 — 25일에 다음 달 교재를 반·묶음별로 미리 청구, 배부하면 자동으로 짝(✅ 선청구분), 못 준 것은 ⏳ 대기. 시작일 11/26
+   v31: 교재 이름은 숙제앱 교재 관리의 지금 이름으로 (이름을 바꾸면 지난 배부도 새 이름으로 보이고 판매내역과 맞춤)
    v30: 지난 목록은 숙제관리 앱에 있는 학생만 (판매내역의 다른 학생 뺌)
    v29: 2026년 판매내역에서 스터디포스 독해 트레이닝 뺌 (지난 목록·예전에 받은 적 있음 확인 모두)
    v28: 지난 목록이 비어 있으면 그 자리에서 판매내역 불러오기
@@ -129,7 +134,7 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    v14: 같은 반·같은 교재끼리 묶어 인쇄 (교재별 인쇄)
    v13: 2판으로 다시 만듦 (연결표·통통통 엑셀·가격·선생님 구분 없앰, 확인창, 인쇄)
    ══════════════════════════════════════════════════════════════ */
-const VER = 'v30';
+const VER = 'v34';
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAh3zMoepbA38yFFEDQ210XWveBdf2HDN8",
   authDomain: "sotong-academy.firebaseapp.com",
@@ -141,8 +146,9 @@ const FIREBASE_CONFIG = {
 };
 const SRC_PATH = 'homework_v4';   // 숙제관리 — 읽기 전용
 const STORE_PATHS = { test: 'homework_v4_fee_test', live: 'homework_v4_fee' };
-const STORE_KEYS = ['settings', 'bills', 'billed', 'skip', 'ok', 'acks', 'seen', 'renew', 'unlegacy'];
-const DEFAULT_START = '2026-10-26';   // 이 날 이후 배부분부터 챙김 (그 전은 정리 끝남)
+const STORE_KEYS = ['settings', 'bills', 'billed', 'skip', 'ok', 'acks', 'seen', 'renew', 'unlegacy', 'pre', 'preConf'];
+const DEFAULT_START = '2026-11-26';   // ★ v32 11/25 청구는 인쇄본으로 끝냄 → 11/26부터
+const DEFAULT_START_OLD = '2026-10-26';   // 이 날 이후 배부분부터 챙김 (그 전은 정리 끝남)
 const EXCLUDE = /전자교재/;
 // ★ v29 판매내역에서 빼는 것: [교재 이름(띄어쓰기 무시), 이 날짜부터]
 const SALES_DROP = [['스터디포스독해트레이닝', '2026-01-01']];
@@ -182,7 +188,7 @@ const byGN = (a, b) => (a.group || '').localeCompare(b.group || '', 'ko') || (a.
 const kTag = k => `<span class="k ${k}">${KIND[k] || k}</span>`;
 const stamp = () => ({ at: nowStr() });
 const atTxt = o => o && o.at ? esc(String(o.at).slice(5)) : '';
-const UI = { tab: 'bill', month: defaultMonth(), group: '', kind: '', fStu: '', fBook: '', unsel: new Set(), hMonth: '', sid: '', dlgShown: false,
+const UI = { tab: 'pre', pM: '', pG: '', pKind: 'main', pBook: '', month: defaultMonth(), group: '', kind: '', fStu: '', fBook: '', unsel: new Set(), hMonth: '', sid: '', dlgShown: false,
   view: (() => { try { return localStorage.getItem('fee_view') || 'stu'; } catch (e) { return 'stu'; } })(),
   legendOpen: (() => { try { return !!localStorage.getItem('fee_legend'); } catch (e) { return false; } })() };
 const startFrom = () => (F.settings && F.settings.startFrom) || DEFAULT_START;
@@ -343,12 +349,13 @@ const salesOf = st => (SX && SX.get(normName(st.name))) || [];
 function analyze(st, M) {
   const P = period(M), S0 = startFrom(), log = feeLogOf(st), sales = salesOf(st);
   const items = log.map(f => { const b = bookById(f.bookId);
-    return { key: `f:${st.id}:${f.id}`, sid: st.id, bookId: f.bookId, name: f.bookName || (b && b.name) || '(이름 없음)', kind: kindOf(b, f.bookName), cohort: f.cohort || '', date: f.date, oldBilled: f.billed || '' }; })
+    return { key: `f:${st.id}:${f.id}`, sid: st.id, bookId: f.bookId, name: (b && b.name) || f.bookName || '(이름 없음)', kind: kindOf(b, f.bookName), cohort: f.cohort || '', date: f.date, oldBilled: f.billed || '' }; })
     .sort((a, b) => a.date.localeCompare(b.date) || a.key.localeCompare(b.key));
   items.forEach(it => {
     const bid = F.billed[it.key];
     if (bid && F.bills[bid]) { it.state = 'listed'; it.bill = F.bills[bid]; }
-    else if (it.oldBilled && !F.unlegacy[it.key]) it.state = 'legacy';   // ★ v22 예전 교재비 화면(숙제관리 v550 이전)에서 '청구 완료'로 표시한 배부 → 이미 청구된 것
+    else if (it.oldBilled && !F.unlegacy[it.key]) it.state = 'legacy';
+    else if (preM().byFee.has(it.key)) { it.state = 'pre'; it.pre = preM().byFee.get(it.key); }   // ★ v32 선청구분 배부   // ★ v22 예전 교재비 화면(숙제관리 v550 이전)에서 '청구 완료'로 표시한 배부 → 이미 청구된 것
     else if (F.skip[it.key]) it.state = 'skip';
     else if (it.date < S0) it.state = 'old';
     else if (it.date > P.to) it.state = 'next';
@@ -405,7 +412,7 @@ function checkList(M) {
 const checkCount = c => c.cancel.length + c.redist.length + c.need.length;
 
 /* ══════════ 화면 ══════════ */
-const TABS = [['bill', '📋 이번 달 배부 목록'], ['check', '🔍 확인 목록'], ['stat', '📊 배부 현황'], ['ledger', '📒 학생별 기록'], ['hist', '🗂 지난 목록'], ['set', '⚙ 설정']];
+const TABS = [['pre', '📝 선청구'], ['bill', '📋 이번 달 배부 목록'], ['check', '🔍 확인 목록'], ['stat', '📊 배부 현황'], ['ledger', '📒 학생별 기록'], ['hist', '🗂 지난 목록'], ['set', '⚙ 설정']];
 let _cc = null;
 function setStatus() {
   const src = D.from === 'firebase' ? '<span class="pill ok">숙제관리 연결 (읽기만)</span>' : D.from === 'file' ? '<span class="pill b">숙제관리 백업 파일</span>' : '<span class="pill rd">숙제관리 데이터 없음</span>';
@@ -414,6 +421,7 @@ function setStatus() {
   $('status').innerHTML = `${src}${sales}${st}<span class="mu">${VER}</span>`;
 }
 function render() {
+  _pm = null;
   _cc = D.students.length ? checkList(UI.month) : null;
   const n = _cc ? checkCount(_cc) : 0;
   $('tabs').innerHTML = TABS.map(([k, l]) => `<button class="tab ${UI.tab === k ? 'on' : ''}" onclick="go('${k}')">${l}${k === 'check' && n ? `<span class="n">${n}</span>` : ''}</button>`).join('');
@@ -423,7 +431,7 @@ function render() {
     r.innerHTML = `<div class="card"><div class="empty">숙제관리 학생 데이터가 아직 없어요.<br>${fbErr ? esc(fbErr) + '<br>' : ''}서버에 연결되지 않으면 <b>⚙ 설정</b>에서 숙제관리 <b>전체 백업 파일(.json)</b>을 불러올 수 있어요.<br><br><button class="btn" onclick="go('set')">⚙ 설정으로</button></div></div>`;
     return;
   }
-  ({ bill: rBill, check: rCheck, stat: rStat, ledger: rLedger, hist: rHist, set: rSet })[UI.tab](r);
+  ({ pre: rPre, bill: rBill, check: rCheck, stat: rStat, ledger: rLedger, hist: rHist, set: rSet })[UI.tab](r);
   if (UI.tab === 'bill' && !UI.dlgShown && _cc && _cc.need.length) { UI.dlgShown = true; setTimeout(openPriorDialog, 200); }
 }
 function go(t) { UI.tab = t; render(); window.scrollTo(0, 0); }
@@ -436,6 +444,137 @@ function monthBar(extra) {
     <label>반</label>${groupSel("UI.group=this.value;UI.fStu='';UI.fBook='';render()", UI.group)}${extra || ''}</div>`;
 }
 
+/* ══════════ 📝 선청구 (★ v32) ══════════
+   F.pre[청구달][id] = { sid, bookId, name, kind, at, src }   — 25일에 다음 달 줄 교재를 미리 청구
+   F.preConf[청구달] = { at, n }                              — 목록 확정 (확정 뒤 넣은 것은 '확정 후 추가')
+   배부와 짝: 같은 학생 + 같은 교재, 청구달 기간 시작(전달 26일) 5일 전 이후 배부 — 오래된 선청구부터 하나씩 */
+const preTarget = () => { const t = today(); return monthAdd(t.slice(0, 7), +t.slice(8) > 25 ? 2 : 1); };
+const preOf = M => Object.entries(F.pre[M] || {}).filter(([, p]) => p).map(([id, p]) => ({ ...p, id, month: M }));
+const allPre = () => Object.keys(F.pre || {}).sort().flatMap(preOf);
+let _pm = null;
+function preM() {
+  if (_pm) return _pm;
+  const byFee = new Map(), used = new Set(), bySt = new Map();
+  allPre().filter(p => !p.cancel).forEach(p => { const k = String(p.sid); if (!bySt.has(k)) bySt.set(k, []); bySt.get(k).push(p); });
+  bySt.forEach((L, sid) => {
+    const st = studentById(sid); if (!st) return;
+    L.sort((a, b) => a.month.localeCompare(b.month) || String(a.at).localeCompare(String(b.at)));
+    feeLogOf(st).slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(f => {
+      const p = L.find(p => !used.has(p.id) && String(p.bookId) === String(f.bookId) && f.date >= preFrom(p.month));
+      if (p) { used.add(p.id); byFee.set(`f:${st.id}:${f.id}`, p); p.given = f.date; }
+    });
+  });
+  return (_pm = { byFee, used });
+}
+const preFrom = M => { const d = new Date(period(M).from + 'T00:00:00'); d.setDate(d.getDate() - 5); return fmt(d); };   // 청구달 기간 시작(전달 26일) 5일 전 배부부터 짝
+const preWait = p => !p.cancel && !preM().used.has(p.id);
+function bookOpts(sel) {
+  const bs = D.books.filter(b => b.mode !== 'voca' && !b.archived && !EXCLUDE.test(b.name || '')).sort((a, b) => KIND_ORDER.indexOf(kindOf(a)) - KIND_ORDER.indexOf(kindOf(b)) || (a.ord || 0) - (b.ord || 0));
+  return `<option value="">교재 고르기</option>` + KIND_ORDER.map(k => { const L = bs.filter(b => kindOf(b) === k); return L.length ? `<optgroup label="${KIND[k]}">${L.map(b => `<option value="${b.id}" ${String(b.id) === String(sel) ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</optgroup>` : ''; }).join('');
+}
+const appBooks = () => D.books.filter(b => b.mode !== 'voca' && !b.archived && !EXCLUDE.test(b.name || '')).sort((a, b) => (a.ord || 0) - (b.ord || 0) || String(a.name).localeCompare(String(b.name), 'ko', { numeric: true }));
+function bookPicker() {   // 숙제앱 교재 관리의 교재를 분야별로 그대로 — 분야 → 교재 드롭다운 (직접 입력 없음)
+  const bs = appBooks(), ks = KIND_ORDER.filter(k => bs.some(b => kindOf(b) === k));
+  if (!ks.includes(UI.pKind)) UI.pKind = ks[0] || 'main';
+  const sel = bookById(UI.pBook);
+  return `<div class="card"><div class="sh"><span class="nm">넣을 교재</span><span class="gx">숙제앱 교재 관리의 교재</span><span style="flex:1"></span>
+      <label class="mu">분야</label><select onchange="UI.pKind=this.value;UI.pBook='';render()">${ks.map(k => `<option value="${k}" ${UI.pKind === k ? 'selected' : ''}>${KIND[k]} (${bs.filter(b => kindOf(b) === k).length})</option>`).join('')}</select>
+      <label class="mu">교재</label><select style="min-width:240px" onchange="UI.pBook=this.value;render()"><option value="">교재 고르기</option>${bs.filter(b => kindOf(b) === UI.pKind).map(b => `<option value="${b.id}" ${String(b.id) === String(UI.pBook) ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select>
+      ${sel ? `<button class="lk" onclick="UI.pBook='';render()">고르기 취소</button>` : ''}</div></div>`;
+}
+function preWarn(sid, bookId, M) {   // 넣기 전에 확인할 것
+  const st = studentById(sid), b = bookById(bookId), w = [];
+  if (preOf(M).some(p => !p.cancel && String(p.sid) === String(sid) && String(p.bookId) === String(bookId))) w.push({ t: 'dup', s: `이미 ${mL(M)} 선청구에 있음` });
+  allPre().filter(p => p.month < M && String(p.sid) === String(sid) && String(p.bookId) === String(bookId) && preWait(p)).forEach(p => w.push({ t: 'wait', s: `⏳ ${mL(p.month)} 선청구했는데 아직 못 줌` }));
+  const got = feeLogOf(st).filter(f => String(f.bookId) === String(bookId)).map(f => f.date).sort().pop();
+  if (got) w.push({ t: 'had', s: `🔁 ${ymd(got)} 받은 적 있음` });
+  else { const sx = salesOf(st).filter(x => sameBook(x.book, b ? b.name : '')).map(x => x.date).sort().pop(); if (sx) w.push({ t: 'had', s: `🔁 ${ymd(sx)} 산 적 있음 (판매내역)` }); }
+  return w;
+}
+function addPre(sids, bookId, M) {
+  const b = bookById(bookId); if (!b) return toast('교재를 골라 주세요');
+  if (!sids.length) return toast('학생을 골라 주세요');
+  const W = sids.map(sid => ({ sid, w: preWarn(sid, bookId, M) }));
+  let ok = W.filter(x => !x.w.some(w => w.t === 'dup'));
+  const dup = W.length - ok.length;
+  const warn = ok.filter(x => x.w.length);
+  if (warn.length) {
+    const msg = `${b.name} — 확인이 필요한 학생 ${warn.length}명\n\n${warn.map(x => `${studentById(x.sid).name}: ${x.w.map(w => w.s).join(', ')}`).join('\n')}\n\n[확인] 모두 넣기   [취소] 확인 필요 학생은 빼고 넣기`;
+    if (!confirm(msg)) ok = ok.filter(x => !x.w.length);
+  }
+  if (!ok.length) return toast(dup ? '이미 선청구에 있어요' : '넣은 학생이 없어요');
+  const ch = {}, at = nowStr();
+  ok.forEach(x => { ch[`pre/${M}/${nid()}`] = { sid: x.sid, bookId: b.id, name: b.name, kind: kindOf(b), at, src: '선청구' }; });
+  write(ch); toast(`${b.name} ${ok.length}명 선청구에 넣었어요${dup ? ` (이미 있던 ${dup}명 뺌)` : ''}`);
+}
+function addPreCard(i) { const bid = UI.pBook; const sids = [...document.querySelectorAll(`input[name="ps_${i}"]:checked`)].map(x => x.value); addPre(sids, bid, UI.pM); }
+function addPreOne() { addPre([$('po_s').value].filter(Boolean), UI.pBook, UI.pM); }
+function delPre(M, id) { const p = (F.pre[M] || {})[id]; if (p && confirm(`${(studentById(p.sid) || {}).name || ''} · ${p.name}을 ${mL(M)} 선청구에서 뺄까요?${F.preConf[M] ? '\n이미 확정한 목록이에요. 통통통에서도 빼 주세요.' : ''}`)) write({ [`pre/${M}/${id}`]: null }); }
+function cancelPre(M, id) { if (confirm('이 선청구는 주지 않기로 할까요?\n통통통에서 취소·환불해 주세요. (⏳ 대기에서 빠져요)')) write({ [`pre/${M}/${id}/cancel`]: stamp() }); }
+function confirmPre(M) {
+  const L = preOf(M).filter(p => !p.cancel); if (!L.length) return;
+  if (!confirm(`${mLY(M)} 선청구 ${L.length}권을 확정할까요?\n확정한 뒤에 넣는 것은 "확정 후 추가"로 표시돼요.`)) return;
+  write({ [`preConf/${M}`]: { at: nowStr(), n: L.length } }); toast('✅ 선청구 목록을 확정했어요');
+}
+function preRows(M, grp) {
+  const conf = F.preConf[M];
+  return preOf(M).filter(p => !p.cancel).map(p => { const st = studentById(p.sid) || { name: '(지운 학생)', group: '' }, b = bookById(p.bookId);
+    return { key: p.id, sid: p.sid, student: st.name, group: st.group || '', kind: p.kind || kindOf(b, p.name), bookId: p.bookId, name: (b && b.name) || p.name, date: '', cohort: '', flags: conf && String(p.at) > String(conf.at) ? '확정 후 추가' : '' }; })
+    .filter(r => !grp || r.group === grp)
+    .sort((a, b) => byGN({ group: a.group, name: a.student }, { group: b.group, name: b.student }) || KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind));
+}
+function printPre(mode, onlyAdd) {
+  const M = UI.pM; let rows = preRows(M, UI.pG); if (onlyAdd) rows = rows.filter(r => r.flags);
+  if (!rows.length) return toast('인쇄할 선청구가 없어요');
+  printRows(rows, M, '선청구', mode, { title: `${mLY(M)} 선청구${onlyAdd ? ' (확정 후 추가분)' : ''}`, sub: `${mL(M)}에 줄 교재 미리 청구${UI.pG ? ' · ' + UI.pG : ''}` });
+}
+function bundles(g) {   // 반 안의 묶음 — 가장 최근에 받은 주교재(없으면 아무 교재)가 같은 학생끼리
+  const studs = D.students.filter(s => (s.group || '') === g && !s.left).sort(byGN), m = new Map();
+  const cnt = new Map(); studs.forEach(st => new Set(feeLogOf(st).map(f => String(f.bookId))).forEach(k => cnt.set(k, (cnt.get(k) || 0) + 1)));
+  studs.forEach(st => { const L = feeLogOf(st).slice().sort((a, b) => b.date.localeCompare(a.date));
+    const mains = L.filter(f => kindOf(bookById(f.bookId), f.bookName) === 'main');
+    const f = mains.find(f => cnt.get(String(f.bookId)) >= 2) || mains[0] || L[0];   // 반 친구와 같이 받은 가장 최근 주교재
+    const k = f ? String(f.bookId) : ''; if (!m.has(k)) m.set(k, { book: f ? ((bookById(f.bookId) || {}).name || f.bookName) : '', studs: [] }); m.get(k).studs.push(st); });
+  return [...m.values()].sort((a, b) => b.studs.length - a.studs.length);
+}
+function rPre(r) {
+  if (!UI.pM) UI.pM = preTarget();
+  const M = UI.pM, conf = F.preConf[M], L = preOf(M).filter(p => !p.cancel);
+  const wait = allPre().filter(p => p.month < M && preWait(p) && (!UI.pG || (studentById(p.sid) || {}).group === UI.pG));
+  const bar = `<div class="bar"><label>청구 달</label><input type="month" value="${M}" onchange="UI.pM=this.value||preTarget();render()">
+    <span class="pill b">${mL(M)}에 줄 교재 · ${mL(monthAdd(M, -1))} 25일 청구</span>
+    <label>반</label><select onchange="UI.pG=this.value;render()"><option value="">전체 반 (요약)</option>${groupsList().map(g => `<option ${g === UI.pG ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>
+    ${conf ? `<span class="pill ok">✅ 확정 ${esc(String(conf.at).slice(5))}</span>` : '<span class="pill w">확정 전</span>'}</div>`;
+  const waitHtml = wait.length ? `<div class="warn w-y">⏳ <b>지난 선청구 중 아직 배부 안 된 것 ${wait.length}권</b> — 이번에 같은 책을 또 청구하지 않게 봐 주세요 (배부하면 자동으로 짝이 돼요)
+    <table style="margin-top:.4rem;background:#fff">${wait.map(p => { const st = studentById(p.sid) || {}; return `<tr><td class="nw">${esc(st.group || '')}</td><td class="nw"><b>${esc(st.name || '')}</b></td><td>${kTag(p.kind || 'etc')}${esc(p.name)}</td><td class="nw">${mL(p.month)} 선청구</td><td class="ar"><button class="lk d" onclick="cancelPre('${p.month}','${p.id}')">안 주기로 함</button></td></tr>`; }).join('')}</table></div>` : '';
+  const foot = `<div class="foot"><span><b>${mL(M)} 선청구 ${new Set(L.map(p => String(p.sid))).size}명 · ${L.length}권</b>${UI.pG ? ` <span class="mu">(${esc(UI.pG)} ${preRows(M, UI.pG).length}권)</span>` : ''}</span><span style="flex:1"></span>
+    <button class="btn" onclick="printPre('stu')">🖨 학생별 인쇄</button><button class="btn" onclick="printPre('book')">🖨 반·교재별 인쇄</button>
+    ${conf && preRows(M).some(x => x.flags) ? `<button class="btn" onclick="printPre('stu',1)">🖨 확정 후 추가분만</button>` : ''}
+    <button class="btn p" ${L.length ? '' : 'disabled'} onclick="confirmPre('${M}')">✅ ${conf ? '다시 확정' : '선청구 확정'}</button></div>`;
+  if (!UI.pG) {
+    const gs = groupsList().filter(g => D.students.some(s => s.group === g && !s.left));
+    r.innerHTML = `${bar}${waitHtml}<div class="mu" style="margin-bottom:.5rem">반을 골라 다음 달 교재를 넣어요. 반 안에서 같은 책으로 같이 가는 학생끼리 묶음으로 보여 줘요.</div>
+      <div class="card"><table><tr><th>반</th><th class="ar">학생</th><th class="ar">${mL(M)} 선청구</th><th>교재</th><th></th></tr>
+      ${gs.map(g => { const rr = preRows(M, g), n = D.students.filter(s => s.group === g && !s.left).length, bc = new Map(); rr.forEach(x => bc.set(x.name, (bc.get(x.name) || 0) + 1));
+        return `<tr><td><b>${esc(g)}</b></td><td class="ar">${n}명</td><td class="ar">${rr.length ? rr.length + '권' : '<span class="mu">-</span>'}</td><td class="mu">${[...bc].map(([k, v]) => `${esc(k)} ${v}`).join(' · ')}</td><td class="ar"><button class="btn sm" onclick="UI.pG='${esc(g)}';render()">이 반 넣기 →</button></td></tr>`; }).join('')}</table></div>${foot}`;
+    return;
+  }
+  const g = UI.pG, B = bundles(g), rows = preRows(M, g), sel = bookById(UI.pBook);
+  const mine = sid => rows.filter(x => String(x.sid) === String(sid));
+  const cards = B.map((bd, i) => `<div class="card"><div class="sh"><span class="nm">묶음 ${i + 1}</span><span class="gx">${bd.book ? '지금 주교재: ' + esc(bd.book) : '배부 기록 없음'} · ${bd.studs.length}명</span>
+      <span style="flex:1"></span><button class="btn sm p" ${sel ? '' : 'disabled'} onclick="addPreCard(${i})">＋ 체크한 학생에 ${sel ? '「' + esc(sel.name) + '」' : '고른 교재'} 넣기</button></div>
+    <div class="box" style="padding:.6rem .8rem;gap:.35rem">${bd.studs.map(st => `<label class="row" style="gap:.4rem"><input type="checkbox" name="ps_${i}" value="${st.id}" checked> <b style="min-width:64px">${esc(st.name)}</b>
+      ${mine(st.id).map(x => `<span class="pill ${x.flags ? 'w' : 'b'}">${esc(x.name)}${x.flags ? ' · 확정 후 추가' : ''} <a href="javascript:void 0" onclick="event.preventDefault();delPre('${M}','${x.key}')" style="color:inherit;text-decoration:none">✕</a></span>`).join(' ') || '<span class="mu">아직 없음</span>'}</label>`).join('')}</div></div>`).join('');
+  r.innerHTML = `${bar}${waitHtml}
+    <div class="mu" style="margin-bottom:.5rem"><b>① 넣을 교재</b>에서 분야 → 교재를 고르고 → <b>② 묶음</b>에서 빠질 학생은 체크를 풀고 → <b>＋ 넣기</b>. 주교재·부교재·단어장처럼 여러 권이면 교재마다 한 번씩 넣어요. 넣을 때 "예전에 받은 책", "지난 선청구를 아직 못 준 책"이면 확인창이 떠요.</div>
+    ${bookPicker()}
+    ${cards}
+    <div class="card"><div class="sh"><span class="nm">한 명씩 넣기</span><span class="gx">입회·묶음과 다른 학생</span><span style="flex:1"></span>
+      <select id="po_s"><option value="">학생</option>${D.students.filter(s => (s.group || '') === g && !s.left).sort(byGN).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select>
+      <button class="btn sm p" ${sel ? '' : 'disabled'} onclick="addPreOne()">＋ ${sel ? '「' + esc(sel.name) + '」' : '고른 교재'} 넣기</button></div></div>
+    <div class="row" style="margin:.2rem 0 .6rem"><button class="lk" onclick="UI.pG='';render()">← 전체 반 요약</button></div>${foot}`;
+}
+
 /* ---------- 📋 이번 달 배부 목록 ---------- */
 function priorTxt(it) { return it.prior ? it.prior.slice(0, 3).map(p => `${ymd(p.date)} ${esc(p.name)} <span class="mu">(${p.src}·${p.how})</span>`).join(' / ') + (it.prior.length > 3 ? ` 외 ${it.prior.length - 3}` : '') : ''; }
 function stateChip(it) {
@@ -444,6 +583,7 @@ function stateChip(it) {
   else if (it.state === 'skip') s = `<span class="pill">목록에서 뺌 · ${atTxt(F.skip[it.key])}</span> <button class="lk" onclick="unskip('${it.key}')">되돌리기</button>`;
   else if (it.state === 'next') s = `<span class="pill">다음 달</span>`;
   else if (it.state === 'old') s = `<span class="pill">시작일 전</span>`;
+  else if (it.state === 'pre') s = `<span class="pill ok">✅ ${mL(it.pre.month)} 선청구분</span>`;
   else if (it.state === 'legacy') s = `<span class="pill ok">✅ 예전 교재비 화면에서 청구 (${md(it.oldBilled)})</span> <button class="lk" onclick="unlegacy(['${it.key}'])">청구 전으로 되돌리기</button>`;
   else if (it.state === 'inherit') s = `<span class="pill ok">↩ 다시 배부 — ${mL(it.inherit.month)} 목록에 이미 있음</span> <span class="mu">(${md(it.inherit.date)} 배부 → 취소 → 다시 배부)</span> <button class="btn sm" onclick="renewItem('${it.key}')">새로 청구</button>`;
   else {
@@ -457,7 +597,7 @@ function stateChip(it) {
 function rBill(r) {
   const M = UI.month, P = period(M), all = analyzeAll(M);
   let show = all.filter(x => !UI.group || x.st.group === UI.group)
-    .map(x => ({ ...x, list: x.items.filter(i => (!UI.kind || i.kind === UI.kind) && (i.state === 'open' || (['skip', 'inherit'].includes(i.state) && i.date >= P.from && i.date <= P.to))) }))
+    .map(x => ({ ...x, list: x.items.filter(i => (!UI.kind || i.kind === UI.kind) && (i.state === 'open' || (['skip', 'inherit', 'pre'].includes(i.state) && i.date >= P.from && i.date <= P.to))) }))
     .filter(x => x.list.length).sort((a, b) => byGN(a.st, b.st));
   const stuOpts = show.map(x => x.st), bookOpts = new Map();
   show.forEach(x => x.list.forEach(i => { const k = String(i.bookId); if (!bookOpts.has(k)) bookOpts.set(k, { name: i.name, kind: i.kind, n: 0 }); bookOpts.get(k).n++; }));
@@ -537,6 +677,7 @@ function legendDrawer() {
     ['<span class="pill v">🔁 예전에 받은 적 있음</span>', '이 학생이 예전에 같거나 이름이 비슷한 교재를 받았어요. (숙제앱 지난 배부·통통통 판매내역에서 찾음)', '확인창이나 줄에서 "목록에 넣기"를 누르면 들어가요. 그 전에는 목록에서 빠져요.'],
     ['<span class="pill ok">↩ 다시 배부 — 목록에 이미 있음</span>', '배부를 취소했다가 같은 교재를 다시 배부했어요. 예전 배부가 이미 목록(청구)에 있어서 그 청구를 이어받아요.', '다시 청구하지 않아요. 새 책을 준 거면 "새로 청구".'],
     ['<span class="pill ok">✅ 목록 확정</span>', '이미 그달 목록에 들어간 교재예요.', '할 일 없어요. 🗂 지난 목록에서 다시 보거나 인쇄해요.'],
+    ['<span class="pill ok">✅ ○월 선청구분</span>', '📝 선청구에 넣었던 교재를 숙제앱에서 실제로 배부했어요.', '이미 미리 청구했으니 다시 청구하지 않아요.'],
     ['<span class="pill">목록에서 뺌</span>', '"목록에서 빼기"를 누른 교재예요. 누른 날짜가 같이 나와요.', '잘못 눌렀으면 "되돌리기".'],
   ];
   return `<details class="card" style="padding:.5rem .8rem;margin-bottom:.7rem" ${UI.legendOpen ? 'open' : ''} ontoggle="UI.legendOpen=this.open;try{localStorage.setItem('fee_legend',this.open?'1':'')}catch(e){}">
@@ -596,7 +737,8 @@ function confirmList() {
   printRows(rows, UI.month, '확정');
   toast(`✅ ${mL(UI.month)} 배부 목록을 확정했어요`);
 }
-function printRows(rows, M, tag, mode) {
+function printRows(rows, M, tag, mode, o) {
+  o = o || {};
   if (!rows.length) return;
   mode = mode || (UI.view === 'book' ? 'book' : 'stu');
   const P = period(M), by = new Map();
@@ -632,7 +774,7 @@ function printRows(rows, M, tag, mode) {
     if (first) { g0 = r.group; body += `<div class="keep"><h2>${esc(g0 || '반 없음')} <small>${studs.filter(s => s.r.group === g0).length}명</small></h2>`; }
     body += `<div class="s"><span class="bx">☐</span><b>${esc(r.student)}</b><ul>${list.map(i => `<li>${esc(i.name)}${i.cohort ? ` (${esc(i.cohort)})` : ''} <small>${md(i.date)} · ${KIND[i.kind] || ''}${i.flags ? ' · ' + esc(i.flags) : ''}</small></li>`).join('')}</ul></div>` + (first ? '</div>' : '');
   });
-  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${mLY(M)} 교재 배부 목록</title><style>
+  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${o.title || mLY(M) + ' 교재 배부 목록'}</title><style>
     @page{size:A4;margin:12mm}body{font-family:'Pretendard','Malgun Gothic',sans-serif;font-size:11pt;color:#111}
     h1{font-size:15pt;margin:0 0 2px}.sub{color:#555;font-size:9.5pt;margin-bottom:8px}h2{font-size:12pt;margin:12px 0 4px;border-bottom:1.5px solid #333;padding-bottom:2px}h2 small{font-weight:400;color:#555}
     .s{display:flex;gap:6px;padding:4px 0;border-bottom:1px solid #ddd;break-inside:avoid}.s b{min-width:70px}.bx{font-size:13pt;line-height:1}
@@ -642,8 +784,8 @@ function printRows(rows, M, tag, mode) {
     .keep{break-inside:avoid;page-break-inside:avoid}h2{break-after:avoid;page-break-after:avoid}
     .cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-items:start}.cols3 .bk{margin:0}
     .on{color:#000;padding:1px 0}.on .bx{color:#000}.no{color:#9a9a9a;padding:1px 0}
-  </style></head><body><h1>${mLY(M)} 교재 배부 목록 — ${mode === 'book' ? '반·교재별' : '반·학생별'}${tag === '미리 보기' ? ' (미리 보기)' : ''}</h1>
-  <div class="sub">${P.from} ~ ${P.to} 배부분 · ${studs.length}명 · ${rows.length}권 · 인쇄 ${nowStr()} · ${mode === 'book' ? '■ = 이 교재를 청구하는 학생, □ = 같은 반 다른 학생' : '통통통에 입력하면 ☐에 체크'}</div>${body}
+  </style></head><body><h1>${o.title || mLY(M) + ' 교재 배부 목록'} — ${mode === 'book' ? '반·교재별' : '반·학생별'}${tag === '미리 보기' ? ' (미리 보기)' : ''}</h1>
+  <div class="sub">${o.sub || P.from + ' ~ ' + P.to + ' 배부분'} · ${studs.length}명 · ${rows.length}권 · 인쇄 ${nowStr()} · ${mode === 'book' ? '■ = 이 교재를 청구하는 학생, □ = 같은 반 다른 학생' : '통통통에 입력하면 ☐에 체크'}</div>${body}
   <div class="keep"><h2>교재별 권수 (반별)</h2>${matrixHtml(rows)}</div>
   <script>setTimeout(function(){window.print()},300)<\/script></body></html>`;
   const w = window.open('', '_blank');
@@ -704,7 +846,7 @@ function statRows(M) {
     const key = `f:${st.id}:${f.id}`; if (F.skip[key] && UI.statSkip !== 'all') return;
     const b = bookById(f.bookId); const kind = kindOf(b, f.bookName);
     if (UI.kind && kind !== UI.kind) return; if (UI.group && st.group !== UI.group) return;
-    out.push({ key, sid: st.id, student: st.name, group: st.group || '', name: f.bookName || (b && b.name) || '', kind, date: f.date, listed: !!(F.billed[key] && F.bills[F.billed[key]]) || (!!f.billed && !F.unlegacy[key]) });
+    out.push({ key, sid: st.id, student: st.name, group: st.group || '', name: (b && b.name) || f.bookName || '', kind, date: f.date, listed: !!(F.billed[key] && F.bills[F.billed[key]]) || (!!f.billed && !F.unlegacy[key]) || preM().byFee.has(key) });
   }));
   return out;
 }
@@ -772,7 +914,7 @@ function legacyItems() {
   const out = [];
   D.students.forEach(st => feeLogOf(st).forEach(f => { if (!f.billed) return; const key = `f:${st.id}:${f.id}`;
     if (F.unlegacy[key] || (F.billed[key] && F.bills[F.billed[key]])) return; const b = bookById(f.bookId);
-    out.push({ key, sid: st.id, student: st.name, group: st.group || '', kind: kindOf(b, f.bookName), bookId: f.bookId, name: f.bookName || (b && b.name) || '', date: f.date, cohort: f.cohort || '', month: billMonth(f.billed), billedOn: f.billed, legacy: true, flags: '예전 교재비 화면에서 청구 (' + md(f.billed) + ')' }); }));
+    out.push({ key, sid: st.id, student: st.name, group: st.group || '', kind: kindOf(b, f.bookName), bookId: f.bookId, name: (b && b.name) || f.bookName || '', date: f.date, cohort: f.cohort || '', month: billMonth(f.billed), billedOn: f.billed, legacy: true, flags: '예전 교재비 화면에서 청구 (' + md(f.billed) + ')' }); }));
   return out;
 }
 /* ★ v27 통통통 판매내역도 지난 목록에 — 판매일자 기준 달 (26일부터는 다음 달), 환불 뺀 것 */
