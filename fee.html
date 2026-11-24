@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>교재비 v34</title>
+<title>교재비 v36</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
 <style>
 /* 숙제관리 앱(index.html)과 같은 디자인 — 색·글꼴·버튼·표 모양을 그대로 맞춤 */
@@ -111,6 +111,8 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    · 예전 자료(숙제앱 지난 배부 + 통통통 판매내역)는 '같거나 비슷한 교재를 예전에 받은 적 있음' 확인창으로만 쓴다
    · 두 번 배부는 표시만 하고 목록에 넣는다
    · 목록 확정 → A4 인쇄 (종이 보면서 통통통에 입력)
+   v36: 통통통 판매내역과 배부를 짝지어 이미 청구된 것은 자동으로 뺌 (이름 연결표), 시작일 9/26
+   v35: 시작일 기본 11/25 — 11/24까지는 인쇄본으로 청구 끝, 11/25 당일 배부만 11월 목록에
    v34: 선청구 교재 고르기를 분야 → 교재 드롭다운으로
    v33: 선청구 교재는 숙제앱 교재 관리의 교재를 분야별(주교재·부교재·단기·단어장)로 골라 넣기
    v32: 📝 선청구 — 25일에 다음 달 교재를 반·묶음별로 미리 청구, 배부하면 자동으로 짝(✅ 선청구분), 못 준 것은 ⏳ 대기. 시작일 11/26
@@ -134,7 +136,7 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    v14: 같은 반·같은 교재끼리 묶어 인쇄 (교재별 인쇄)
    v13: 2판으로 다시 만듦 (연결표·통통통 엑셀·가격·선생님 구분 없앰, 확인창, 인쇄)
    ══════════════════════════════════════════════════════════════ */
-const VER = 'v34';
+const VER = 'v36';
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAh3zMoepbA38yFFEDQ210XWveBdf2HDN8",
   authDomain: "sotong-academy.firebaseapp.com",
@@ -147,7 +149,7 @@ const FIREBASE_CONFIG = {
 const SRC_PATH = 'homework_v4';   // 숙제관리 — 읽기 전용
 const STORE_PATHS = { test: 'homework_v4_fee_test', live: 'homework_v4_fee' };
 const STORE_KEYS = ['settings', 'bills', 'billed', 'skip', 'ok', 'acks', 'seen', 'renew', 'unlegacy', 'pre', 'preConf'];
-const DEFAULT_START = '2026-11-26';   // ★ v32 11/25 청구는 인쇄본으로 끝냄 → 11/26부터
+const DEFAULT_START = '2026-09-26';   // ★ v36 9/26 이후 배부부터 — 판매내역에 있는 것(이미 청구)은 자동으로 빠지고, 없는 것만 목록에 (지난 기간은 ⏰)
 const DEFAULT_START_OLD = '2026-10-26';   // 이 날 이후 배부분부터 챙김 (그 전은 정리 끝남)
 const EXCLUDE = /전자교재/;
 // ★ v29 판매내역에서 빼는 것: [교재 이름(띄어쓰기 무시), 이 날짜부터]
@@ -336,11 +338,47 @@ function buildSX() {   // 학생(이름 띄어쓰기·뒤 숫자 무시) → [{b
     if (EXCLUDE.test(book) || salesDrop(book, date)) return;
     const k = normName(name); if (!SX.has(k)) SX.set(k, []);
     const L = SX.get(k);
-    if (qty > 0) L.push({ book, date });
+    if (qty > 0) for (let q = 0; q < qty; q++) L.push({ book, date });
     else if (qty < 0) { let j = -1; L.forEach((x, i) => { if (x.book === book && x.date <= date) j = i; }); if (j >= 0) L.splice(j, 1); }
   });
 }
 const salesOf = st => (SX && SX.get(normName(st.name))) || [];
+
+/* ★ v36 숙제앱 배부 ↔ 통통통 판매내역 짝짓기 — 판매내역에 있으면 이미 청구(선청구)된 것
+   이름 연결표: claude/교재_이름_연결표.md (2026-11-24 확인). 표에 없으면 같은 이름(띄어쓰기·기호 무시)으로 찾음 */
+const SALES_ALIAS = [
+  [/^basic(\d+)$/, m => [`Basic ${m[1]}_N`]],
+  [/^워크북(e\d)$/, m => [`English_Workbook ${m[1].toUpperCase()}`]],
+  [/^중\d\d학기(중간|기말)부교재$/, () => ['시험대비_기출교재(영어)']],
+  [/^중\d\d학기(중간|기말)$/, () => ['시험대비_올백(영어)']],
+  [/^3800드릴(\d)단계$/, m => [`3800제 - ${m[1]}학년`]],
+  [/^중등필수단어장$/, () => ['중등필수단어']],
+  [/^5형식부사구$/, () => ['5형식(부사구)']], [/^5형식준동사$/, () => ['5형식(준동사)']],
+  [/^5형식주동시$/, () => ['5형식(주어,동사)']], [/^5형식분석해석하기$/, () => ['5형식(분석)']],
+  [/^3인칭일반동사단어장$/, () => ['단어장(3인칭일반)']], [/^과거일반동사단어장$/, () => ['단어장(과거일반)']],
+];
+function salesNames(appName) { const n = norm(appName); for (const [re, f] of SALES_ALIAS) { const m = n.match(re); if (m) return f(m).map(norm); } return [n]; }
+const SALES_FROM = '2026-08-26';   // 이 날 이후 배부부터 판매내역과 짝지음
+let _sm = null;
+function salesM() {   // feeKey → {book, date}
+  if (_sm) return _sm;
+  const byFee = new Map();
+  D.students.forEach(st => {
+    const pool = salesOf(st).map(x => ({ ...x, n: norm(x.book), used: false }));
+    if (!pool.length) return;
+    feeLogOf(st).filter(f => f.date >= SALES_FROM).sort((a, b) => a.date.localeCompare(b.date)).forEach(f => {
+      const b = bookById(f.bookId), names = salesNames((b && b.name) || f.bookName), exam = names.some(x => x.startsWith('시험대비'));
+      const lo = addDays(f.date, exam ? -40 : -70), hi = addDays(f.date, 40);
+      const c = pool.filter(x => !x.used && names.includes(x.n) && x.date >= lo && x.date <= hi);
+      if (!c.length) return;
+      const x = exam ? c.sort((a, b) => Math.abs(dayDiff(a.date, f.date)) - Math.abs(dayDiff(b.date, f.date)))[0] : c.sort((a, b) => a.date.localeCompare(b.date))[0];
+      x.used = true; byFee.set(`f:${st.id}:${f.id}`, x);
+    });
+  });
+  return (_sm = { byFee });
+}
+function addDays(d, n) { const t = new Date(d + 'T00:00:00'); t.setDate(t.getDate() + n); return fmt(t); }
+function dayDiff(a, b) { return Math.round((new Date(a + 'T00:00:00') - new Date(b + 'T00:00:00')) / 86400000); }
 
 /* ══════════ 학생 한 명 분석 ══════════
    state: listed(목록 확정됨) · skip(목록에서 뺌) · old(시작일 전 — 정리 끝남) · next(다음 달) · open(이번 목록)
@@ -355,7 +393,8 @@ function analyze(st, M) {
     const bid = F.billed[it.key];
     if (bid && F.bills[bid]) { it.state = 'listed'; it.bill = F.bills[bid]; }
     else if (it.oldBilled && !F.unlegacy[it.key]) it.state = 'legacy';
-    else if (preM().byFee.has(it.key)) { it.state = 'pre'; it.pre = preM().byFee.get(it.key); }   // ★ v32 선청구분 배부   // ★ v22 예전 교재비 화면(숙제관리 v550 이전)에서 '청구 완료'로 표시한 배부 → 이미 청구된 것
+    else if (preM().byFee.has(it.key)) { it.state = 'pre'; it.pre = preM().byFee.get(it.key); }   // ★ v32 선청구분 배부
+    else if (salesM().byFee.has(it.key)) { it.state = 'paid'; it.sale = salesM().byFee.get(it.key); }   // ★ v36 통통통 판매내역에 있음 → 이미 청구   // ★ v22 예전 교재비 화면(숙제관리 v550 이전)에서 '청구 완료'로 표시한 배부 → 이미 청구된 것
     else if (F.skip[it.key]) it.state = 'skip';
     else if (it.date < S0) it.state = 'old';
     else if (it.date > P.to) it.state = 'next';
@@ -421,7 +460,7 @@ function setStatus() {
   $('status').innerHTML = `${src}${sales}${st}<span class="mu">${VER}</span>`;
 }
 function render() {
-  _pm = null;
+  _pm = null; _sm = null;
   _cc = D.students.length ? checkList(UI.month) : null;
   const n = _cc ? checkCount(_cc) : 0;
   $('tabs').innerHTML = TABS.map(([k, l]) => `<button class="tab ${UI.tab === k ? 'on' : ''}" onclick="go('${k}')">${l}${k === 'check' && n ? `<span class="n">${n}</span>` : ''}</button>`).join('');
@@ -583,6 +622,7 @@ function stateChip(it) {
   else if (it.state === 'skip') s = `<span class="pill">목록에서 뺌 · ${atTxt(F.skip[it.key])}</span> <button class="lk" onclick="unskip('${it.key}')">되돌리기</button>`;
   else if (it.state === 'next') s = `<span class="pill">다음 달</span>`;
   else if (it.state === 'old') s = `<span class="pill">시작일 전</span>`;
+  else if (it.state === 'paid') s = `<span class="pill ok">✅ 통통통에 청구됨 (${ymd(it.sale.date)} ${esc(it.sale.book)})</span>`;
   else if (it.state === 'pre') s = `<span class="pill ok">✅ ${mL(it.pre.month)} 선청구분</span>`;
   else if (it.state === 'legacy') s = `<span class="pill ok">✅ 예전 교재비 화면에서 청구 (${md(it.oldBilled)})</span> <button class="lk" onclick="unlegacy(['${it.key}'])">청구 전으로 되돌리기</button>`;
   else if (it.state === 'inherit') s = `<span class="pill ok">↩ 다시 배부 — ${mL(it.inherit.month)} 목록에 이미 있음</span> <span class="mu">(${md(it.inherit.date)} 배부 → 취소 → 다시 배부)</span> <button class="btn sm" onclick="renewItem('${it.key}')">새로 청구</button>`;
@@ -597,7 +637,7 @@ function stateChip(it) {
 function rBill(r) {
   const M = UI.month, P = period(M), all = analyzeAll(M);
   let show = all.filter(x => !UI.group || x.st.group === UI.group)
-    .map(x => ({ ...x, list: x.items.filter(i => (!UI.kind || i.kind === UI.kind) && (i.state === 'open' || (['skip', 'inherit', 'pre'].includes(i.state) && i.date >= P.from && i.date <= P.to))) }))
+    .map(x => ({ ...x, list: x.items.filter(i => (!UI.kind || i.kind === UI.kind) && (i.state === 'open' || (['skip', 'inherit', 'pre', 'paid'].includes(i.state) && i.date >= P.from && i.date <= P.to))) }))
     .filter(x => x.list.length).sort((a, b) => byGN(a.st, b.st));
   const stuOpts = show.map(x => x.st), bookOpts = new Map();
   show.forEach(x => x.list.forEach(i => { const k = String(i.bookId); if (!bookOpts.has(k)) bookOpts.set(k, { name: i.name, kind: i.kind, n: 0 }); bookOpts.get(k).n++; }));
@@ -677,6 +717,7 @@ function legendDrawer() {
     ['<span class="pill v">🔁 예전에 받은 적 있음</span>', '이 학생이 예전에 같거나 이름이 비슷한 교재를 받았어요. (숙제앱 지난 배부·통통통 판매내역에서 찾음)', '확인창이나 줄에서 "목록에 넣기"를 누르면 들어가요. 그 전에는 목록에서 빠져요.'],
     ['<span class="pill ok">↩ 다시 배부 — 목록에 이미 있음</span>', '배부를 취소했다가 같은 교재를 다시 배부했어요. 예전 배부가 이미 목록(청구)에 있어서 그 청구를 이어받아요.', '다시 청구하지 않아요. 새 책을 준 거면 "새로 청구".'],
     ['<span class="pill ok">✅ 목록 확정</span>', '이미 그달 목록에 들어간 교재예요.', '할 일 없어요. 🗂 지난 목록에서 다시 보거나 인쇄해요.'],
+    ['<span class="pill ok">✅ 통통통에 청구됨</span>', '통통통 판매내역에 같은 학생·같은 교재 청구가 있어요 (이름 연결표 기준).', '이미 청구했으니 목록에서 빠져요.'],
     ['<span class="pill ok">✅ ○월 선청구분</span>', '📝 선청구에 넣었던 교재를 숙제앱에서 실제로 배부했어요.', '이미 미리 청구했으니 다시 청구하지 않아요.'],
     ['<span class="pill">목록에서 뺌</span>', '"목록에서 빼기"를 누른 교재예요. 누른 날짜가 같이 나와요.', '잘못 눌렀으면 "되돌리기".'],
   ];
@@ -846,7 +887,7 @@ function statRows(M) {
     const key = `f:${st.id}:${f.id}`; if (F.skip[key] && UI.statSkip !== 'all') return;
     const b = bookById(f.bookId); const kind = kindOf(b, f.bookName);
     if (UI.kind && kind !== UI.kind) return; if (UI.group && st.group !== UI.group) return;
-    out.push({ key, sid: st.id, student: st.name, group: st.group || '', name: (b && b.name) || f.bookName || '', kind, date: f.date, listed: !!(F.billed[key] && F.bills[F.billed[key]]) || (!!f.billed && !F.unlegacy[key]) || preM().byFee.has(key) });
+    out.push({ key, sid: st.id, student: st.name, group: st.group || '', name: (b && b.name) || f.bookName || '', kind, date: f.date, listed: !!(F.billed[key] && F.bills[F.billed[key]]) || (!!f.billed && !F.unlegacy[key]) || preM().byFee.has(key) || salesM().byFee.has(key) });
   }));
   return out;
 }
