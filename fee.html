@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>교재비 v36</title>
+<title>교재비 v37</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
 <style>
 /* 숙제관리 앱(index.html)과 같은 디자인 — 색·글꼴·버튼·표 모양을 그대로 맞춤 */
@@ -111,6 +111,7 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    · 예전 자료(숙제앱 지난 배부 + 통통통 판매내역)는 '같거나 비슷한 교재를 예전에 받은 적 있음' 확인창으로만 쓴다
    · 두 번 배부는 표시만 하고 목록에 넣는다
    · 목록 확정 → A4 인쇄 (종이 보면서 통통통에 입력)
+   v37: 25일 청구 = ① 다음 달 선청구 + ② 추가 청구 — 한 화면·한 번 확정·한 번 인쇄
    v36: 통통통 판매내역과 배부를 짝지어 이미 청구된 것은 자동으로 뺌 (이름 연결표), 시작일 9/26
    v35: 시작일 기본 11/25 — 11/24까지는 인쇄본으로 청구 끝, 11/25 당일 배부만 11월 목록에
    v34: 선청구 교재 고르기를 분야 → 교재 드롭다운으로
@@ -136,7 +137,7 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    v14: 같은 반·같은 교재끼리 묶어 인쇄 (교재별 인쇄)
    v13: 2판으로 다시 만듦 (연결표·통통통 엑셀·가격·선생님 구분 없앰, 확인창, 인쇄)
    ══════════════════════════════════════════════════════════════ */
-const VER = 'v36';
+const VER = 'v37';
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAh3zMoepbA38yFFEDQ210XWveBdf2HDN8",
   authDomain: "sotong-academy.firebaseapp.com",
@@ -451,7 +452,7 @@ function checkList(M) {
 const checkCount = c => c.cancel.length + c.redist.length + c.need.length;
 
 /* ══════════ 화면 ══════════ */
-const TABS = [['pre', '📝 선청구'], ['bill', '📋 이번 달 배부 목록'], ['check', '🔍 확인 목록'], ['stat', '📊 배부 현황'], ['ledger', '📒 학생별 기록'], ['hist', '🗂 지난 목록'], ['set', '⚙ 설정']];
+const TABS = [['pre', '📝 선청구'], ['bill', '📋 25일 청구'], ['check', '🔍 확인 목록'], ['stat', '📊 배부 현황'], ['ledger', '📒 학생별 기록'], ['hist', '🗂 지난 목록'], ['set', '⚙ 설정']];
 let _cc = null;
 function setStatus() {
   const src = D.from === 'firebase' ? '<span class="pill ok">숙제관리 연결 (읽기만)</span>' : D.from === 'file' ? '<span class="pill b">숙제관리 백업 파일</span>' : '<span class="pill rd">숙제관리 데이터 없음</span>';
@@ -589,7 +590,7 @@ function rPre(r) {
   const foot = `<div class="foot"><span><b>${mL(M)} 선청구 ${new Set(L.map(p => String(p.sid))).size}명 · ${L.length}권</b>${UI.pG ? ` <span class="mu">(${esc(UI.pG)} ${preRows(M, UI.pG).length}권)</span>` : ''}</span><span style="flex:1"></span>
     <button class="btn" onclick="printPre('stu')">🖨 학생별 인쇄</button><button class="btn" onclick="printPre('book')">🖨 반·교재별 인쇄</button>
     ${conf && preRows(M).some(x => x.flags) ? `<button class="btn" onclick="printPre('stu',1)">🖨 확정 후 추가분만</button>` : ''}
-    <button class="btn p" ${L.length ? '' : 'disabled'} onclick="confirmPre('${M}')">✅ ${conf ? '다시 확정' : '선청구 확정'}</button></div>`;
+    <button class="btn p" onclick="UI.month=monthAdd('${M}',-1);UI.group=UI.pG;go('bill')">📋 ${mL(monthAdd(M, -1))} 25일 청구에서 확정 →</button></div>`;
   if (!UI.pG) {
     const gs = groupsList().filter(g => D.students.some(s => s.group === g && !s.left));
     r.innerHTML = `${bar}${waitHtml}<div class="mu" style="margin-bottom:.5rem">반을 골라 다음 달 교재를 넣어요. 반 안에서 같은 책으로 같이 가는 학생끼리 묶음으로 보여 줘요.</div>
@@ -612,6 +613,16 @@ function rPre(r) {
       <select id="po_s"><option value="">학생</option>${D.students.filter(s => (s.group || '') === g && !s.left).sort(byGN).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select>
       <button class="btn sm p" ${sel ? '' : 'disabled'} onclick="addPreOne()">＋ ${sel ? '「' + esc(sel.name) + '」' : '고른 교재'} 넣기</button></div></div>
     <div class="row" style="margin:.2rem 0 .6rem"><button class="lk" onclick="UI.pG='';render()">← 전체 반 요약</button></div>${foot}`;
+}
+
+function preSecHtml(M) {
+  const N = monthAdd(M, 1), rows = preRows(N, UI.group), pc = F.preConf[N];
+  const by = new Map(); rows.forEach(r => { const k = r.group; if (!by.has(k)) by.set(k, new Map()); const m = by.get(k); if (!m.has(r.name)) m.set(r.name, { kind: r.kind, st: [], add: 0 }); const x = m.get(r.name); x.st.push(r.student); if (r.flags) x.add++; });
+  return `<div class="gh" style="font-size:.95rem">${secPre(M)} <span class="mu" style="font-weight:500">${mL(N)}에 줄 교재 · ${rows.length}권</span>
+      ${pc ? `<span class="pill ok">확정 ${esc(String(pc.at).slice(5))}</span>` : ''} <button class="lk" onclick="UI.pM='${N}';UI.pG=UI.group;go('pre')">📝 선청구에서 넣고 고치기 →</button></div>
+    ${rows.length ? `<div class="card"><table class="fee-t">${[...by].map(([g, m]) => `<tr class="fee-sh"><td colspan="3"><b>${esc(g || '반 없음')}</b> <span class="mu">${[...m.values()].reduce((a, x) => a + x.st.length, 0)}권</span></td></tr>
+      ${[...m].map(([n, x]) => `<tr><td style="width:240px">${kTag(x.kind)}${esc(n)}</td><td class="nw" style="width:50px">${x.st.length}명</td><td class="mu">${x.st.map(esc).join(', ')}${x.add ? ` <span class="pill w">확정 후 추가 ${x.add}</span>` : ''}</td></tr>`).join('')}`).join('')}</table></div>`
+      : `<div class="card"><div class="empty">아직 ${mL(N)} 선청구가 없어요 — <button class="lk" onclick="UI.pM='${N}';UI.pG=UI.group;go('pre')">📝 선청구에서 넣기</button></div></div>`}`;
 }
 
 /* ---------- 📋 이번 달 배부 목록 ---------- */
@@ -649,6 +660,7 @@ function rBill(r) {
   show = show.map(x => ({ ...x, list: x.list.filter(i => fPass(x.st, i)) })).filter(x => x.list.length);
   const openAll = show.flatMap(x => x.list.filter(i => i.state === 'open'));
   const pick = openAll.filter(i => selectable(i) && !UI.unsel.has(i.key));
+  const canB = pick.length || preRows(monthAdd(M, 1), UI.group).length;
   const nNeed = openAll.filter(i => i.need).length, nLate = openAll.filter(i => i.late).length, nDup = openAll.filter(i => i.dup).length;
   let warn = '';
   // ★ v24 이번 기간 배부인데 목록에 안 나오는 것 — 왜 빠졌는지 보여 줌
@@ -677,12 +689,14 @@ function rBill(r) {
   }
   r.innerHTML = `${monthBar(`<span class="seg"><button class="${UI.view === 'stu' ? 'on' : ''}" onclick="setView('stu')">👤 학생별</button><button class="${UI.view === 'book' ? 'on' : ''}" onclick="setView('book')">📚 교재별</button></span>${pickSel}<label>분류</label>${kindSel('UI.kind=this.value;render()', UI.kind)}`)}
     ${warn}${legendDrawer()}
-    ${show.length ? html : `<div class="card"><div class="empty">이번 달 배부 목록에 넣을 교재가 없어요${inP.length ? `<br><span class="mu">이 기간 배부 ${inP.length}권 — 예전 화면 청구 완료 ${nLeg.length} · 목록 확정 ${nLst} · 목록에서 뺌 ${nSk}${inP.length - nLeg.length - nLst - nSk > 0 ? ` · 그 밖 ${inP.length - nLeg.length - nLst - nSk}` : ''}</span>` : ''}</div></div>`}
-    <div class="foot"><span><b>${new Set(pick.map(i => i.sid)).size}명 · ${pick.length}권</b>${nNeed ? `<span class="mu"> · 확인 전 ${nNeed}건 빠짐</span>` : ''}${nDup ? `<span class="mu"> · ⚠ ${nDup}건 포함</span>` : ''}${(UI.view === 'stu' ? UI.fStu : UI.fBook) ? '<span class="pill w" style="margin-left:.3rem">고른 것만 확정돼요</span>' : ''}</span>
+    ${preSecHtml(M)}
+    <div class="gh" style="font-size:.95rem">② 추가 청구 <span class="mu" style="font-weight:500">${md(P.from)} ~ ${md(P.to)} 배부 중 청구 안 된 것</span></div>
+    ${show.length ? html : `<div class="card"><div class="empty">② 추가 청구할 교재가 없어요${inP.length ? `<br><span class="mu">이 기간 배부 ${inP.length}권 — 예전 화면 청구 완료 ${nLeg.length} · 목록 확정 ${nLst} · 목록에서 뺌 ${nSk}${inP.length - nLeg.length - nLst - nSk > 0 ? ` · 그 밖 ${inP.length - nLeg.length - nLst - nSk}` : ''}</span>` : ''}</div></div>`}
+    <div class="foot"><span><b>${secPre(M)} ${preRows(monthAdd(M, 1), UI.group).length}권 + ② 추가 ${pick.length}권</b>${nNeed ? `<span class="mu"> · 확인 전 ${nNeed}건 빠짐</span>` : ''}${nDup ? `<span class="mu"> · ⚠ ${nDup}건 포함</span>` : ''}${(UI.view === 'stu' ? UI.fStu : UI.fBook) ? '<span class="pill w" style="margin-left:.3rem">고른 것만 확정돼요</span>' : ''}</span>
       <span style="flex:1"></span>
       <button class="lk" onclick="selAll(true)">모두 선택</button><button class="lk" onclick="selAll(false)">모두 해제</button>
-      <button class="btn" ${pick.length ? '' : 'disabled'} onclick="printRows(pickedRows(),UI.month,'미리 보기','stu')">🖨 학생별 인쇄</button><button class="btn" ${pick.length ? '' : 'disabled'} onclick="printRows(pickedRows(),UI.month,'미리 보기','book')">🖨 교재별 인쇄</button>
-      <button class="btn p" ${pick.length ? '' : 'disabled'} onclick="confirmList()">✅ 목록 확정</button></div>`;
+      <button class="btn" ${canB ? '' : 'disabled'} onclick="printRows(billRows(UI.month),UI.month,'미리 보기','stu',billTitle(UI.month))">🖨 학생별 인쇄</button><button class="btn" ${canB ? '' : 'disabled'} onclick="printRows(billRows(UI.month),UI.month,'미리 보기','book',billTitle(UI.month))">🖨 반·교재별 인쇄</button>
+      <button class="btn p" ${canB ? '' : 'disabled'} onclick="confirmList()">✅ ${mL(M)} 25일 청구 확정</button></div>`;
 }
 function rowHtml(it, mid) {
   return `<tr class="${it.state === 'open' ? '' : 'off'}"><td class="c">${selectable(it) ? `<input type="checkbox" ${UI.unsel.has(it.key) ? '' : 'checked'} onchange="selItem('${it.key}',this.checked)">` : ''}</td>${mid}
@@ -769,14 +783,26 @@ function pickedRows() {
     flags: [i.late && '지난 기간 배부', i.dup && '두 번 배부', i.prior && '예전에 받은 적 있음(확인함)', i.redist && '취소 후 다시 배부'].filter(Boolean).join(', ') })));
   return out.sort((a, b) => byGN({ group: a.group, name: a.student }, { group: b.group, name: b.student }) || KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) || a.date.localeCompare(b.date));
 }
+/* ★ v37 25일 청구 = ① 다음 달 선청구 + ② 이번 기간 추가 청구 — 한 번에 확정·인쇄 */
+const secPre = M => `① ${mL(monthAdd(M, 1))} 선청구`, SEC_ADD = '② 추가 청구';
+function billRows(M) {   // 인쇄·확정용: ① 선청구(확정 전 것 + 확정 후 추가) + ② 고른 추가 청구
+  const pre = preRows(monthAdd(M, 1), UI.group).map(r => ({ ...r, sec: secPre(M) }));
+  const add = pickedRows().map(r => ({ ...r, sec: SEC_ADD }));
+  return pre.concat(add);
+}
+const billTitle = M => ({ title: `${mLY(M)} 25일 청구`, sub: `${secPre(M)} + ${SEC_ADD} (${period(M).from.slice(5).replace('-', '/')} ~ ${period(M).to.slice(5).replace('-', '/')} 배부)` });
 function confirmList() {
-  const rows = pickedRows(); if (!rows.length) return;
-  if (!confirm(`${mLY(UI.month)} 배부 목록으로 확정할까요?\n${new Set(rows.map(r => r.sid)).size}명 · ${rows.length}권\n\n확정하면 ✅ 표시가 붙고, 인쇄 창이 열려요 (${UI.view === 'book' ? '교재별' : '학생별'} — 지금 보기 방식대로).`)) return;
-  const id = nid(), bill = { id, month: UI.month, ...stamp(), items: rows };
-  const ch = { [`bills/${id}`]: bill }; rows.forEach(r => { ch[`billed/${r.key}`] = id; });
+  const M = UI.month, add = pickedRows(), pre = preOf(monthAdd(M, 1)).filter(p => !p.cancel), pc = F.preConf[monthAdd(M, 1)];
+  if (!add.length && !pre.length) return;
+  const preNew = pc ? pre.filter(p => String(p.at) > String(pc.at)).length : pre.length;
+  if (!confirm(`${mLY(M)} 25일 청구를 확정할까요?\n\n${secPre(M)}: ${pre.length}권${pc && preNew ? ` (그중 새로 넣은 것 ${preNew}권)` : ''}\n${SEC_ADD}: ${add.length}권\n\n확정하면 ✅ 표시가 붙고, 인쇄 창이 열려요.`)) return;
+  const ch = {};
+  if (add.length) { const id = nid(); ch[`bills/${id}`] = { id, month: M, ...stamp(), items: add }; add.forEach(r => { ch[`billed/${r.key}`] = id; }); }
+  if (pre.length) ch[`preConf/${monthAdd(M, 1)}`] = { at: nowStr(), n: pre.length, by: M };
+  const rows = billRows(M);
   UI.unsel.clear(); write(ch);
-  printRows(rows, UI.month, '확정');
-  toast(`✅ ${mL(UI.month)} 배부 목록을 확정했어요`);
+  printRows(rows, M, '확정', UI.view === 'book' ? 'book' : 'stu', billTitle(M));
+  toast(`✅ ${mL(M)} 25일 청구를 확정했어요`);
 }
 function printRows(rows, M, tag, mode, o) {
   o = o || {};
@@ -789,8 +815,8 @@ function printRows(rows, M, tag, mode, o) {
   let g0 = null, body = '';
   if (mode === 'book') {   // 같은 반 · 같은 교재끼리 묶음 — 반 학생 모두 적고, 이 교재를 청구하는 학생만 ■
     const bg = new Map();
-    rows.forEach(r => { const k = `${r.group}|${r.name}`; if (!bg.has(k)) bg.set(k, { g: r.group, name: r.name, kind: r.kind, list: [] }); bg.get(k).list.push(r); });
-    const blocks = [...bg.values()].sort((a, b) => (a.g || '').localeCompare(b.g || '', 'ko') || KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) || a.name.localeCompare(b.name, 'ko', { numeric: true }));
+    rows.forEach(r => { const k = `${r.group}|${r.sec || ''}|${r.name}`; if (!bg.has(k)) bg.set(k, { g: r.group, sec: r.sec || '', name: r.name, kind: r.kind, list: [] }); bg.get(k).list.push(r); });
+    const blocks = [...bg.values()].sort((a, b) => (a.g || '').localeCompare(b.g || '', 'ko') || a.sec.localeCompare(b.sec) || KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) || a.name.localeCompare(b.name, 'ko', { numeric: true }));
     const roster = g => {   // 그 반 학생 (퇴원 제외) + 목록에 있는 학생
       const m = new Map(); D.students.filter(st => (st.group || '') === (g || '') && !st.left).forEach(st => m.set(String(st.id), st.name));
       rows.filter(r => (r.group || '') === (g || '')).forEach(r => m.set(String(r.sid), r.student));
@@ -803,7 +829,7 @@ function printRows(rows, M, tag, mode, o) {
       n.forEach((b, bi) => {
         if (bi === 3) body += `</div></div><div class="cols3">`;   // 반 제목 + 첫 줄(3칸)은 같은 쪽에
         const on = new Map(); b.list.forEach(i => { const k = String(i.sid); if (!on.has(k)) on.set(k, []); on.get(k).push(i); });
-        body += `<div class="bk"><div class="bt"><span class="kk">${KIND[b.kind] || ''}</span> <b>${esc(b.name)}</b><br><small>${on.size}명 청구 / ${ros.length}명</small></div>
+        body += `<div class="bk"><div class="bt">${b.sec ? `<span class="sc">${esc(b.sec)}</span> ` : ''}<span class="kk">${KIND[b.kind] || ''}</span> <b>${esc(b.name)}</b><br><small>${on.size}명 청구 / ${ros.length}명</small></div>
           ${ros.map(([sid, nm]) => { const its = on.get(sid); return its
             ? `<div class="on"><span class="bx">■</span> <b>${esc(nm)}</b> <small>${its.map(i => md(i.date) + (i.cohort ? ' ' + esc(i.cohort) : '')).join(', ')}${its.length > 1 ? ' · ' + its.length + '권' : ''}</small></div>`
             : `<div class="no"><span class="bx">□</span> ${esc(nm)}</div>`; }).join('')}</div>`;
@@ -813,7 +839,7 @@ function printRows(rows, M, tag, mode, o) {
   } else studs.forEach(({ r, list }) => {
     const first = r.group !== g0;
     if (first) { g0 = r.group; body += `<div class="keep"><h2>${esc(g0 || '반 없음')} <small>${studs.filter(s => s.r.group === g0).length}명</small></h2>`; }
-    body += `<div class="s"><span class="bx">☐</span><b>${esc(r.student)}</b><ul>${list.map(i => `<li>${esc(i.name)}${i.cohort ? ` (${esc(i.cohort)})` : ''} <small>${md(i.date)} · ${KIND[i.kind] || ''}${i.flags ? ' · ' + esc(i.flags) : ''}</small></li>`).join('')}</ul></div>` + (first ? '</div>' : '');
+    body += `<div class="s"><span class="bx">☐</span><b>${esc(r.student)}</b><ul>${list.slice().sort((a, b) => (a.sec || '').localeCompare(b.sec || '')).map(i => `<li>${i.sec ? `<span class="sc">${esc(i.sec.slice(0, 1))}</span> ` : ''}${esc(i.name)}${i.cohort ? ` (${esc(i.cohort)})` : ''} <small>${md(i.date)} · ${KIND[i.kind] || ''}${i.flags ? ' · ' + esc(i.flags) : ''}</small></li>`).join('')}</ul></div>` + (first ? '</div>' : '');
   });
   const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${o.title || mLY(M) + ' 교재 배부 목록'}</title><style>
     @page{size:A4;margin:12mm}body{font-family:'Pretendard','Malgun Gothic',sans-serif;font-size:11pt;color:#111}
@@ -824,10 +850,11 @@ function printRows(rows, M, tag, mode, o) {
     .bk{border:1px solid #ccc;border-radius:4px;padding:5px 8px;margin:6px 0;break-inside:avoid}.bt{margin-bottom:3px}.kk{font-size:8.5pt;border:1px solid #999;border-radius:3px;padding:0 4px}
     .keep{break-inside:avoid;page-break-inside:avoid}h2{break-after:avoid;page-break-after:avoid}
     .cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-items:start}.cols3 .bk{margin:0}
+    .sc{font-size:8pt;border:1px solid #333;border-radius:3px;padding:0 3px;font-weight:700}
     .on{color:#000;padding:1px 0}.on .bx{color:#000}.no{color:#9a9a9a;padding:1px 0}
   </style></head><body><h1>${o.title || mLY(M) + ' 교재 배부 목록'} — ${mode === 'book' ? '반·교재별' : '반·학생별'}${tag === '미리 보기' ? ' (미리 보기)' : ''}</h1>
   <div class="sub">${o.sub || P.from + ' ~ ' + P.to + ' 배부분'} · ${studs.length}명 · ${rows.length}권 · 인쇄 ${nowStr()} · ${mode === 'book' ? '■ = 이 교재를 청구하는 학생, □ = 같은 반 다른 학생' : '통통통에 입력하면 ☐에 체크'}</div>${body}
-  <div class="keep"><h2>교재별 권수 (반별)</h2>${matrixHtml(rows)}</div>
+  <div class="keep"><h2>교재별 권수 (반별)</h2>${matrixHtml(rows.map(r => r.sec ? { ...r, name: r.sec.slice(0, 1) + ' ' + r.name } : r))}</div>
   <script>setTimeout(function(){window.print()},300)<\/script></body></html>`;
   const w = window.open('', '_blank');
   if (!w) return alert('인쇄 창이 막혔어요. 브라우저의 팝업 허용을 켜 주세요.');
@@ -970,11 +997,12 @@ function salesItems() {
 }
 function histItems(M) {
   const n = toArr(F.bills).filter(b => b.month === M).flatMap(b => toArr(b.items).map(i => ({ ...i, billId: b.id })));
-  return n.concat(legacyItems().filter(i => i.month === M), salesItems().filter(i => i.month === M)).filter(i => studentById(i.sid));   // ★ v30 숙제관리 앱에 있는 학생만
+  const pr = F.preConf[monthAdd(M, 1)] ? preRows(monthAdd(M, 1)).map(r => ({ ...r, pre: true, sec: secPre(M), flags: [secPre(M), r.flags].filter(Boolean).join(' · ') })) : [];
+  return pr.concat(n.map(i => F.preConf[monthAdd(M, 1)] ? { ...i, sec: SEC_ADD } : i), legacyItems().filter(i => i.month === M), salesItems().filter(i => i.month === M)).filter(i => studentById(i.sid));   // ★ v30 숙제관리 앱에 있는 학생만
 }
 function rHist(r) {
   const bills = toArr(F.bills), leg = legacyItems(), sal = salesItems();
-  const months = [...new Set(bills.map(b => b.month).concat(leg.map(i => i.month), sal.map(i => i.month)))].sort().reverse();
+  const months = [...new Set(bills.map(b => b.month).concat(leg.map(i => i.month), sal.map(i => i.month), Object.keys(F.preConf || {}).map(m => monthAdd(m, -1))))].sort().reverse();
   if (!months.length) { r.innerHTML = `<div class="card"><div class="empty">아직 확정한 목록이 없어요.<br><span class="mu">지난달까지 청구한 내용은 통통통 판매내역으로 봐요. 통통통 원본 판매내역 엑셀을 여기서 바로 불러와 주세요.</span>
       <div class="row" style="justify-content:center;margin-top:.6rem"><label class="btn p">📂 통통통 판매내역 불러오기<input type="file" accept=".xlsx,.xls" hidden onchange="importSales(this.files[0])"></label></div></div></div>`; return; }
   if (!months.includes(UI.hMonth)) UI.hMonth = months[0];
@@ -994,7 +1022,7 @@ function rHist(r) {
     <div class="kpi"><div><b>${by.size}명</b><span>학생</span></div><div><b>${items.length}권</b><span>교재</span></div>${mb.length ? `<div><b>${mb.length}번</b><span>확정: ${mb.map(b => esc(String(b.at || '').slice(5))).join(' / ')}</span></div>` : ''}${nLeg ? `<div><b>${nLeg}권</b><span>예전 화면에서 청구</span></div>` : ''}${nSal ? `<div><b>${nSal}권</b><span>통통통 판매내역</span></div>` : ''}</div>
     ${studs.map(([sid, list]) => `<div class="card"><div class="sh"><span class="nm ${String(sid).startsWith('n:') ? '' : 'a'}" ${String(sid).startsWith('n:') ? '' : `onclick="openLedger('${sid}')"`}>${esc(list[0].student)}</span><span class="gx">${esc(list[0].group)}</span><span class="sum">${list.length}권</span></div>
       <table>${list.map(i => `<tr><td class="nw" style="width:48px">${md(i.date)}</td><td>${kTag(i.kind || 'etc')}${esc(i.name)}${canc.has(i.key) ? ' <span class="pill rd">⚠ 확정 후 배부 취소</span>' : ''}${i.sales ? ` <span class="pill">통통통 판매</span>` : i.legacy ? ` <span class="pill">예전 화면 청구 ${md(i.billedOn)}</span>` : i.flags ? `<div class="mu">${esc(i.flags)}</div>` : ''}</td>
-        <td class="ar" style="width:120px">${i.sales ? '' : i.legacy ? (i.date >= startFrom() ? `<button class="lk" onclick="unlegacy(['${i.key}'])">청구 전으로 되돌리기</button>` : '') : `<button class="lk d" onclick="unlistItem('${i.billId}','${i.key}')">목록에서 빼기</button>`}</td></tr>`).join('')}</table></div>`).join('')}`;
+        <td class="ar" style="width:120px">${i.sales || i.pre ? '' : i.legacy ? (i.date >= startFrom() ? `<button class="lk" onclick="unlegacy(['${i.key}'])">청구 전으로 되돌리기</button>` : '') : `<button class="lk d" onclick="unlistItem('${i.billId}','${i.key}')">목록에서 빼기</button>`}</td></tr>`).join('')}</table></div>`).join('')}`;
 }
 function printHist(mode) { printRows(histItems(UI.hMonth).filter(i => !UI.group || i.group === UI.group), UI.hMonth, '확정', mode); }
 function unlistItem(billId, key) {
