@@ -645,7 +645,9 @@ function dedupeVocaAssigns(assigns, books) {
     const isVoca = (book && book.mode) === 'voca' || a.type === 'voca';
     if (!isVoca) { others.push(a); return; }
     // ★ 차수(cohort)까지 키에 포함 — 선생님용 앱과 동일한 원칙
-    const key = `${a.bookId}:${normUnit(a.unitFrom)}:${a.cohort||''}`;
+    // ★ v371 카테고리까지 키에 포함 — 선생님 앱(_dedupeVocaAssigns)과 같게.
+    //   같은 교재를 홈보카·수업보카로 같이 하면 회차 번호가 겹쳐서, 한쪽 배정이 통째로 가려지던 문제
+    const key = `${a.bookId}:${normUnit(a.unitFrom)}:${a.cohort||''}:${a.category||''}`;
     const ex = latestByKey.get(key);
     if (!ex || a.date > ex.date) latestByKey.set(key, a);
   });
@@ -1340,7 +1342,7 @@ function renderMainView(student, assigns, vacations, books, reqTests, pauses) {
 // 초기화 + Firebase 데이터 로드
 // ══════════════════════════════════════════════════════════
 // ★ 새 버전을 올릴 때 이 값을 함께 올린다 — 화면 맨 아래에 표시된다
-const APP_VERSION = 'v370';
+const APP_VERSION = 'v371';
 
 async function main() {
   const key = getAccessKey();
