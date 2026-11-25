@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>교재비 v40</title>
+<title>교재비 v41</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
 <style>
 /* 숙제관리 앱(index.html)과 같은 디자인 — 색·글꼴·버튼·표 모양을 그대로 맞춤 */
@@ -111,6 +111,7 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    · 예전 자료(숙제앱 지난 배부 + 통통통 판매내역)는 '같거나 비슷한 교재를 예전에 받은 적 있음' 확인창으로만 쓴다
    · 두 번 배부는 표시만 하고 목록에 넣는다
    · 목록 확정 → A4 인쇄 (종이 보면서 통통통에 입력)
+   v41: 나눠 청구 — 확정할 때 체크 안 한 교재는 다음 달 청구로 미룸 (↪ 표시, 되돌리기)
    v40: 25일 청구 확정은 전체 반에서만 (반을 고른 채 확정하면 일부만 확정되던 것), 선청구 → 25일 청구로 갈 때 전체 반으로
    v39: 이번 25일 청구에서 통통통에 입력한 판매(20일 이후)는 목록에서 빼지 않고 '📥 통통통 입력 확인'으로만 표시
    v38: ② 추가 청구에 이 기간 배부를 모두 보여 줌 (확정됨·예전 화면 청구도 회색으로 — 사라져 보이지 않게)
@@ -140,7 +141,7 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    v14: 같은 반·같은 교재끼리 묶어 인쇄 (교재별 인쇄)
    v13: 2판으로 다시 만듦 (연결표·통통통 엑셀·가격·선생님 구분 없앰, 확인창, 인쇄)
    ══════════════════════════════════════════════════════════════ */
-const VER = 'v40';
+const VER = 'v41';
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAh3zMoepbA38yFFEDQ210XWveBdf2HDN8",
   authDomain: "sotong-academy.firebaseapp.com",
@@ -152,7 +153,7 @@ const FIREBASE_CONFIG = {
 };
 const SRC_PATH = 'homework_v4';   // 숙제관리 — 읽기 전용
 const STORE_PATHS = { test: 'homework_v4_fee_test', live: 'homework_v4_fee' };
-const STORE_KEYS = ['settings', 'bills', 'billed', 'skip', 'ok', 'acks', 'seen', 'renew', 'unlegacy', 'pre', 'preConf'];
+const STORE_KEYS = ['settings', 'bills', 'billed', 'skip', 'ok', 'acks', 'seen', 'renew', 'unlegacy', 'pre', 'preConf', 'defer'];
 const DEFAULT_START = '2026-09-26';   // ★ v36 9/26 이후 배부부터 — 판매내역에 있는 것(이미 청구)은 자동으로 빠지고, 없는 것만 목록에 (지난 기간은 ⏰)
 const DEFAULT_START_OLD = '2026-10-26';   // 이 날 이후 배부분부터 챙김 (그 전은 정리 끝남)
 const EXCLUDE = /전자교재/;
@@ -405,6 +406,7 @@ function analyze(st, M) {
     else if (it.date > P.to) it.state = 'next';
     else { it.state = 'open'; it.late = it.date < P.from; }
     const sm = salesM().byFee.get(it.key); if (sm && it.state !== 'paid' && sm.date >= SALES_CUT(M)) it.entered = sm;   // 이번 청구에서 통통통에 입력됨
+    deferMark(it, M);
   });
   const openP = items.filter(i => i.state === 'open' && !i.late);
   openP.forEach(i => { const n = openP.filter(o => String(o.bookId) === String(i.bookId)).length; if (n > 1) i.dup = n; });
@@ -433,7 +435,9 @@ function analyze(st, M) {
   return { st, items, prev };
 }
 const analyzeAll = M => D.students.map(st => analyze(st, M));
-const selectable = it => it.state === 'open' && !it.need;
+const selectable = it => it.state === 'open' && !it.need && !it.holdNow;
+/* ★ v41 나눠 청구: 확정할 때 체크 안 한 교재는 다음 달 청구로 미룸 (F.defer[key] = { from: 미룬 달, at }) */
+function deferMark(it, M) { const d = F.defer[it.key]; if (!d || it.state !== 'open') return; if (d.from === M) it.holdNow = d; else if (d.from < M) it.deferred = d; }
 function fPass(st, i) { return UI.view === 'stu' ? (!UI.fStu || String(st.id) === UI.fStu) : (!UI.fBook || String(i.bookId) === UI.fBook); }
 
 /* ---------- 확인 목록 데이터 ---------- */
@@ -643,7 +647,7 @@ function stateChip(it) {
   else if (it.state === 'legacy') s = `<span class="pill ok">✅ 예전 교재비 화면에서 청구 (${md(it.oldBilled)})</span> <button class="lk" onclick="unlegacy(['${it.key}'])">청구 전으로 되돌리기</button>`;
   else if (it.state === 'inherit') s = `<span class="pill ok">↩ 다시 배부 — ${mL(it.inherit.month)} 목록에 이미 있음</span> <span class="mu">(${md(it.inherit.date)} 배부 → 취소 → 다시 배부)</span> <button class="btn sm" onclick="renewItem('${it.key}')">새로 청구</button>`;
   else {
-    s = it.late ? `<span class="pill rd">⏰ 지난 기간 배부 — 목록에서 빠졌던 것</span>` : '';   // 🆕 이번 기간 배부는 기본이라 따로 표시 안 함 (표가 깔끔하게)
+    s = it.holdNow ? `<span class="pill">↪ ${mL(monthAdd(it.holdNow.from, 1))} 청구로 미룸</span> <button class="lk" onclick="undefer('${it.key}')">되돌리기</button>` : it.deferred ? `<span class="pill b">↪ ${mL(it.deferred.from)} 청구에서 미뤄 온 것</span>` : it.late ? `<span class="pill rd">⏰ 지난 기간 배부 — 목록에서 빠졌던 것</span>` : '';   // 🆕 이번 기간 배부는 기본이라 따로 표시 안 함 (표가 깔끔하게)
     if (it.dup) s += ` <span class="pill w">⚠ 이번 기간 ${it.dup}번 배부</span>`;
     if (it.prior) s += it.need ? ` <span class="pill v">🔁 예전에 받은 적 있음 — 확인 필요</span> <button class="btn sm gr" onclick="okItem('${it.key}')">목록에 넣기</button>` : ` <span class="pill ok">🔁 확인함 · ${atTxt(F.ok[it.key])}</span>`;
   }
@@ -667,7 +671,7 @@ function rBill(r) {
   const openAll = show.flatMap(x => x.list.filter(i => i.state === 'open'));
   const pick = openAll.filter(i => selectable(i) && !UI.unsel.has(i.key));
   const canB = pick.length || preRows(monthAdd(M, 1), UI.group).length;
-  const nNeed = openAll.filter(i => i.need).length, nLate = openAll.filter(i => i.late).length, nDup = openAll.filter(i => i.dup).length;
+  const nNeed = openAll.filter(i => i.need).length, nLate = openAll.filter(i => i.late && !i.deferred).length, nHold = openAll.filter(i => i.holdNow).length, nDef = openAll.filter(i => i.deferred).length, nDup = openAll.filter(i => i.dup).length;
   let warn = '';
   // ★ v24 이번 기간 배부인데 목록에 안 나오는 것 — 왜 빠졌는지 보여 줌
   const inP = all.filter(x => !UI.group || x.st.group === UI.group).flatMap(x => x.items).filter(i => i.date >= startFrom() && i.date <= P.to);
@@ -676,6 +680,8 @@ function rBill(r) {
     <button class="btn sm p" onclick="if(confirm('${nLeg.length}권을 청구 전으로 되돌려 이번 목록에 넣을까요?')) unlegacy('${nLeg.map(i => i.key).join(',')}'.split(','))">↩ ${nLeg.length}권 모두 청구 전으로</button> <button class="lk" onclick="go('set')">하나씩 고르기 (⚙ 설정)</button></div>`;
   if (_cc.cancel.length) warn += `<div class="warn w-r">⚠ <b>목록 확정 후 배부 취소 ${_cc.cancel.length}건</b> — 통통통에서도 취소해 주세요 <button class="lk" onclick="go('check')">🔍 확인 목록</button></div>`;
   if (nNeed) warn += `<div class="warn w-y">🔁 <b>예전에 같거나 비슷한 교재를 받은 학생 ${nNeed}건</b> — 확인하기 전에는 목록에 안 들어가요 <button class="btn sm" onclick="openPriorDialog()">확인창 열기</button></div>`;
+  if (nHold) warn += `<div class="warn w-b">↪ <b>${nHold}권은 ${mL(monthAdd(M, 1))} 청구로 미뤘어요</b> — 다음 달 목록에 "미뤄 온 것"으로 나와요. 이번에 청구하려면 줄마다 "되돌리기"</div>`;
+  if (nDef) warn += `<div class="warn w-b">↪ <b>지난달에 미뤄 온 교재 ${nDef}권</b> — 이번 목록에 같이 넣었어요</div>`;
   if (nLate) warn += `<div class="warn w-r">⏰ <b>지난 기간에 배부했는데 목록에서 빠졌던 교재 ${nLate}건</b> — 이번 목록에 같이 넣었어요</div>`;
   let html = '', g0 = null;
   if (UI.view === 'book') html = byBookHtml(show);
@@ -737,6 +743,7 @@ function legendDrawer() {
     ['<span class="pill v">🔁 예전에 받은 적 있음</span>', '이 학생이 예전에 같거나 이름이 비슷한 교재를 받았어요. (숙제앱 지난 배부·통통통 판매내역에서 찾음)', '확인창이나 줄에서 "목록에 넣기"를 누르면 들어가요. 그 전에는 목록에서 빠져요.'],
     ['<span class="pill ok">↩ 다시 배부 — 목록에 이미 있음</span>', '배부를 취소했다가 같은 교재를 다시 배부했어요. 예전 배부가 이미 목록(청구)에 있어서 그 청구를 이어받아요.', '다시 청구하지 않아요. 새 책을 준 거면 "새로 청구".'],
     ['<span class="pill ok">✅ 목록 확정</span>', '이미 그달 목록에 들어간 교재예요.', '할 일 없어요. 🗂 지난 목록에서 다시 보거나 인쇄해요.'],
+    ['<span class="pill">↪ 다음 달 청구로 미룸</span>', '확정할 때 체크를 풀어 둔 교재예요. 금액이 커서 나눠 청구할 때 써요.', '다음 달 목록에 "미뤄 온 것"으로 자동으로 나와요. 이번에 청구하려면 "되돌리기".'],
     ['<span class="pill ok">✅ 통통통에 청구됨</span>', '통통통 판매내역에 같은 학생·같은 교재 청구가 있어요 (이름 연결표 기준).', '이미 청구했으니 목록에서 빠져요.'],
     ['<span class="pill ok">✅ ○월 선청구분</span>', '📝 선청구에 넣었던 교재를 숙제앱에서 실제로 배부했어요.', '이미 미리 청구했으니 다시 청구하지 않아요.'],
     ['<span class="pill">목록에서 뺌</span>', '"목록에서 빼기"를 누른 교재예요. 누른 날짜가 같이 나와요.', '잘못 눌렀으면 "되돌리기".'],
@@ -751,6 +758,7 @@ function selKeys(ks, on) { ks.split(',').filter(Boolean).forEach(k => on ? UI.un
 function selAll(on) { if (on) UI.unsel.clear(); else analyzeAll(UI.month).forEach(x => x.items.filter(i => selectable(i) && fPass(x.st, i)).forEach(i => UI.unsel.add(i.key))); render(); }
 function skipItem(k) { if (confirm('이 교재를 목록에서 뺄까요? (되돌릴 수 있어요)')) { UI.unsel.delete(k); write({ [`skip/${k}`]: stamp() }); } }
 function renewItem(k) { if (confirm('새 책을 다시 준 건가요?\n"새로 청구"하면 이번 목록에 들어가고, 예전 목록의 배부는 "통통통에서 취소" 확인 목록에 떠요.')) { write({ [`renew/${k}`]: stamp() }); toast('새로 청구로 바꿨어요'); } }
+function undefer(k) { write({ [`defer/${k}`]: null }); toast('이번 청구로 되돌렸어요'); }
 function unskip(k) { write({ [`skip/${k}`]: null }); }
 /* ★ v23 예전 교재비 화면의 '청구 완료' 표시를 이 프로그램에서만 무시 → 다시 이번 목록에 나옴 (숙제관리 데이터는 그대로) */
 function unlegacy(keys) { if (!keys.length) return; const ch = {}; keys.forEach(k => ch[`unlegacy/${k}`] = stamp()); write(ch); toast(`${keys.length}권을 청구 전으로 되돌렸어요`); }
@@ -799,12 +807,14 @@ function billRows(M) {   // 인쇄·확정용: ① 선청구(확정 전 것 + �
 const billTitle = M => ({ title: `${mLY(M)} 25일 청구`, sub: `${secPre(M)} + ${SEC_ADD} (${period(M).from.slice(5).replace('-', '/')} ~ ${period(M).to.slice(5).replace('-', '/')} 배부)` });
 function confirmList() {
   const M = UI.month, add = pickedRows(), pre = preOf(monthAdd(M, 1)).filter(p => !p.cancel), pc = F.preConf[monthAdd(M, 1)];
+  const left = analyzeAll(M).flatMap(x => x.items.filter(i => selectable(i) && UI.unsel.has(i.key)));   // 체크 안 한 것 → 다음 달로
   if (!add.length && !pre.length) return;
   const preNew = pc ? pre.filter(p => String(p.at) > String(pc.at)).length : pre.length;
-  if (!confirm(`${mLY(M)} 25일 청구를 확정할까요?\n\n${secPre(M)}: ${pre.length}권${pc && preNew ? ` (그중 새로 넣은 것 ${preNew}권)` : ''}\n${SEC_ADD}: ${add.length}권\n\n확정하면 ✅ 표시가 붙고, 인쇄 창이 열려요.`)) return;
+  if (!confirm(`${mLY(M)} 25일 청구를 확정할까요?\n\n${secPre(M)}: ${pre.length}권${pc && preNew ? ` (그중 새로 넣은 것 ${preNew}권)` : ''}\n${SEC_ADD}: ${add.length}권${left.length ? `\n체크 안 한 ${left.length}권 → ${mL(monthAdd(M, 1))} 청구로 미룸` : ''}\n\n확정하면 ✅ 표시가 붙고, 인쇄 창이 열려요.`)) return;
   const ch = {};
   if (add.length) { const id = nid(); ch[`bills/${id}`] = { id, month: M, ...stamp(), items: add }; add.forEach(r => { ch[`billed/${r.key}`] = id; }); }
   if (pre.length) ch[`preConf/${monthAdd(M, 1)}`] = { at: nowStr(), n: pre.length, by: M };
+  left.forEach(i => { ch[`defer/${i.key}`] = { from: M, at: nowStr() }; });
   const rows = billRows(M);
   UI.unsel.clear(); write(ch);
   printRows(rows, M, '확정', UI.view === 'book' ? 'book' : 'stu', billTitle(M));
