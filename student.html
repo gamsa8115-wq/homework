@@ -450,23 +450,43 @@ details[open] > summary .s-rq-arrow { transform:rotate(90deg); }
 .s-rq-fold[open] > summary { margin-bottom:.45rem; }
 .s-rq-fold[open] .s-rq-tg::after { content:'접기 ▴'; }
 
-/* ★ v362 교재 찾기 바로가기 — 같은 저장소의 find.html (학생 데이터와 무관, 교재 목차·본문 검색만) */
+/* ★ v369 교재 찾기 바로가기 (C안: 진한 카드 버튼) — 같은 저장소의 find.html (학생 데이터와 무관) */
 .s-find-link {
-  display: flex; align-items: center; gap: .55rem;
-  margin: .85rem 1.1rem 0; padding: .62rem .85rem;
-  border: 1.5px solid #cfe0ee; border-radius: 10px;
-  background: rgba(28,108,168,.05); color: var(--brand);
-  text-decoration: none; font-size: .84rem; font-weight: 700;
+  display: flex; align-items: center; gap: .75rem;
+  margin: .85rem 1.1rem 0; padding: .8rem .9rem;
+  border-radius: 14px; background: linear-gradient(135deg, var(--brand-1), var(--brand-2));
+  color: #fff; text-decoration: none; box-shadow: 0 4px 14px rgba(10,71,113,.25);
 }
-.s-find-link:active { background: rgba(28,108,168,.12); }
-.s-find-link small { color: #6b7280; font-weight: 500; font-size: .72rem; }
-.s-find-link .go { margin-left: auto; color: #9aa1a9; }
+.s-find-link:active { transform: scale(.98); box-shadow: 0 2px 8px rgba(10,71,113,.25); }
+.s-find-ic { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 11px; background: rgba(255,255,255,.18);
+  display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
+.s-find-tx { flex: 1 1 auto; min-width: 0; }
+.s-find-tx b { display: block; font-size: .9rem; font-weight: 800; }
+.s-find-tx small { display: block; font-size: .72rem; opacity: .85; margin-top: .1rem; }
+.s-find-link .go { flex: 0 0 auto; margin-left: auto; font-size: 1.15rem; opacity: .85; }
 
 /* ★ v368 받은 교재 격자 범례 — 글 대신 실제 칸 모양으로 보여준다 */
 .s-legend { display:flex; flex-wrap:wrap; gap:.35rem .8rem; margin:-.3rem 0 .65rem; padding:.5rem .7rem;
   background:#f7f8fa; border-radius:8px; font-size:.72rem; font-weight:700; color:#4b5563; }
 .s-legend > span { display:inline-flex; align-items:center; gap:.35rem; }
 .s-legend .s-cell { font-style:normal; }
+
+/* ★ v370 시험대비 기간 — 헤더 보라 + D-day, 쉬는 교재는 접어 둔다 */
+.s-header.exam { background: linear-gradient(135deg, #3b2a6e 0%, #6a4bb3 100%); }
+.s-header.exam .s-header-mark { top: 3.1rem; bottom: auto; width: 92px; }
+.s-dday { display: inline-flex; align-items: baseline; gap: .45rem; margin-top: .7rem; padding: .5rem .75rem;
+  background: rgba(255,255,255,.16); border-radius: 10px; max-width: 100%; }
+.s-dday b { font-size: 1.35rem; font-weight: 800; white-space: nowrap; }
+.s-dday span { font-size: .74rem; opacity: .92; line-height: 1.35; }
+.s-ex-none { font-size: .8rem; color: #8a9099; text-align: center; padding: .9rem; background: #f7f8fa; border-radius: 10px; }
+.s-pause-fold { margin-top: .5rem; }
+.s-pause-fold > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  padding: .62rem .85rem; border: 1.5px dashed #d6d9de; border-radius: 10px; font-size: .8rem; font-weight: 700; color: #6b7280; }
+.s-pause-fold > summary::-webkit-details-marker { display: none; }
+.s-pf-tg::after { content: '보기 ▾'; font-size: .72rem; color: var(--brand); font-weight: 800; white-space: nowrap; }
+.s-pause-fold[open] .s-pf-tg::after { content: '접기 ▴'; }
+.s-pause-fold[open] > summary { margin-bottom: .45rem; }
+.s-paused { opacity: .6; }
 
 /* ── 오늘 자동 스크롤 앵커 ── */
 #today-anchor { scroll-margin-top: 20px; }
@@ -742,7 +762,8 @@ function renderBookProgressCard(b, idx) {
   const catMeta = {
     '수업보카': { bg: '#3b4a7a', label: '🏫 수업보카' },
     '홈보카':   { bg: '#92600f', label: '🏠 홈보카' },
-    '교재':     { bg: '#1c6ca8', label: '📖 교재' }
+    '교재':     { bg: '#1c6ca8', label: '📖 교재' },
+    '시험대비': { bg: '#6a4bb3', label: '📝 시험대비' }
   }[b.category] || { bg: '#1c6ca8', label: '📖 교재' };
   const pct = b.total > 0 ? Math.round((b.done / b.total) * 100) : 0;
   const name = `<span class="s-book-name">${escHtml(b.name)}${b.cohort ? ` <span class="s-book-cohort">(${escHtml(tagTxt(b.cohort))})</span>` : ''}</span>`;
@@ -816,11 +837,13 @@ function renderHwCard(a, type, reason, idx) {
   const dateShort = fmtDateShort(a.date);
 
   // ★ 홈보카/수업보카/교재 구분 배지 — 배정 시 선택한 카테고리를 그대로 보여줌
-  const category = isVoca ? (a.category || '수업보카') : '교재';
+  // ★ v370 시험대비 기간이면 단기 교재 숙제는 「시험대비」 배지
+  const category = isVoca ? (a.category || '수업보카') : (_EXAM_EXTRA.has(a.bookId) ? '시험대비' : '교재');
   const catMeta = {
     '수업보카': { bg: '#3b4a7a', label: '🏫 수업보카' },
     '홈보카':   { bg: '#92600f', label: '🏠 홈보카' },
-    '교재':     { bg: '#1c6ca8', label: '📖 교재' }
+    '교재':     { bg: '#1c6ca8', label: '📖 교재' },
+    '시험대비': { bg: '#6a4bb3', label: '📝 시험대비' }
   }[category];
   const catBadge = `<span class="s-hw-cat" style="background:${catMeta.bg}">${catMeta.label}</span>`;
 
@@ -966,7 +989,39 @@ const SHOW_OVERDUE = false;
 /* ★ v367 「최근 완료」 목록도 학생 화면에서 숨긴다 (선생님 요청). 다시 보이게 하려면 true로 바꾼다 */
 const SHOW_RECENT = false;
 
-function renderMainView(student, assigns, vacations, books, reqTests) {
+/* ★ v370 시험대비 기간 — 선생님 앱의 「시험대비 기간」(classPauses: 학교·학년·시작일·끝나는 날)을 읽어서
+   그 기간이면 학생 화면을 시험 모드로 보여준다. 판정은 선생님 앱(_spHitsSt, _hbExamOf, _hbPausedBy)과 같다.
+   - 보카는 항상 쉼, 일반 교재는 「교재 숙제도 미루기」(p.book)일 때만 쉼, 단기 교재(book.extra)는 그 기간에 하는 것 */
+let _EXAM_EXTRA = new Set();
+function _ymd(ds) { const [y, m, d] = String(ds).split('-').map(Number); return new Date(y, (m || 1) - 1, d || 1); }
+function _ymdStr(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function _schoolYearS(ds) { const d = ds ? _ymd(ds) : new Date(); return d.getMonth() >= 2 ? d.getFullYear() : d.getFullYear() - 1; }
+function _stGradeS(st, ds) { const r = st && st.gr; if (!r || !r.g) return 0; return r.g + (_schoolYearS(ds) - (r.y || _schoolYearS(ds))); }
+function _grFromGroupS(g) {
+  const m = String(g || '').trim().match(/^([초중고])\s*([1-6])(?:\D|$)/); if (!m) return 0;
+  const n = +m[2], base = { 초: 0, 중: 6, 고: 9 }[m[1]];
+  if (m[1] !== '초' && n > 3) return 0;
+  return base + n;
+}
+function _normSchoolS(v) { return String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); }
+function _examHits(p, st) {
+  if (!p || !st || !p.school || _normSchoolS(p.school) !== _normSchoolS(st.school)) return false;
+  if (Array.isArray(p.grades) && p.grades.length) return p.grades.map(Number).includes(_stGradeS(st, p.start) || _grFromGroupS(st.group));
+  return !Array.isArray(p.groups) || !p.groups.length || p.groups.includes(st.group);
+}
+function examOf(st, today, pauses) {
+  return (pauses || []).filter(p => p && p.start && p.end && today >= p.start && today <= p.end && _examHits(p, st))
+    .sort((a, b) => b.end.localeCompare(a.end))[0] || null;
+}
+/* 기간이 끝난 다음 수업일 (주말·공휴일·학원 휴무 건너뜀) */
+function examResume(end, vacations) {
+  const d = _ymd(end);
+  for (let i = 0; i < 30; i++) { d.setDate(d.getDate() + 1); const ds = _ymdStr(d); if (!isNonClassDay(ds, vacations)) return ds; }
+  d.setDate(d.getDate() + 1); return _ymdStr(d);
+}
+function _mdDow(ds) { const d = _ymd(ds); return `${d.getMonth()+1}/${d.getDate()}(${'일월화수목금토'[d.getDay()]})`; }
+
+function renderMainView(student, assigns, vacations, books, reqTests, pauses) {
   const today = todayStr();
 
   // 이 학생의 배정 전체
@@ -1073,11 +1128,25 @@ function renderMainView(student, assigns, vacations, books, reqTests) {
       const category = isVoca ? cat : '교재';
       bookProgressList.push({ name: bn, cohort, total, done, miss, todayN,
         rest: Math.max(0, total - done - miss - todayN),
-        isVoca, rows, doneKeys, missKeys, todayKeys, category });
+        isVoca, rows, doneKeys, missKeys, todayKeys, category, extra: !!book.extra });
     });
   });
 
   // ★ 전체 평균 진행률(도넛 그래프용) — 단순 평균이 아니라 "전체 배정 중 전체 완료" 비율로 계산
+  // ★ v369 받은 교재 순서 — 홈보카 → 수업보카 → 교재 (같은 종류 안에서는 원래 순서 유지)
+  // ★ v370 시험대비 기간 판정
+  const EX = examOf(student, today, pauses);
+  const exResume = EX ? examResume(EX.end, vacations) : null;
+  const exPaused = b => !!EX && (b.isVoca || (EX.book && !b.extra));
+  _EXAM_EXTRA = new Set(EX ? books.filter(b => b && b.extra).map(b => b.id) : []);
+  if (EX) bookProgressList.forEach(b => { if (!b.isVoca && b.extra) b.category = '시험대비'; });
+  const CAT_ORDER = { '시험대비': -1, '홈보카': 0, '수업보카': 1, '교재': 2 };
+  bookProgressList.sort((a, b) => (CAT_ORDER[a.category] ?? 3) - (CAT_ORDER[b.category] ?? 3));
+  const activeBooks = EX ? bookProgressList.filter(b => !exPaused(b)) : bookProgressList;
+  const pausedBooks = EX ? bookProgressList.filter(exPaused) : [];
+  const exDays = EX ? Math.round((_ymd(EX.end) - _ymd(today)) / 86400000) : 0;
+  const exLabel = EX ? String(EX.label || '시험대비').replace(new RegExp('^' + _normSchoolS(EX.school).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*'), '') : '';
+
   const totalAssignedAll = bookProgressList.reduce((s, b) => s + b.total, 0);
   const totalDoneAll = bookProgressList.reduce((s, b) => s + b.done, 0);
   const avgPct = totalAssignedAll > 0 ? Math.round((totalDoneAll / totalAssignedAll) * 100) : null;
@@ -1153,18 +1222,19 @@ function renderMainView(student, assigns, vacations, books, reqTests) {
   const todayKor = fmtDateKor(today);
 
   const html = `
-    <div class="s-header">
-      <div class="s-header-title">오늘의 숙제</div>
+    <div class="s-header${EX ? ' exam' : ''}">
+      <div class="s-header-title">${EX ? `${escHtml(exLabel)} 기간 · ${fmtDateShort(EX.start)} ~ ${fmtDateShort(EX.end)}` : '오늘의 숙제'}</div>
       <div class="s-header-name">
         ${escHtml(student.name)}
         <span class="s-header-group">${escHtml(student.group || '')}</span>
       </div>
       <div class="s-header-date">🗓 ${todayKor}${streak >= 2 ? `<span class="s-streak">🔥 ${streak}일 연속 완료</span>` : ''}</div>
+      ${EX ? `<div class="s-dday"><b>${exDays > 0 ? 'D-' + exDays : '마지막 날'}</b><span>시험 끝나면 ${_mdDow(exResume)}부터 기존 숙제 다시 시작</span></div>` : ''}
       <button class="s-refresh-btn" onclick="location.reload()">🔄 새로고침</button>
       <img class="s-header-mark" src="data:image/png;base64,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" alt="THE FIRST">
     </div>
 
-    <a class="s-find-link" href="find.html">📚 교재에서 찾기 <small>Sentence Build up 몇 쪽?</small><span class="go">›</span></a>
+    <a class="s-find-link" href="find.html"><span class="s-find-ic">📚</span><span class="s-find-tx"><b>Sentence Build up 찾기</b><small>문법 이름이나 질문으로 몇 쪽인지 찾아줘요</small></span><span class="go">›</span></a>
 
     <div id="today-anchor" class="s-section">
       <div class="s-section-title">
@@ -1204,10 +1274,10 @@ function renderMainView(student, assigns, vacations, books, reqTests) {
     <div class="s-section">
       <div class="s-section-title">
         <div class="s-section-title-left">
-          <span>📚 받은 교재</span>
+          <span>${EX ? '📚 시험대비 교재' : '📚 받은 교재'}</span>
         </div>
         <div style="display:flex;align-items:center;gap:.55rem">
-          <span class="s-section-count">${bookProgressList.length}개</span>
+          <span class="s-section-count">${EX ? activeBooks.length : bookProgressList.length}개</span>
           ${avgPct !== null ? `
             <div class="s-donut">
               <svg width="34" height="34" viewBox="0 0 34 34">
@@ -1228,7 +1298,10 @@ function renderMainView(student, assigns, vacations, books, reqTests) {
         <span><i class="s-cell today">03</i>오늘 할 곳</span>
         <span><i class="s-cell">04</i>아직</span>
       </div>` : ''}
-      <div class="s-book-list">${bookProgressList.map(renderBookProgressCard).join('')}</div>
+      ${activeBooks.length ? `<div class="s-book-list">${activeBooks.map(renderBookProgressCard).join('')}</div>`
+        : '<div class="s-ex-none">시험대비 교재가 아직 없어요</div>'}
+      ${pausedBooks.length ? `<details class="s-pause-fold"><summary><span>⏸ 쉬는 교재 <b>${pausedBooks.length}</b>개 (${_mdDow(exResume)}부터 다시)</span><span class="s-pf-tg"></span></summary>
+        <div class="s-book-list s-paused">${pausedBooks.map(renderBookProgressCard).join('')}</div></details>` : ''}
     </div>
     ` : ''}
 
@@ -1267,7 +1340,7 @@ function renderMainView(student, assigns, vacations, books, reqTests) {
 // 초기화 + Firebase 데이터 로드
 // ══════════════════════════════════════════════════════════
 // ★ 새 버전을 올릴 때 이 값을 함께 올린다 — 화면 맨 아래에 표시된다
-const APP_VERSION = 'v368';
+const APP_VERSION = 'v370';
 
 async function main() {
   const key = getAccessKey();
@@ -1308,7 +1381,8 @@ async function main() {
 
     // 메인 뷰 렌더링
     const reqTests = Array.isArray(val.reqTests) ? val.reqTests : _toArray(val.reqTests); // ★ v356 필수 테스트
-    renderMainView(me, assigns, vacations, books, reqTests);
+    const pauses = _toArray(val.classPauses); // ★ v370 시험대비 기간 (선생님 앱과 같은 기록)
+    renderMainView(me, assigns, vacations, books, reqTests, pauses);
 
   } catch (err) {
     console.error(err);
