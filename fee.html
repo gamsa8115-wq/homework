@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>교재비 v42</title>
+<title>교재비 v43</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
 <style>
 /* 숙제관리 앱(index.html)과 같은 디자인 — 색·글꼴·버튼·표 모양을 그대로 맞춤 */
@@ -111,6 +111,7 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    · 예전 자료(숙제앱 지난 배부 + 통통통 판매내역)는 '같거나 비슷한 교재를 예전에 받은 적 있음' 확인창으로만 쓴다
    · 두 번 배부는 표시만 하고 목록에 넣는다
    · 목록 확정 → A4 인쇄 (종이 보면서 통통통에 입력)
+   v43: 25일 청구에 📅 배부일별 보기 (날짜마다 그날 배부한 교재, '이 날 모두 선택/해제')
    v42: 기본은 실제 저장, 테스트 저장일 때는 모든 탭 맨 위에 알림 + 바로 바꾸기
    v41: 나눠 청구 — 확정할 때 체크 안 한 교재는 다음 달 청구로 미룸 (↪ 표시, 되돌리기)
    v40: 25일 청구 확정은 전체 반에서만 (반을 고른 채 확정하면 일부만 확정되던 것), 선청구 → 25일 청구로 갈 때 전체 반으로
@@ -142,7 +143,7 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    v14: 같은 반·같은 교재끼리 묶어 인쇄 (교재별 인쇄)
    v13: 2판으로 다시 만듦 (연결표·통통통 엑셀·가격·선생님 구분 없앰, 확인창, 인쇄)
    ══════════════════════════════════════════════════════════════ */
-const VER = 'v42';
+const VER = 'v43';
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAh3zMoepbA38yFFEDQ210XWveBdf2HDN8",
   authDomain: "sotong-academy.firebaseapp.com",
@@ -439,7 +440,7 @@ const analyzeAll = M => D.students.map(st => analyze(st, M));
 const selectable = it => it.state === 'open' && !it.need && !it.holdNow;
 /* ★ v41 나눠 청구: 확정할 때 체크 안 한 교재는 다음 달 청구로 미룸 (F.defer[key] = { from: 미룬 달, at }) */
 function deferMark(it, M) { const d = F.defer[it.key]; if (!d || it.state !== 'open') return; if (d.from === M) it.holdNow = d; else if (d.from < M) it.deferred = d; }
-function fPass(st, i) { return UI.view === 'stu' ? (!UI.fStu || String(st.id) === UI.fStu) : (!UI.fBook || String(i.bookId) === UI.fBook); }
+function fPass(st, i) { return UI.view !== 'book' ? (!UI.fStu || String(st.id) === UI.fStu) : (!UI.fBook || String(i.bookId) === UI.fBook); }
 
 /* ---------- 확인 목록 데이터 ---------- */
 function checkList(M) {
@@ -666,7 +667,7 @@ function rBill(r) {
   show.forEach(x => x.list.forEach(i => { const k = String(i.bookId); if (!bookOpts.has(k)) bookOpts.set(k, { name: i.name, kind: i.kind, n: 0 }); bookOpts.get(k).n++; }));
   if (UI.fStu && !stuOpts.some(st => String(st.id) === UI.fStu)) UI.fStu = '';
   if (UI.fBook && !bookOpts.has(UI.fBook)) UI.fBook = '';
-  const pickSel = UI.view === 'stu'
+  const pickSel = UI.view !== 'book'
     ? `<select onchange="UI.fStu=this.value;render()"><option value="">👤 학생 전체 (${stuOpts.length}명)</option>${stuOpts.map(st => `<option value="${st.id}" ${String(st.id) === UI.fStu ? 'selected' : ''}>${esc(st.name)}${UI.group ? '' : ' · ' + esc(st.group || '')}</option>`).join('')}</select>`
     : `<select onchange="UI.fBook=this.value;render()"><option value="">📚 교재 전체 (${bookOpts.size}개)</option>${[...bookOpts.entries()].sort((a, b) => KIND_ORDER.indexOf(a[1].kind) - KIND_ORDER.indexOf(b[1].kind) || a[1].name.localeCompare(b[1].name, 'ko', { numeric: true })).map(([id, b]) => `<option value="${id}" ${id === UI.fBook ? 'selected' : ''}>[${KIND[b.kind]}] ${esc(b.name)} (${b.n}명)</option>`).join('')}</select>`;
   show = show.map(x => ({ ...x, list: x.list.filter(i => fPass(x.st, i)) })).filter(x => x.list.length);
@@ -687,6 +688,7 @@ function rBill(r) {
   if (nLate) warn += `<div class="warn w-r">⏰ <b>지난 기간에 배부했는데 목록에서 빠졌던 교재 ${nLate}건</b> — 이번 목록에 같이 넣었어요</div>`;
   let html = '', g0 = null;
   if (UI.view === 'book') html = byBookHtml(show);
+  else if (UI.view === 'date') html = byDateHtml(show);
   else {
     const byG = new Map(); show.forEach(x => { const g = x.st.group || ''; if (!byG.has(g)) byG.set(g, []); byG.get(g).push(x); });
     byG.forEach((xs, g) => {
@@ -701,7 +703,7 @@ function rBill(r) {
       html += `</table></div>`;
     });
   }
-  r.innerHTML = `${monthBar(`<span class="seg"><button class="${UI.view === 'stu' ? 'on' : ''}" onclick="setView('stu')">👤 학생별</button><button class="${UI.view === 'book' ? 'on' : ''}" onclick="setView('book')">📚 교재별</button></span>${pickSel}<label>분류</label>${kindSel('UI.kind=this.value;render()', UI.kind)}`)}
+  r.innerHTML = `${monthBar(`<span class="seg"><button class="${UI.view === 'stu' ? 'on' : ''}" onclick="setView('stu')">👤 학생별</button><button class="${UI.view === 'book' ? 'on' : ''}" onclick="setView('book')">📚 교재별</button><button class="${UI.view === 'date' ? 'on' : ''}" onclick="setView('date')">📅 배부일별</button></span>${pickSel}<label>분류</label>${kindSel('UI.kind=this.value;render()', UI.kind)}`)}
     ${warn}${legendDrawer()}
     ${preSecHtml(M)}
     <div class="gh" style="font-size:.95rem">② 추가 청구 <span class="mu" style="font-weight:500">${md(P.from)} ~ ${md(P.to)} 배부 중 청구 안 된 것</span></div>
@@ -736,6 +738,17 @@ function byBookHtml(show) {   // 반마다 한 장의 표 — 교재 이름 줄 
     html += `</table></div>`;
   });
   return html;
+}
+function byDateHtml(show) {   // ★ v43 배부일별 — 날짜마다 그날 배부한 교재 (청구 여부 표시 그대로)
+  const days = new Map();
+  show.forEach(x => x.list.forEach(it => { if (!days.has(it.date)) days.set(it.date, []); days.get(it.date).push({ x, it }); }));
+  const wd = d => '일월화수목금토'[new Date(d + 'T00:00:00').getDay()];
+  return [...days.keys()].sort().map(d => { const L = days.get(d).sort((a, b) => byGN(a.x.st, b.x.st));
+    const on = L.filter(r => selectable(r.it) && !UI.unsel.has(r.it.key)).length, sel = L.filter(r => selectable(r.it));
+    return `<div class="gh">${md(d)} (${wd(d)}) <span class="mu" style="font-weight:500">배부 ${L.length}권 · 이번에 청구 ${on}권</span></div>
+      <div class="card"><table class="fee-t"><colgroup><col style="width:34px"><col style="width:70px"><col style="width:90px"><col><col style="width:96px"></colgroup>
+      <tr class="fee-sh"><td colspan="4"></td><td class="ar">${sel.length ? `<button class="lk" onclick="selKeys('${sel.map(r => r.it.key).join(',')}',${on === sel.length ? 'false' : 'true'})">${on === sel.length ? '이 날 모두 해제' : '이 날 모두 선택'}</button>` : ''}</td></tr>
+      ${L.map(({ x, it }) => rowHtml(it, `<td class="mu">${esc(x.st.group || '')}</td><td><b class="who" onclick="openLedger('${x.st.id}')">${esc(x.st.name)}</b></td><td>${kTag(it.kind)}${esc(it.name)}${it.cohort ? ` <span class="mu">(${esc(it.cohort)})</span>` : ''}<div style="margin-top:3px">${stateChip(it)}</div></td>`)).join('')}</table></div>`; }).join('');
 }
 function legendDrawer() {
   const rows = [
