@@ -1003,7 +1003,7 @@ const SHOW_RECENT = false;
 let _EXAM_EXTRA = new Set();
 function _ymd(ds) { const [y, m, d] = String(ds).split('-').map(Number); return new Date(y, (m || 1) - 1, d || 1); }
 function _ymdStr(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
-function _schoolYearS(ds) { const d = ds ? _ymd(ds) : new Date(); return d.getMonth() >= 2 ? d.getFullYear() : d.getFullYear() - 1; }
+function _schoolYearS(ds) { const d = ds ? _ymd(ds) : new Date(); return d.getFullYear(); }   // v373 학원 기준 1월 1일에 학년 바뀜
 function _stGradeS(st, ds) { const r = st && st.gr; if (!r || !r.g) return 0; return r.g + (_schoolYearS(ds) - (r.y || _schoolYearS(ds))); }
 function _grFromGroupS(g) {
   const m = String(g || '').trim().match(/^([초중고])\s*([1-6])(?:\D|$)/); if (!m) return 0;
@@ -1348,7 +1348,7 @@ function renderMainView(student, assigns, vacations, books, reqTests, pauses) {
 // 초기화 + Firebase 데이터 로드
 // ══════════════════════════════════════════════════════════
 // ★ 새 버전을 올릴 때 이 값을 함께 올린다 — 화면 맨 아래에 표시된다
-const APP_VERSION = 'v372';
+const APP_VERSION = 'v373';
 
 async function main() {
   const key = getAccessKey();
