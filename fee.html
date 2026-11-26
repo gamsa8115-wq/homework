@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>교재비 v43</title>
+<title>교재비 v45</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
 <style>
 /* 숙제관리 앱(index.html)과 같은 디자인 — 색·글꼴·버튼·표 모양을 그대로 맞춤 */
@@ -111,6 +111,8 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    · 예전 자료(숙제앱 지난 배부 + 통통통 판매내역)는 '같거나 비슷한 교재를 예전에 받은 적 있음' 확인창으로만 쓴다
    · 두 번 배부는 표시만 하고 목록에 넣는다
    · 목록 확정 → A4 인쇄 (종이 보면서 통통통에 입력)
+   v45: 통통통 새 교재명 '(N) 숙제앱 교재명' 읽기 — (N)을 떼고 같은 이름으로 짝, 예전 이름도 계속 짝
+   v44: 🔍 확인 목록에 '📂 통통통 입력 확인' — 판매내역을 올리면 25일 청구 목록과 비교 (❌ 통통통에 없음 / ⚠ 통통통에만 있음)
    v43: 25일 청구에 📅 배부일별 보기 (날짜마다 그날 배부한 교재, '이 날 모두 선택/해제')
    v42: 기본은 실제 저장, 테스트 저장일 때는 모든 탭 맨 위에 알림 + 바로 바꾸기
    v41: 나눠 청구 — 확정할 때 체크 안 한 교재는 다음 달 청구로 미룸 (↪ 표시, 되돌리기)
@@ -143,7 +145,7 @@ body.embed .top h1,body.embed .top .sub{display:none}body.embed .top{padding-top
    v14: 같은 반·같은 교재끼리 묶어 인쇄 (교재별 인쇄)
    v13: 2판으로 다시 만듦 (연결표·통통통 엑셀·가격·선생님 구분 없앰, 확인창, 인쇄)
    ══════════════════════════════════════════════════════════════ */
-const VER = 'v43';
+const VER = 'v45';
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAh3zMoepbA38yFFEDQ210XWveBdf2HDN8",
   authDomain: "sotong-academy.firebaseapp.com",
@@ -341,7 +343,8 @@ function buildSX() {   // 학생(이름 띄어쓰기·뒤 숫자 무시) → [{b
   SX = new Map();
   if (!SALES || !SALES.rows) return;
   SALES.rows.forEach(r => {
-    const [name, book, date, qty] = r.length >= 7 ? [r[0], r[2], r[3], r[4]] : r;   // 예전 형식도 읽음
+    const [name, book0, date, qty] = r.length >= 7 ? [r[0], r[2], r[3], r[4]] : r;   // 예전 형식도 읽음
+    const book = String(book0 || '').replace(/^\s*\(N\)\s*/i, '');   // ★ v45 2026-11 청구분부터 통통통 교재명 = '(N) ' + 숙제앱 교재명
     if (EXCLUDE.test(book) || salesDrop(book, date)) return;
     const k = normName(name); if (!SX.has(k)) SX.set(k, []);
     const L = SX.get(k);
@@ -364,7 +367,7 @@ const SALES_ALIAS = [
   [/^5형식주동시$/, () => ['5형식(주어,동사)']], [/^5형식분석해석하기$/, () => ['5형식(분석)']],
   [/^3인칭일반동사단어장$/, () => ['단어장(3인칭일반)']], [/^과거일반동사단어장$/, () => ['단어장(과거일반)']],
 ];
-function salesNames(appName) { const n = norm(appName); for (const [re, f] of SALES_ALIAS) { const m = n.match(re); if (m) return f(m).map(norm); } return [n]; }
+function salesNames(appName) { const n = norm(appName); for (const [re, f] of SALES_ALIAS) { const m = n.match(re); if (m) return [n, ...f(m).map(norm)]; } return [n]; }   // 같은 이름((N) 교재명) + 예전 통통통 이름
 const SALES_FROM = '2026-08-26';
 const SALES_CUT = M => `${M}-20`;   // 이 날부터 판매 = 다음 달 청구분 (25일 무렵 입력, 25·27·28일·다음 달 1일 등)   // 이 날 이후 배부부터 판매내역과 짝지음
 let _sm = null;
@@ -710,6 +713,7 @@ function rBill(r) {
     ${show.length ? html : `<div class="card"><div class="empty">② 추가 청구할 교재가 없어요${inP.length ? `<br><span class="mu">이 기간 배부 ${inP.length}권 — 예전 화면 청구 완료 ${nLeg.length} · 목록 확정 ${nLst} · 목록에서 뺌 ${nSk}${inP.length - nLeg.length - nLst - nSk > 0 ? ` · 그 밖 ${inP.length - nLeg.length - nLst - nSk}` : ''}</span>` : ''}</div></div>`}
     <div class="foot"><span><b>${secPre(M)} ${preRows(monthAdd(M, 1), UI.group).length}권 + ② 추가 ${pick.length}권</b>${nNeed ? `<span class="mu"> · 확인 전 ${nNeed}건 빠짐</span>` : ''}${nDup ? `<span class="mu"> · ⚠ ${nDup}건 포함</span>` : ''}${UI.group || (UI.view === 'stu' ? UI.fStu : UI.fBook) ? '<span class="pill w" style="margin-left:.3rem">일부만 보는 중 — 확정은 전체 반에서</span>' : ''}</span>
       <span style="flex:1"></span>
+      <button class="lk" onclick="go('check')">📂 통통통 자료로 확인</button>
       <button class="lk" onclick="selAll(true)">모두 선택</button><button class="lk" onclick="selAll(false)">모두 해제</button>
       <button class="btn" ${canB ? '' : 'disabled'} onclick="printRows(billRows(UI.month),UI.month,'미리 보기','stu',billTitle(UI.month))">🖨 학생별 인쇄</button><button class="btn" ${canB ? '' : 'disabled'} onclick="printRows(billRows(UI.month),UI.month,'미리 보기','book',billTitle(UI.month))">🖨 반·교재별 인쇄</button>
       ${UI.group || UI.fStu || UI.fBook ? `<button class="btn p" onclick="UI.group='';UI.fStu='';UI.fBook='';render()">전체 반으로 보고 확정하기</button>` : `<button class="btn p" ${canB ? '' : 'disabled'} onclick="confirmList()">✅ ${mL(M)} 25일 청구 확정</button>`}</div>`;
@@ -911,6 +915,43 @@ function matrixHtml(rows, cls, lab, cols) {
 
 /* ---------- 🔍 확인 목록 ---------- */
 function ack(type, k, msg) { write({ [`acks/${type}|${k}`]: stamp() }); toast(msg || '확인함으로 표시했어요'); }
+/* ★ v44 통통통 입력 확인 — 이 달 25일 청구 목록(① 선청구 + ② 추가)과 통통통 판매내역(이 달 청구분: 20일 ~ 다음 달 19일)을 비교 */
+function tttCheck(M) {
+  const lo = SALES_CUT(M), hi = SALES_CUT(monthAdd(M, 1)), N = monthAdd(M, 1);
+  const exp = [];   // 프로그램 청구 목록
+  preOf(N).filter(p => !p.cancel).forEach(p => { const st = studentById(p.sid), b = bookById(p.bookId); if (st) exp.push({ st, name: (b && b.name) || p.name, kind: p.kind || kindOf(b, p.name), sec: secPre(M), date: '' }); });
+  analyzeAll(M).forEach(x => x.items.forEach(it => {
+    const inList = (it.state === 'listed' && it.bill && it.bill.month === M) || (selectable(it) && !UI.unsel.has(it.key));
+    if (inList) exp.push({ st: x.st, name: it.name, kind: it.kind, sec: SEC_ADD + (it.state === 'listed' ? ' (확정)' : ' (확정 전)'), date: it.date });
+  }));
+  const appNames = new Set(appBooks().flatMap(b => salesNames(b.name)));
+  const byN = new Map(); D.students.forEach(st => { const k = normName(st.name); if (!byN.has(k)) byN.set(k, st); });
+  const pool = []; if (SX) SX.forEach((L, k) => L.forEach(x => { if (x.date >= lo && x.date < hi) pool.push({ ...x, k, st: byN.get(k), n: norm(x.book), used: false }); }));
+  const ok = [], miss = [];
+  exp.forEach(e => { const names = salesNames(e.name), k = normName(e.st.name);
+    const x = pool.find(x => !x.used && x.k === k && names.includes(x.n));
+    if (x) { x.used = true; ok.push({ ...e, sale: x }); } else miss.push(e); });
+  const rest = pool.filter(x => !x.used), extra = rest.filter(x => x.st && appNames.has(x.n)), other = rest.filter(x => !x.st || !appNames.has(x.n));
+  return { lo, hi, exp, ok, miss, extra, other };
+}
+function tttHtml(M) {
+  const head = `<div class="sec s-b" style="border-left:4px solid var(--acc)"><h4 style="color:var(--acc)">📂 통통통 입력 확인 — ${mL(M)} 25일 청구</h4>`;
+  if (!SALES) return head + `<div class="d">통통통에서 판매내역을 내려받아 올리면, 프로그램 청구 목록과 비교해서 빠진 것·잘못 들어간 것을 알려 줘요.</div><div class="box"><label class="btn p" style="align-self:flex-start">📂 통통통 판매내역 불러오기<input type="file" accept=".xlsx,.xls" hidden onchange="importSales(this.files[0])"></label></div></div>`;
+  const T = tttCheck(M), g = st => !UI.group || (st && st.group === UI.group);
+  const miss = T.miss.filter(e => g(e.st)), extra = T.extra.filter(x => g(x.st)), ok = T.ok.filter(e => g(e.st));
+  const covered = SALES.meta && SALES.meta.to >= T.lo;
+  const sub = (t, rows) => `<div style="padding:.35rem .8rem;font-weight:700;font-size:.8rem">${t}</div>${rows}`;
+  const tbl = rows => rows.length ? `<table>${rows.join('')}</table>` : `<div class="empty" style="background:#fff;padding:.6rem">없어요 👍</div>`;
+  return head + `<div class="d">비교 기준: 통통통 판매일자 <b>${md(T.lo)} ~ ${md(addDays(T.hi, -1))}</b> = ${mL(M)} 25일 청구분 · 판매내역 ~${ymd(SALES.meta.to)}까지 불러옴
+      ${covered ? '' : ' <span class="pill rd">아직 이 달 청구분이 판매내역에 없어요 — 입력한 뒤 판매내역을 새로 내려받아 올려 주세요</span>'}
+      <label class="btn sm" style="margin-left:.4rem">📂 새 판매내역 올리기<input type="file" accept=".xlsx,.xls" hidden onchange="importSales(this.files[0])"></label></div>
+    <div class="kpi" style="padding:.5rem .8rem 0"><div><b>${ok.length}</b><span>✅ 맞음</span></div><div><b style="color:var(--red)">${miss.length}</b><span>❌ 목록에 있는데 통통통에 없음</span></div><div><b style="color:#b45309">${extra.length}</b><span>⚠ 통통통에만 있음</span></div></div>
+    ${sub('❌ 프로그램 목록에는 있는데 통통통에 없어요 — 입력 누락이거나 교재 이름이 달라요', tbl(miss.sort((a, b) => byGN(a.st, b.st)).map(e => `<tr><td class="nw"><b>${esc(e.st.name)}</b> <span class="mu">${esc(e.st.group || '')}</span></td><td>${kTag(e.kind)}${esc(e.name)}${e.date ? ` <span class="mu">${md(e.date)} 배부</span>` : ''}</td><td class="mu nw">${esc(e.sec)}</td></tr>`)))}
+    ${sub('⚠ 통통통에는 있는데 프로그램 목록에 없어요 — 목록 밖 청구·중복·잘못 입력인지 확인', tbl(extra.sort((a, b) => byGN(a.st, b.st)).map(x => `<tr><td class="nw"><b>${esc(x.st.name)}</b> <span class="mu">${esc(x.st.group || '')}</span></td><td>${esc(x.book)}</td><td class="mu nw">통통통 ${ymd(x.date)}</td></tr>`)))}
+    <details style="padding:.3rem .8rem .6rem"><summary class="mu">✅ 맞는 것 ${ok.length}건 · 참고: 숙제앱에 없는 교재·학생 판매 ${T.other.length}건</summary>
+      <table style="margin-top:.3rem">${ok.sort((a, b) => byGN(a.st, b.st)).map(e => `<tr><td class="nw">${esc(e.st.name)} <span class="mu">${esc(e.st.group || '')}</span></td><td>${esc(e.name)}</td><td class="mu">↔ ${esc(e.sale.book)} ${ymd(e.sale.date)}</td></tr>`).join('')}
+      ${T.other.map(x => `<tr class="off"><td class="nw">${esc(x.st ? x.st.name : x.k)}</td><td>${esc(x.book)}</td><td class="mu">${ymd(x.date)} · ${x.st ? '숙제앱에 없는 교재' : '숙제앱에 없는 학생'}</td></tr>`).join('')}</table></details></div>`;
+}
 function rCheck(r) {
   const c = _cc, g = s => !UI.group || (s && s.group === UI.group);
   const nm = (st, sid) => st ? `<b class="who" onclick="openLedger('${st.id}')">${esc(st.name)}</b> <span class="mu">${esc(st.group || '')}</span>` : `<b>(지운 학생 ${esc(sid)})</b>`;
@@ -918,6 +959,7 @@ function rCheck(r) {
   const sec = (cls, title, desc, rows) => `<div class="sec ${cls}"><h4>${title}</h4><div class="d">${desc}</div>${rows.length ? `<table>${rows.join('')}</table>` : `<div class="empty" style="background:#fff">없어요 👍</div>`}</div>`;
   const done = Object.entries(F.acks).sort((a, b) => String(b[1].at).localeCompare(String(a[1].at))).slice(0, 30);
   r.innerHTML = `${monthBar()}
+    ${tttHtml(UI.month)}
     <div class="kpi"><div><b style="color:var(--red)">${cancel.length}</b><span>확정 후 배부 취소</span></div><div><b>${redist.length}</b><span>취소 후 다시 배부</span></div><div><b>${need.length}</b><span>예전에 받은 적 있음</span></div><div><b>${dup.length}</b><span>두 번 배부 (참고)</span></div></div>
     ${sec('s-r', `⚠ 목록 확정 후 배부 취소 ${cancel.length}건`, '이미 목록을 확정했는데 숙제관리에서 배부가 취소됐어요. <b>통통통에서도 취소</b>한 다음 "처리 완료"를 눌러 주세요.',
       cancel.map(x => `<tr><td>${nm(x.st, x.sid)}</td><td>${kTag(x.kind)}${esc(x.name)} <span class="mu">${md(x.date)} 배부 → ${md(x.gone)} 취소 확인</span></td><td class="nw">${mL(x.bill.month)} 목록</td><td class="ar"><button class="btn sm" onclick="ack('cancel','${x.key}','처리 완료로 표시했어요')">처리 완료</button></td></tr>`))}
