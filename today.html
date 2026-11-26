@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>오늘 수업 v2</title>
+<title>오늘 수업 v3</title>
 <style>
 :root{
   --bg:#f7f6f3;--surface:#fff;--s2:#f1f0ed;--bd:#e2e1dd;
@@ -1365,7 +1365,7 @@ async function savePatterns() {
 /* ══════════ 반별 학습표 ══════════
    반(시간표의 수업 칸) 안의 줄(반 전체 · 학년 · 학생)마다 교재와 주 횟수를 정하면 요일별 학습표를 계산한다.
    저장: homework_v4/todayView/studyPlan/<반> = { opt, rows:[{ id, kind:'all'|'grade'|'student', gr, sid, name, items:[{n,c}], memo:{d1:''}, pins:{d1:''} }], plan:{ 줄id:{ d1:'교재' } } }
-   학년은 숙제관리 앱 학생 관리의 학년(st.gr = { g, y }, 3월 1일에 학년도가 바뀜)으로 자동 계산한다. */
+   학년은 숙제관리 앱 학생 관리의 학년(st.gr = { g, y }, 1월 1일에 학년도가 바뀜)으로 자동 계산한다. */
 const SP_PATH = FB_PATH + '/todayView/studyPlan';
 let SP = {};              // 저장된 학습표
 let spDraft = {};         // 고치는 중
@@ -1387,7 +1387,7 @@ function spSeries() {   // 숙제관리 앱 교재(교재형) → 시리즈 목�
 const SP_PAL = ['#059669', '#0891b2', '#7c3aed', '#c2410c', '#db2777', '#a16207', '#d97706', '#4d7c0f', '#1d4ed8', '#be123c', '#0f766e', '#9333ea'];
 const spHash = n => { let h = 0; for (const c of String(n)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return SP_PAL[h % SP_PAL.length]; };
 const spCol = n => SP_COLORS[n] || (typesNow ? (Object.values(typesNow()).find(t => t.name === n) || {}).color : '') || spHash(n);
-const spYear = ds => { const d = ds ? new Date(ds + 'T00:00:00') : new Date(); return d.getMonth() >= 2 ? d.getFullYear() : d.getFullYear() - 1; };
+const spYear = ds => { const d = ds ? new Date(ds + 'T00:00:00') : new Date(); return d.getFullYear(); };   // v3 학원 기준 1월 1일
 const stGrade = (st, ds) => { const r = st && st.gr; if (!r || !r.g) return 0; return r.g + (spYear(ds) - (r.y || spYear(ds))); };
 const grLabel = n => !n ? '' : n <= 6 ? '초' + n : n <= 9 ? '중' + (n - 6) : n <= 12 ? '고' + (n - 9) : '졸업';
 const spDirty = k => !!spDraft[k] && JSON.stringify(spDraft[k]) !== JSON.stringify(SP[k] || null);
